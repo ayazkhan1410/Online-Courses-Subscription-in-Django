@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}
+<title>Payment Success</title>
+{% endblock %}
+
+{% block body %}
+
+<div class="container mt-5">
+    {% if messages %}
+        <div class="alert alert-warning" role="">
+    
+         {% for message in messages %}
+
+        {{message}}
+
+        {% endfor %}
+     </div>    
+    {% endif %}
+    <div class="text-center">
+        <p><strong> you payment has been received! </strong></p>
+        <a href="/" class="btn btn-success">Back to home</a>
+    </div>
+
+</div>
+
+
+{% endblock %}

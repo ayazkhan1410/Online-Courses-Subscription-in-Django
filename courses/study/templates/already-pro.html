@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title%}
+<title>
+    Already Pro!
+</title>
+{% endblock %}
+
+{% block body%}
+
+<style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .card {
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    }
+    .card-header {
+      background-color: #007bff;
+      color: #fff;
+      border-radius: 15px 15px 0 0;
+    }
+    .card-footer {
+      background-color: #f8f9fa;
+      border-top: none;
+      border-radius: 0 0 15px 15px;
+    }
+  </style>
+
+<div class="container mt-5">
+    <div class="row">
+      <div class="col-md-8 offset-md-2">
+
+        <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
+
+        <div class="card">
+          <div class="card-header text-center">
+            <h3>Pro Plan Information</h3>
+          </div>
+          <div class="card-body">
+            <p class="text-center">
+              You are already using our subscription Plan                  
+            </p>
+          </div>
+
+          <div class="card-footer text-center">
+            <a href="{% url 'home' %}" class="btn btn-primary">Back to Home</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{%endblock%}
