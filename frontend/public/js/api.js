@@ -156,5 +156,34 @@
     getConfig: function () {
       return request('/config/');
     },
+    getDashboard: function () {
+      return request('/dashboard/');
+    },
+    enrollCourse: function (slug) {
+      return request('/courses/' + encodeURIComponent(slug) + '/enroll/', {
+        method: 'POST',
+        body: {},
+      });
+    },
+    markLessonProgress: function (moduleId, completed) {
+      return request('/modules/' + moduleId + '/progress/', {
+        method: 'POST',
+        body: { completed: completed !== false },
+      });
+    },
+    getWishlist: function () {
+      return request('/wishlist/');
+    },
+    addWishlist: function (slug) {
+      return request('/wishlist/', {
+        method: 'POST',
+        body: { slug: slug },
+      });
+    },
+    removeWishlist: function (slug) {
+      return request('/wishlist/' + encodeURIComponent(slug) + '/', {
+        method: 'DELETE',
+      });
+    },
   };
 })(window);

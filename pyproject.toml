@@ -31,6 +31,7 @@ known-first-party = [
   "courses",
   "subscriptions",
   "contact",
+  "learning",
   "utils",
 ]
 force-single-line = false

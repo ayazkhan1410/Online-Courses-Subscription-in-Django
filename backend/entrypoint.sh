@@ -35,6 +35,7 @@ else:
 PY
 
 python manage.py migrate --noinput
+python manage.py seed_youtube_courses
 python manage.py collectstatic --noinput
 
 exec gunicorn config.wsgi:application \

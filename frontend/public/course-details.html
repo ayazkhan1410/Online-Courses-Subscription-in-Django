@@ -3,81 +3,300 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Course Details</title>
+    <title>Course — Study with Ayaz</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/css/styles.css" rel="stylesheet">
+    <link href="/css/styles.css?v=20261126b" rel="stylesheet">
+    <script src="/js/theme.js?v=20261126b"></script>
   </head>
-  <body data-page-title="Course Details">
+  <body data-page-title="Course — Study with Ayaz">
     <div id="app-shell"></div>
-    <div class="container mt-3">
+    <main class="page">
       <div id="alert-box"></div>
-      <div id="course-content"></div>
-    </div>
+      <div id="course-content">
+        <div class="empty-state">Loading course…</div>
+      </div>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/config.js"></script>
-    <script src="/js/api.js"></script>
-    <script src="/js/layout.js"></script>
-    <script src="/js/nav.js"></script>
+    <script src="/js/config.js?v=20261126b"></script>
+    <script src="/js/api.js?v=20261126b"></script>
+    <script src="/js/layout.js?v=20261126b"></script>
+    <script src="/js/nav.js?v=20261126b"></script>
+    <script src="/js/motion.js?v=20261126b"></script>
     <script>
+      let courseState = null;
+      let activeIndex = 0;
+
+      function embedSrc(mod) {
+        if (!mod) return '';
+        return mod.embed_url || mod.module_video || '';
+      }
+
+      function renderPlayer(mod, enrolled) {
+        if (!mod) {
+          return (
+            '<div class="player-shell">' +
+              '<div class="player-bezel"><span></span><span></span><span></span>' +
+              '<em>lesson player</em></div>' +
+              '<div class="video-container empty-player">' +
+                '<p>No lessons in this course yet.</p>' +
+              '</div>' +
+            '</div>'
+          );
+        }
+        if (!enrolled) {
+          return (
+            '<div class="player-shell reveal">' +
+              '<div class="player-bezel">' +
+                '<span></span><span></span><span></span>' +
+                '<em>locked until enroll</em>' +
+              '</div>' +
+              '<div class="video-container empty-player">' +
+                '<p>Enroll to watch lessons from this playlist.</p>' +
+              '</div>' +
+            '</div>'
+          );
+        }
+        const src = embedSrc(mod);
+        return (
+          '<div class="player-shell reveal">' +
+            '<div class="player-bezel">' +
+              '<span></span><span></span><span></span>' +
+              '<em>lesson player</em>' +
+            '</div>' +
+            '<div class="video-container">' +
+              (src
+                ? '<iframe src="' + src +
+                  '" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" title="' +
+                  (mod.module_name || 'Lesson') + '"></iframe>'
+                : '<div class="empty-player"><p>Video unavailable.</p></div>') +
+            '</div>' +
+          '</div>' +
+          '<div class="module-desc reveal">' +
+            '<div class="module-desc-row">' +
+              '<h3>' + mod.module_name + '</h3>' +
+              '<button type="button" class="btn btn-ghost" id="mark-complete">' +
+                (mod.is_completed ? 'Completed' : 'Mark complete') +
+              '</button>' +
+            '</div>' +
+            '<div class="rich">' + (mod.module_description || '') + '</div>' +
+          '</div>'
+        );
+      }
+
+      function renderToolbar(course) {
+        const enrolled = !!course.is_enrolled;
+        const wish = !!course.is_wishlisted;
+        const pct = course.progress_percent || 0;
+        let primary = '';
+        if (!API.getToken()) {
+          primary =
+            '<a class="btn btn-swa" href="/login.html?next=' +
+            encodeURIComponent(window.location.pathname + window.location.search) +
+            '">Log in to enroll</a>';
+        } else if (!enrolled) {
+          if (course.is_premium) {
+            primary =
+              '<button type="button" class="btn btn-accent" id="btn-enroll">Enroll (Pro)</button>' +
+              '<a class="btn btn-ghost" href="/become-pro.html">Get Pro</a>';
+          } else {
+            primary =
+              '<button type="button" class="btn btn-swa" id="btn-enroll">Enroll free</button>';
+          }
+        } else {
+          primary =
+            '<span class="status-pill is-enrolled">Enrolled</span>' +
+            '<span class="progress-inline">' + pct + '% complete</span>';
+        }
+        return (
+          '<div class="course-toolbar reveal">' +
+            '<div class="course-toolbar-meta">' +
+              (course.is_premium
+                ? '<span class="status-pill is-pro">Pro</span>'
+                : '<span class="status-pill is-free">Free</span>') +
+              '<span class="muted">' +
+                (course.module_count || (course.course_modules || []).length) +
+                ' lessons</span>' +
+            '</div>' +
+            '<div class="course-toolbar-actions">' +
+              primary +
+              '<button type="button" class="btn btn-ghost" id="btn-wish">' +
+                (wish ? 'Saved' : 'Save') +
+              '</button>' +
+              (course.playlist_url
+                ? '<a class="btn btn-ghost" href="' + course.playlist_url +
+                  '" target="_blank" rel="noopener">YouTube playlist</a>'
+                : '') +
+            '</div>' +
+            (enrolled
+              ? '<div class="progress-track course-progress">' +
+                  '<div class="progress-fill" style="width:' + pct + '%"></div>' +
+                '</div>'
+              : '') +
+          '</div>'
+        );
+      }
+
+      function renderPage() {
+        const course = courseState;
+        if (!course) return;
+        const modules = course.course_modules || [];
+        const enrolled = !!course.is_enrolled;
+        const active = modules[activeIndex] || modules[0];
+        const list = modules.map(function (mod, index) {
+          let cls = 'module-item';
+          if (index === activeIndex) cls += ' is-active';
+          if (mod.is_completed) cls += ' is-done';
+          if (!enrolled) cls += ' is-locked';
+          return (
+            '<button type="button" class="' + cls + '" data-index="' + index + '"' +
+              (enrolled ? '' : ' disabled') + '>' +
+              '<div class="idx">Lesson ' +
+                String(index + 1).padStart(2, '0') +
+                (mod.is_completed ? ' · done' : '') +
+              '</div>' +
+              '<div class="name">' + mod.module_name + '</div>' +
+            '</button>'
+          );
+        }).join('');
+
+        const thumb = course.course_image || course.thumbnail_url || '';
+        document.getElementById('course-content').innerHTML =
+          '<div class="learn-layout">' +
+            '<div>' +
+              '<div class="learn-copy reveal">' +
+                (thumb
+                  ? '<div class="course-hero-thumb"><img src="' + thumb +
+                    '" alt=""></div>'
+                  : '') +
+                '<h1 class="lesson-rule">' + course.courses_name + '</h1>' +
+                renderToolbar(course) +
+                '<div class="rich">' + (course.courses_description || '') + '</div>' +
+              '</div>' +
+              '<div id="player-area" class="mt-4">' +
+                renderPlayer(active, enrolled) +
+              '</div>' +
+            '</div>' +
+            '<aside class="module-panel reveal">' +
+              '<div class="module-panel-head">' +
+                '<h2>Lessons</h2>' +
+                '<p>' + modules.length + ' in playlist</p>' +
+              '</div>' +
+              '<div id="module-list">' +
+                (list || '<p class="p-3 text-muted">No lessons yet.</p>') +
+              '</div>' +
+            '</aside>' +
+          '</div>';
+
+        bindInteractions();
+        if (window.Motion) Motion.initReveal();
+      }
+
+      function bindInteractions() {
+        document.querySelectorAll('.module-item:not([disabled])').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            activeIndex = parseInt(btn.getAttribute('data-index'), 10) || 0;
+            renderPage();
+          });
+        });
+
+        const enrollBtn = document.getElementById('btn-enroll');
+        if (enrollBtn) {
+          enrollBtn.addEventListener('click', async function () {
+            if (!API.getToken()) {
+              window.location.href =
+                '/login.html?next=' +
+                encodeURIComponent(window.location.pathname + window.location.search);
+              return;
+            }
+            enrollBtn.disabled = true;
+            try {
+              await API.enrollCourse(courseState.slug);
+              await refreshCourse();
+            } catch (err) {
+              document.getElementById('alert-box').innerHTML =
+                '<div class="alert alert-warning">' + API.formatError(err) + '</div>';
+              enrollBtn.disabled = false;
+            }
+          });
+        }
+
+        const wishBtn = document.getElementById('btn-wish');
+        if (wishBtn) {
+          wishBtn.addEventListener('click', async function () {
+            if (!API.getToken()) {
+              window.location.href =
+                '/login.html?next=' +
+                encodeURIComponent(window.location.pathname + window.location.search);
+              return;
+            }
+            wishBtn.disabled = true;
+            try {
+              if (courseState.is_wishlisted) {
+                await API.removeWishlist(courseState.slug);
+                courseState.is_wishlisted = false;
+              } else {
+                await API.addWishlist(courseState.slug);
+                courseState.is_wishlisted = true;
+              }
+              renderPage();
+            } catch (err) {
+              document.getElementById('alert-box').innerHTML =
+                '<div class="alert alert-warning">' + API.formatError(err) + '</div>';
+              wishBtn.disabled = false;
+            }
+          });
+        }
+
+        const markBtn = document.getElementById('mark-complete');
+        if (markBtn) {
+          markBtn.addEventListener('click', async function () {
+            const mod = (courseState.course_modules || [])[activeIndex];
+            if (!mod) return;
+            markBtn.disabled = true;
+            try {
+              await API.markLessonProgress(mod.id, true);
+              mod.is_completed = true;
+              const modules = courseState.course_modules || [];
+              const done = modules.filter(function (m) { return m.is_completed; }).length;
+              courseState.progress_percent = modules.length
+                ? Math.round(100 * done / modules.length)
+                : 0;
+              renderPage();
+            } catch (err) {
+              document.getElementById('alert-box').innerHTML =
+                '<div class="alert alert-warning">' + API.formatError(err) + '</div>';
+              markBtn.disabled = false;
+            }
+          });
+        }
+      }
+
+      async function refreshCourse() {
+        const slug = Nav.qs('slug');
+        courseState = await API.getCourse(slug);
+        document.title = courseState.courses_name + ' — Study with Ayaz';
+        document.body.dataset.pageTitle = document.title;
+        renderPage();
+      }
+
       async function load() {
         const slug = Nav.qs('slug');
         if (!slug) {
           document.getElementById('alert-box').innerHTML =
             '<div class="alert alert-warning">Missing course slug.</div>';
-          return;
-        }
-        if (!API.getToken()) {
-          window.location.href =
-            '/login.html?next=' +
-            encodeURIComponent('/course-details.html?slug=' + slug);
+          document.getElementById('course-content').innerHTML = '';
           return;
         }
         try {
-          const course = await API.getCourse(slug);
-          document.title = course.courses_name;
-          const modules = course.course_modules || [];
-          const videos = modules.map(function (mod) {
-            return (
-              '<div class="col-md-8 mb-3">' +
-                '<h5>' + mod.module_name + '</h5>' +
-                '<div class="video-container">' +
-                  '<iframe src="' + mod.module_video +
-                    '" frameborder="0" allowfullscreen></iframe>' +
-                '</div>' +
-                '<div>' + (mod.module_description || '') + '</div>' +
-              '</div>'
-            );
-          }).join('');
-          const accordion = modules.map(function (mod, index) {
-            const n = index + 1;
-            return (
-              '<div class="card mb-2">' +
-                '<div class="card-header">' +
-                  '<strong>Module ' + n + ': ' + mod.module_name + '</strong>' +
-                '</div>' +
-                '<div class="card-body">' + (mod.module_description || '') + '</div>' +
-              '</div>'
-            );
-          }).join('');
-          document.getElementById('course-content').innerHTML =
-            '<h1>' + course.courses_name + '</h1>' +
-            '<div class="mb-3">' + (course.courses_description || '') + '</div>' +
-            '<div class="row">' +
-              '<div class="col-md-8">' + (videos || '<p>No modules yet.</p>') + '</div>' +
-              '<div class="col-md-4"><h4>Course Modules</h4>' + accordion + '</div>' +
-            '</div>';
+          await refreshCourse();
         } catch (err) {
-          if (err.status === 401 || err.status === 403) {
-            window.location.href =
-              '/login.html?next=' +
-              encodeURIComponent(window.location.pathname + window.location.search);
-            return;
-          }
+          document.getElementById('course-content').innerHTML = '';
           document.getElementById('alert-box').innerHTML =
             '<div class="alert alert-danger">' + API.formatError(err) + '</div>';
         }
       }
+
       document.addEventListener('DOMContentLoaded', load);
     </script>
   </body>

@@ -16,7 +16,8 @@ Full-stack online courses platform with a **Django REST Framework** API, **Postg
 │   ├── ocs_backend_venv/        # Local Python virtualenv (gitignored)
 │   ├── config/                  # Django project settings & root URLs
 │   ├── accounts/                # Users, profiles, auth APIs
-│   ├── courses/                 # Course catalog & modules
+│   ├── courses/                 # Course catalog, modules, YouTube seed
+│   ├── learning/                # Enrollments, progress, wishlist, dashboard
 │   ├── subscriptions/           # Plans, Stripe become-pro, public config
 │   ├── contact/                 # Contact form messages
 │   ├── utils/                   # Shared helpers (e.g. utils/email.py)
@@ -40,18 +41,21 @@ Full-stack online courses platform with a **Django REST Framework** API, **Postg
 |-----------------|--------------------------------|-----------------------------------------|
 | `accounts`      | `CustomUser`, `Profile`        | Auth, password reset, `/auth/*`         |
 | `courses`       | `Courses`, `CourseModule`      | Catalog listing & detail                |
+| `learning`      | `Enrollment`, `LessonProgress`, `WishlistItem` | Dashboard, enroll, progress |
 | `subscriptions` | `SubscriptionList`, `Subscription` | Memberships, Stripe, `/config/`     |
 | `contact`       | `Contact`                      | Contact form submissions                |
 
 ## Features
 
+- Real YouTube playlist catalog (Study with Ayaz) via idempotent seed
+- Student dashboard after register/login (enrolled, progress, wishlist)
+- Course enroll, lesson progress, wishlist APIs
+- Light / dark theme with persisted preference
 - Course listing, search, and pagination
-- Course details with modules (token auth required)
+- Course details with YouTube lesson player
 - Register / login / logout (DRF TokenAuthentication)
-- Contact form
-- Forget / change password
+- Contact form, forget / change password
 - Stripe “Become Pro” subscription flow
-- About page
 
 ## Quick start (Docker)
 
@@ -90,6 +94,7 @@ pip install -r requirements.txt -r requirements-dev.txt
 cd .. && docker compose up -d db && cd backend
 # backend/.env should use POSTGRES_HOST=localhost and POSTGRES_PORT=5433
 python manage.py migrate
+python manage.py seed_youtube_courses
 python manage.py runserver 0.0.0.0:4781
 ```
 
@@ -111,22 +116,38 @@ python -m http.server 4780
 
 Base URL: `http://localhost:4781/api`
 
-| Method | Endpoint                 | Auth | App           |
-|--------|--------------------------|------|---------------|
-| GET    | `/courses/`              | No   | `courses`     |
-| GET    | `/courses/<slug>/`       | Yes  | `courses`     |
-| POST   | `/contact/`              | No   | `contact`     |
-| POST   | `/auth/register/`        | No   | `accounts`    |
-| POST   | `/auth/login/`           | No   | `accounts`    |
-| POST   | `/auth/logout/`          | Yes  | `accounts`    |
-| GET    | `/auth/me/`              | Yes  | `accounts`    |
-| POST   | `/auth/forget-password/` | No   | `accounts`    |
-| POST   | `/auth/change-password/` | No   | `accounts`    |
-| GET    | `/subscriptions/`        | Yes  | `subscriptions` |
-| POST   | `/become-pro/`           | Yes  | `subscriptions` |
-| GET    | `/config/`               | No   | `subscriptions` |
+| Method | Endpoint                  | Auth | App            |
+|--------|---------------------------|------|----------------|
+| GET    | `/courses/`               | No   | `courses`      |
+| GET    | `/courses/<slug>/`        | No   | `courses`      |
+| POST   | `/courses/<slug>/enroll/` | Yes  | `learning`     |
+| GET    | `/dashboard/`             | Yes  | `learning`     |
+| GET    | `/enrollments/`           | Yes  | `learning`     |
+| POST   | `/modules/<id>/progress/` | Yes  | `learning`     |
+| GET/POST | `/wishlist/`            | Yes  | `learning`     |
+| DELETE | `/wishlist/<slug>/`       | Yes  | `learning`     |
+| POST   | `/contact/`               | No   | `contact`      |
+| POST   | `/auth/register/`         | No   | `accounts`     |
+| POST   | `/auth/login/`            | No   | `accounts`     |
+| POST   | `/auth/logout/`           | Yes  | `accounts`     |
+| GET    | `/auth/me/`               | Yes  | `accounts`     |
+| POST   | `/auth/forget-password/`  | No   | `accounts`     |
+| POST   | `/auth/change-password/`  | No   | `accounts`     |
+| GET    | `/subscriptions/`         | Yes  | `subscriptions`|
+| POST   | `/become-pro/`            | Yes  | `subscriptions`|
+| GET    | `/config/`                | No   | `subscriptions`|
 
 Auth header: `Authorization: Token <key>`
+
+### Seed YouTube courses
+
+Entrypoint runs this on every backend start (safe to re-run):
+
+```bash
+docker compose exec backend python manage.py seed_youtube_courses
+```
+
+Catalog source: `backend/courses/data/youtube_catalog.json` (from [@studywithayaz](https://www.youtube.com/@studywithayaz/playlists) playlists).
 
 ## Linting (Ruff)
 
@@ -158,6 +179,7 @@ Never commit `backend/.env` or `ocs_backend_venv/`.
 
 ## Notes
 
-- Fresh Postgres has no seed courses — add via admin after `createsuperuser`.
+- Backend entrypoint migrates and seeds YouTube courses automatically.
 - Media files are bind-mounted from `backend/media`.
 - SQLite is not used; PostgreSQL is required.
+- Theme preference is stored in the browser (`localStorage` key `swa_theme`).

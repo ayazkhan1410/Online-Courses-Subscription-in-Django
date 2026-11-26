@@ -1,5 +1,3 @@
-import uuid
-
 from django.contrib.auth import login as django_login
 from django.contrib.auth import logout as django_logout
 from rest_framework import status
@@ -8,7 +6,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.models import CustomUser, Profile
 from accounts.serializers import (
     ChangePasswordSerializer,
     ForgetPasswordSerializer,
@@ -16,7 +13,7 @@ from accounts.serializers import (
     RegisterSerializer,
     UserSerializer,
 )
-from utils.email import send_password_reset_email
+from utils.auth import issue_password_reset, reset_password
 
 
 class RegisterAPIView(APIView):
@@ -77,16 +74,7 @@ class ForgetPasswordAPIView(APIView):
     def post(self, request):
         serializer = ForgetPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
-        user_obj = CustomUser.objects.get(email=email)
-        token = str(uuid.uuid4())
-        profile_obj, _ = Profile.objects.get_or_create(
-            user=user_obj,
-            defaults={'forget_token': token},
-        )
-        profile_obj.forget_token = token
-        profile_obj.save()
-        send_password_reset_email(user_obj.email, token)
+        issue_password_reset(serializer.validated_data['email'])
         return Response({'message': 'An email has been sent.'})
 
 
@@ -96,16 +84,13 @@ class ChangePasswordAPIView(APIView):
     def post(self, request):
         serializer = ChangePasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        token = serializer.validated_data['token']
-        profile_obj = Profile.objects.filter(forget_token=token).first()
-        if profile_obj is None:
+        ok = reset_password(
+            serializer.validated_data['token'],
+            serializer.validated_data['password'],
+        )
+        if not ok:
             return Response(
                 {'detail': 'Invalid or expired token'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        user_obj = profile_obj.user
-        user_obj.set_password(serializer.validated_data['password'])
-        user_obj.save()
-        profile_obj.forget_token = ''
-        profile_obj.save()
         return Response({'message': 'Password changed successfully'})

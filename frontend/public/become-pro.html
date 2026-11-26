@@ -3,51 +3,57 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Become-Pro</title>
+    <title>Go Pro — Study with Ayaz</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/css/styles.css" rel="stylesheet">
+    <link href="/css/styles.css?v=20261126b" rel="stylesheet">
+    <script src="/js/theme.js?v=20261126b"></script>
     <script src="https://js.stripe.com/v3/"></script>
   </head>
-  <body data-page-title="Become-Pro">
+  <body data-page-title="Go Pro — Study with Ayaz">
     <div id="app-shell"></div>
-    <div class="container mt-5">
+    <main class="page">
       <div id="alert-box"></div>
-      <div class="row">
-        <div class="col-lg-6">
-          <h3>Why become Pro?</h3>
+      <div class="pro-layout">
+        <div class="pro-copy reveal">
+          <h1 class="lesson-rule">Pro access for the full library</h1>
           <p>
-            Unlock your full potential by upgrading to a Pro membership! Gain exclusive access
-            to our extensive library of courses in programming, technology, graphic design,
-            and freelancing.
+            Unlock premium courses and keep every module available while you learn
+            programming, freelancing, and digital craft.
           </p>
-          <form id="payment-form">
+          <ul class="pro-perks">
+            <li>Premium course catalog without paywall blocks</li>
+            <li>Desk-ready lessons you can revisit anytime</li>
+            <li>One membership, clear pricing, Stripe checkout</li>
+          </ul>
+        </div>
+        <div class="pro-panel reveal">
+          <h2>Choose a plan</h2>
+          <form id="payment-form" class="stack">
             <div class="mb-3">
-              <label class="form-label">Membership Type</label>
-              <select class="form-control" name="membership" id="membership" required>
-                <option value="">Choose</option>
+              <label class="form-label" for="membership">Membership</label>
+              <select class="form-select" name="membership" id="membership" required>
+                <option value="">Select a plan</option>
               </select>
             </div>
-            <label for="card-element">Credit or debit card</label>
-            <div id="card-element" class="mb-2"></div>
-            <div id="card-errors" role="alert" class="text-danger mb-2"></div>
-            <button class="btn btn-primary mt-3" type="submit">Submit Payment</button>
+            <div class="mb-3">
+              <label class="form-label" for="card-element">Card</label>
+              <div id="card-element"></div>
+              <div id="card-errors" role="alert" class="text-danger mt-2" style="font-size:13px;"></div>
+            </div>
+            <button class="btn btn-accent w-100" type="submit" style="height:44px;">
+              Pay and activate Pro
+            </button>
           </form>
         </div>
-        <div class="col-lg-4 mt-4 mx-4">
-          <img
-            class="img-fluid rounded"
-            src="https://media.onlinefreecourse.net/udemy/2018/09/26004647/vjJ96S.jpg"
-            alt="Become Pro"
-          >
-        </div>
       </div>
-    </div>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/config.js"></script>
-    <script src="/js/api.js"></script>
-    <script src="/js/layout.js"></script>
-    <script src="/js/nav.js"></script>
+    <script src="/js/config.js?v=20261126b"></script>
+    <script src="/js/api.js?v=20261126b"></script>
+    <script src="/js/layout.js?v=20261126b"></script>
+    <script src="/js/nav.js?v=20261126b"></script>
+    <script src="/js/motion.js?v=20261126b"></script>
     <script>
       let card = null;
       let stripe = null;
@@ -75,7 +81,7 @@
             const option = document.createElement('option');
             option.value = item.id;
             option.textContent =
-              item.subscription_list + ' - ' + item.subscription_price + '₹';
+              item.subscription_list + ' — ' + item.subscription_price + '₹';
             select.appendChild(option);
           });
 
@@ -86,7 +92,17 @@
           }
           stripe = Stripe(config.stripe_publishable_key);
           const elements = stripe.elements();
-          card = elements.create('card');
+          card = elements.create('card', {
+            style: {
+              base: {
+                color: '#1f1b16',
+                fontFamily: 'Instrument Sans, system-ui, sans-serif',
+                fontSize: '15px',
+                '::placeholder': { color: '#7b7266' },
+              },
+              invalid: { color: '#dc2626' },
+            },
+          });
           card.mount('#card-element');
           card.on('change', function (event) {
             document.getElementById('card-errors').textContent =
@@ -109,7 +125,7 @@
         const membership = document.getElementById('membership').value;
         if (!membership) {
           alertBox.innerHTML =
-            '<div class="alert alert-warning">Please choose a membership.</div>';
+            '<div class="alert alert-warning">Select a membership plan.</div>';
           return;
         }
         if (!stripe || !card) {

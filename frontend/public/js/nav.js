@@ -13,32 +13,35 @@
 
     if (!user) {
       authSlot.innerHTML =
-        '<a href="/login.html" class="btn btn-primary mx-2">Login</a>' +
-        '<a href="/register.html" class="btn btn-secondary">Register</a>';
+        '<a href="/login.html" class="btn btn-ghost">Log in</a>' +
+        '<a href="/register.html" class="btn btn-swa">Join</a>';
       proSlot.innerHTML =
-        '<a href="/become-pro.html" class="btn btn-danger mx-2">Become Pro</a>';
+        '<a href="/become-pro.html" class="btn btn-ghost">' +
+        '<span class="btn-pro-label">Go Pro</span></a>';
       return;
     }
 
     authSlot.innerHTML =
-      '<button type="button" id="logout-btn" class="btn btn-success mx-3">' +
-      'Logout</button>';
-    document.getElementById('logout-btn').addEventListener('click', async function () {
-      try {
-        await API.logout();
-      } catch (err) {
-        // Token may already be invalid; clear local session anyway.
-      }
-      API.clearSession();
-      window.location.href = '/index.html';
-    });
+      '<button type="button" id="logout-btn" class="btn btn-ghost">Log out</button>';
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async function () {
+        try {
+          await API.logout();
+        } catch (err) {
+          // Token may already be invalid; clear local session anyway.
+        }
+        API.clearSession();
+        window.location.href = '/index.html';
+      });
+    }
 
     if (user.is_pro) {
       proSlot.innerHTML =
-        '<a href="/already-pro.html" class="btn btn-primary mx-2">Pro Soldier</a>';
+        '<a href="/already-pro.html" class="btn btn-ghost">Pro</a>';
     } else {
       proSlot.innerHTML =
-        '<a href="/become-pro.html" class="btn btn-danger mx-2">Become Pro</a>';
+        '<a href="/become-pro.html" class="btn btn-accent">Go Pro</a>';
     }
   }
 
@@ -55,6 +58,7 @@
       if (value.trim()) {
         url.searchParams.set('search', value.trim());
       }
+      url.hash = 'catalog';
       window.location.href = url.toString();
     });
     const existing = qs('search');
@@ -62,12 +66,37 @@
     if (existing && input && window.location.pathname.endsWith('index.html')) {
       input.value = existing;
     }
+
+    const mobile = document.getElementById('nav-mobile');
+    if (mobile && window.matchMedia('(max-width: 900px)').matches) {
+      if (!document.getElementById('nav-search-mobile')) {
+        const clone = form.cloneNode(true);
+        clone.id = 'nav-search-mobile';
+        mobile.appendChild(clone);
+        clone.addEventListener('submit', function (event) {
+          event.preventDefault();
+          const value =
+            (clone.querySelector('input[name="search"]') || {}).value || '';
+          const url = new URL('/index.html', window.location.origin);
+          if (value.trim()) {
+            url.searchParams.set('search', value.trim());
+          }
+          url.hash = 'catalog';
+          window.location.href = url.toString();
+        });
+      }
+    }
+  }
+
+  function mount() {
+    renderNav();
+    wireSearch();
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    renderNav();
-    wireSearch();
+    // layout.js injects shell on the same tick; wait one frame.
+    requestAnimationFrame(mount);
   });
 
-  window.Nav = { qs: qs, renderNav: renderNav };
+  window.Nav = { qs: qs, renderNav: renderNav, mount: mount };
 })();
