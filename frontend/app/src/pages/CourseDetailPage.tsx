@@ -116,7 +116,14 @@ export default function CourseDetailPage() {
           ) : null}
           <div className="mt-8 flex flex-wrap gap-3">
             {course.is_enrolled ? (
-              <Link to={`/learn/${course.slug}/${(course.course_modules.find((m) => !m.is_locked) ?? course.course_modules[0])?.id ?? 0}`} className={buttonClass('primary')}>
+              <Link
+                to={`/learn/${course.slug}/${
+                  (
+                    modules.find((m) => !m.is_locked) ?? modules[0]
+                  )?.id ?? 0
+                }`}
+                className={buttonClass('primary')}
+              >
                 Resume
               </Link>
             ) : (
