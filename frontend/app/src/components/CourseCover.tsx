@@ -6,14 +6,41 @@ export function CourseCover({
   title,
   meta,
   categorySlug,
+  categoryIcon,
+  imageUrl,
   className,
 }: {
   title: string
   meta: string
   categorySlug?: string | null
+  categoryIcon?: string | null
+  imageUrl?: string | null
   className?: string
 }) {
   const label = stripEmoji(title)
+  const thumb = (imageUrl || '').trim()
+  if (thumb) {
+    return (
+      <div
+        className={cn(
+          'relative aspect-video overflow-hidden rounded-notebook bg-paper',
+          className,
+        )}
+      >
+        <img
+          src={thumb}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/10 to-transparent" />
+        <div className="relative flex h-full flex-col justify-end p-4 text-paper">
+          <p className="line-clamp-2 text-base font-medium leading-snug">{label}</p>
+          <p className="mt-1 font-mono text-xs opacity-90">{meta}</p>
+        </div>
+      </div>
+    )
+  }
   return (
     <div
       className={cn(
@@ -28,7 +55,7 @@ export function CourseCover({
         ))}
       </div>
       <div className="relative flex h-full flex-col justify-between p-4 pl-12">
-        <CategoryGlyph slug={categorySlug} />
+        <CategoryGlyph icon={categoryIcon} slug={categorySlug} />
         <div>
           <p className="line-clamp-2 text-base font-medium leading-snug">{label}</p>
           <p className="mt-2 font-mono text-xs">{meta}</p>

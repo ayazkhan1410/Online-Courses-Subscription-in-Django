@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Courses · Study with Ayaz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="app.js"></script>
+<script src="data.js"></script>
+<style>
+  .page-head { padding: 48px 0 24px; display: grid; grid-template-columns: 1fr minmax(0, 360px); gap: 24px; align-items: end; }
+  .page-head p { margin: 8px 0 0; color: var(--text-2); }
+  .tabs { border-bottom: 1px solid var(--line); padding-bottom: 16px; margin-bottom: 32px; }
+  .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; align-items: start; }
+  .filters { position: sticky; top: 88px; display: flex; flex-direction: column; gap: 28px; }
+  .filters h4 { margin: 0 0 8px; font-size: 13px; font-weight: 500; }
+  .results-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 12px; }
+  .select { height: 32px; padding: 0 28px 0 10px; border-radius: var(--r-sm); border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; }
+  .filter-btn { display: none; }
+  .active-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 6px 0 10px; border-radius: 6px; background: var(--sunken); font-size: 12px; color: var(--text-2); }
+  .tag .i { width: 14px; height: 14px; }
+  .cat-intro { display: flex; gap: 16px; align-items: flex-start; padding: 20px; margin-bottom: 28px; }
+  .cat-intro .i { color: var(--text-2); margin-top: 2px; }
+  .cat-intro p { margin: 4px 0 0; color: var(--text-2); font-size: 14px; }
+  @media (max-width: 900px) {
+    .page-head { grid-template-columns: 1fr; padding-top: 32px; }
+    .layout { grid-template-columns: 1fr; }
+    .filters { display: none; }
+    .filter-btn { display: inline-flex; }
+  }
+</style>
+</head>
+<body>
+<div data-nav="Courses"></div>
+
+<main class="wrap">
+  <div class="page-head">
+    <div>
+      <h1 class="h1">Courses</h1>
+      <p>59 free playlists in 8 categories. Filter by topic, teacher or language.</p>
+    </div>
+    <label class="search"><span data-icon="search"></span><input class="input" type="search" placeholder="Search" aria-label="Search courses"></label>
+  </div>
+
+  <div class="tabs" id="categories">
+    <div class="chips" data-single role="group" aria-label="Category">
+      <button class="chip" aria-pressed="false">All <span class="meta">59</span></button>
+      <button class="chip" aria-pressed="false">Study with Ayaz <span class="meta">21</span></button>
+      <button class="chip" aria-pressed="false">Python <span class="meta">5</span></button>
+      <button class="chip" aria-pressed="true">Backend Engineering <span class="meta">6</span></button>
+      <button class="chip" aria-pressed="false">Frontend Engineering <span class="meta">5</span></button>
+      <button class="chip" aria-pressed="false">AI and Machine Learning <span class="meta">7</span></button>
+      <button class="chip" aria-pressed="false">DevOps and Cloud <span class="meta">6</span></button>
+      <button class="chip" aria-pressed="false">Data Structures and Interviews <span class="meta">6</span></button>
+      <button class="chip" aria-pressed="false">Freelancing and Career <span class="meta">3</span></button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <aside class="filters" aria-label="Filters">
+      <div>
+        <h4>Teacher</h4>
+        <label class="check"><input type="checkbox">Corey Schafer<span class="meta">1</span></label>
+        <label class="check"><input type="checkbox">Tech With Tim<span class="meta">2</span></label>
+        <label class="check"><input type="checkbox">Dave Gray<span class="meta">1</span></label>
+        <label class="check"><input type="checkbox">Net Ninja<span class="meta">1</span></label>
+        <label class="check"><input type="checkbox">CodeWithHarry<span class="meta">1</span></label>
+      </div>
+      <div>
+        <h4>Level</h4>
+        <label class="check"><input type="checkbox">Beginner<span class="meta">4</span></label>
+        <label class="check"><input type="checkbox">Intermediate<span class="meta">2</span></label>
+        <label class="check"><input type="checkbox">Advanced<span class="meta">0</span></label>
+      </div>
+      <div>
+        <h4>Language</h4>
+        <label class="check"><input type="checkbox">English<span class="meta">5</span></label>
+        <label class="check"><input type="checkbox">Hindi<span class="meta">1</span></label>
+        <label class="check"><input type="checkbox">Urdu/Hindi<span class="meta">0</span></label>
+      </div>
+    </aside>
+
+    <section>
+      <div class="panel cat-intro">
+        <span data-icon="server"></span>
+        <div>
+          <h2 class="h3">Backend Engineering</h2>
+          <p>Django from first view to deployed API. Start with Corey Schafer if you're new, then build the full stack app with Tech With Tim.</p>
+        </div>
+      </div>
+      <div class="results-bar">
+        <div class="active-filters">
+          <span class="meta">6 courses</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm filter-btn"><span data-icon="filter" class="i-16"></span>Filters</button>
+          <select class="select" aria-label="Sort"><option>Recommended order</option><option>Newest</option><option>Most lessons</option></select>
+        </div>
+      </div>
+      <div class="grid grid-3" data-list></div>
+    </section>
+  </div>
+</main>
+
+<div data-footer></div>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const b = (title, short, lessons, lang, level, name, initials) => ({ title, short, cat: "Backend", ink: "backend", lessons, lang, level, by: { name, initials } });
+    fill("[data-list]", [
+      FEATURED[0],
+      b("Python Django Tutorials for Beginners", "Django basics", 12, "English", "Beginner", "Dave Gray", "DG"),
+      b("Django Tutorial (Create a Blog)", "Django blog", 20, "English", "Beginner", "Net Ninja", "NN"),
+      b("Python Django Tutorials", "Django step by step", 18, "English", "Beginner", "Tech With Tim", "TT"),
+      b("Django and React full stack", "Django + React", 9, "English", "Intermediate", "Tech With Tim", "TT"),
+      FEATURED[8],
+    ]);
+  });
+</script>
+</body>
+</html>

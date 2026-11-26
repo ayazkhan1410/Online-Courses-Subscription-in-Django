@@ -300,6 +300,12 @@ def import_playlist(
         if video:
             modules.append(video)
     thumb = (info.get('thumbnail') or '')[:500]
+    if not thumb and modules:
+        thumb = (modules[0].get('thumbnail_url') or '')[:500]
+    if not thumb and modules:
+        video_id = (modules[0].get('youtube_video_id') or '').strip()
+        if video_id:
+            thumb = f'https://i.ytimg.com/vi/{video_id}/hqdefault.jpg'
     course, _created, _mc, _mu = upsert_youtube_course(
         playlist_id=playlist_id,
         title=info.get('title') or playlist_id,

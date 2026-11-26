@@ -145,7 +145,13 @@ export default function CourseDetailPage() {
             </Button>
           </div>
         </div>
-        <CourseCover title={title} meta={meta} categorySlug={course.category?.slug} />
+        <CourseCover
+          title={title}
+          meta={meta}
+          categorySlug={course.category?.slug}
+          categoryIcon={course.category?.icon}
+          imageUrl={course.thumbnail_url || course.course_image}
+        />
       </div>
       <h2 className="mt-12">Lessons</h2>
       {modules.length === 0 ? (

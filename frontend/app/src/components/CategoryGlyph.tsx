@@ -20,20 +20,28 @@ const FROM_ICON: Record<string, string> = {
   binary: 'binary',
   brain: 'brain',
   briefcase: 'briefcase',
+  code: 'code',
   'code-2': 'code',
   container: 'container',
   'graduation-cap': 'cap',
+  'notebook-pen': 'cap',
   layout: 'layout',
   server: 'server',
 }
 
 const FROM_SLUG: Record<string, string> = {
   'ai-ml': 'brain',
+  'ai-and-machine-learning': 'brain',
   backend: 'server',
+  'backend-engineering': 'server',
   devops: 'container',
+  'devops-and-cloud': 'container',
   dsa: 'binary',
+  'data-structures-and-interviews': 'binary',
   freelancing: 'briefcase',
+  'freelancing-and-career': 'briefcase',
   frontend: 'layout',
+  'frontend-engineering': 'layout',
   python: 'code',
   'study-with-ayaz': 'cap',
 }

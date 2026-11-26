@@ -61,6 +61,8 @@ export default function DashboardHomePage() {
             <CourseCover
               title={stripEmoji(current.courses_name)}
               categorySlug={current.category?.slug}
+              categoryIcon={current.category?.icon}
+              imageUrl={current.thumbnail_url || current.course_image}
               meta={lessonLabel(
                 lessonIndex(current.progress_percent, current.module_count),
                 current.module_count,

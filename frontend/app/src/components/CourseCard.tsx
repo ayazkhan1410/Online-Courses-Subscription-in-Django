@@ -27,6 +27,8 @@ export function CourseCard({ course }: { course: Course }) {
           title={title}
           meta={meta}
           categorySlug={course.category?.slug}
+          categoryIcon={course.category?.icon}
+          imageUrl={course.thumbnail_url || course.course_image}
           className="rounded-none"
         />
       </Link>
