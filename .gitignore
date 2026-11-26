@@ -1,1 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
 .env
+.ruff_cache/
+
+# Django
+*.log
+backend/staticfiles/
+*.sqlite3-journal
+
+# Node / frontend tooling (future)
+node_modules/
+dist/
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Docker
+*.pid

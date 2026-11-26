@@ -1,0 +1,34 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+src = ["backend"]
+extend-exclude = [
+  "**/migrations/**",
+  "backend/staticfiles/**",
+]
+
+[tool.ruff.lint]
+select = [
+  "E",      # pycodestyle errors
+  "W",      # pycodestyle warnings
+  "F",      # pyflakes
+  "I",      # isort
+  "B",      # bugbear
+  "UP",     # pyupgrade
+  "TID",    # tidy imports
+]
+ignore = [
+  "E501",   # line length handled by formatter
+]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.isort]
+known-first-party = ["config", "study"]
+force-single-line = false
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+line-ending = "auto"

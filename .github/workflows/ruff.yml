@@ -1,0 +1,32 @@
+name: Ruff
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  ruff:
+    name: Lint & format check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Ruff
+        run: pip install "ruff>=0.8,<1"
+
+      - name: Ruff check
+        run: ruff check backend
+
+      - name: Ruff format
+        run: ruff format --check backend

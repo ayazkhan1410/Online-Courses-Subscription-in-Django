@@ -1,0 +1,44 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: courses-backend
+    ports:
+      - "4781:4781"
+    env_file:
+      - ./backend/.env
+    environment:
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,backend
+      DJANGO_DB_PATH: /app/data/db.sqlite3
+      CORS_ALLOWED_ORIGINS: http://localhost:4780,http://127.0.0.1:4780
+      FRONTEND_URL: http://localhost:4780
+    volumes:
+      - ./backend/media:/app/media
+      - backend_db:/app/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4781/api/config/')",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: courses-frontend
+    ports:
+      - "4780:4780"
+    environment:
+      API_BASE_URL: http://localhost:4781/api
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  backend_db:
