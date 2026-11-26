@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
@@ -27,8 +28,17 @@ PREMIUM_PLAYLIST_IDS = {
 }
 
 
+EMOJI_RE = re.compile(
+    '[\U0001f300-\U0001faff\U00002600-\U000027bf\U0000fe0f\U0000200d]'
+)
+
+
+def _strip_emoji(value: str) -> str:
+    return EMOJI_RE.sub('', value or '').strip()
+
+
 def _description_html(text: str) -> str:
-    text = (text or '').strip()
+    text = _strip_emoji(text or '').strip()
     if not text:
         return '<p>Course lessons from the Study with Ayaz YouTube playlist.</p>'
     paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
@@ -72,7 +82,7 @@ class Command(BaseCommand):
 
         for item in courses_data:
             playlist_id = item.get('youtube_playlist_id') or ''
-            title = (item.get('title') or '').strip()
+            title = _strip_emoji(item.get('title') or '').strip()
             if not playlist_id or not title:
                 continue
 
@@ -107,7 +117,7 @@ class Command(BaseCommand):
                     or f'https://www.youtube.com/watch?v={video_id}'
                 )
                 mod_defaults = {
-                    'module_name': (mod.get('title') or video_id)[:255],
+                    'module_name': _strip_emoji(mod.get('title') or video_id)[:255],
                     'module_description': (
                         f'<p>{escape((mod.get("title") or "")[:300])}</p>'
                     ),

@@ -6,10 +6,8 @@
     if (saved === 'light' || saved === 'dark') {
       return saved;
     }
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
-    return 'light';
+    // Direction is a study desk at night.
+    return 'dark';
   }
 
   function apply(theme) {
@@ -17,14 +15,14 @@
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem(KEY, next);
     const btn = document.getElementById('theme-toggle');
-    if (btn) {
-      btn.setAttribute('aria-pressed', next === 'dark' ? 'true' : 'false');
-      btn.title = next === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
-      const label = btn.querySelector('.theme-label');
-      if (label) {
-        label.textContent = next === 'dark' ? 'Light' : 'Dark';
-      }
-      btn.classList.toggle('is-dark', next === 'dark');
+    if (!btn) {
+      return;
+    }
+    btn.setAttribute('aria-pressed', next === 'dark' ? 'true' : 'false');
+    btn.title = next === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
+    const icon = next === 'dark' ? 'sun' : 'moon';
+    if (window.Icons) {
+      btn.innerHTML = Icons.svg(icon);
     }
   }
 

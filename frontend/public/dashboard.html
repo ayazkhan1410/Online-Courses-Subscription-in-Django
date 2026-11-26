@@ -4,25 +4,30 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Dashboard — Study with Ayaz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Nastaliq+Urdu:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/css/styles.css?v=20261126b" rel="stylesheet">
-    <script src="/js/theme.js?v=20261126b"></script>
+    <link href="/css/styles.css?v=20261126c" rel="stylesheet">
+    <script src="/js/theme.js?v=20261126c"></script>
   </head>
   <body data-page-title="Dashboard — Study with Ayaz">
     <div id="app-shell"></div>
     <main class="page">
       <div id="alert-box"></div>
       <div id="dashboard-root" class="dash">
-        <div class="empty-state">Loading your learning desk…</div>
+        <div class="empty-state">Loading your learning desk</div>
       </div>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/config.js?v=20261126b"></script>
-    <script src="/js/api.js?v=20261126b"></script>
-    <script src="/js/layout.js?v=20261126b"></script>
-    <script src="/js/nav.js?v=20261126b"></script>
-    <script src="/js/motion.js?v=20261126b"></script>
+    <script src="/js/config.js?v=20261126c"></script>
+    <script src="/js/api.js?v=20261126c"></script>
+    <script src="/js/icons.js?v=20261126c"></script>
+    <script src="/js/text.js?v=20261126c"></script>
+    <script src="/js/layout.js?v=20261126c"></script>
+    <script src="/js/nav.js?v=20261126c"></script>
+    <script src="/js/motion.js?v=20261126c"></script>
     <script>
       function pctBar(value) {
         const v = Math.max(0, Math.min(100, value || 0));
@@ -40,6 +45,15 @@
         const slug = course.slug;
         const progress = course.progress_percent || (extra && extra.progress_percent) || 0;
         const cta = (extra && extra.cta) || (progress > 0 ? 'Continue' : 'Open');
+        const modules = course.module_count || 0;
+        const dayHint = modules
+          ? '<div class="lesson-day">' +
+              TextUtil.dayLabel(
+                Math.max(0, Math.round((progress / 100) * modules) - 1),
+                modules
+              ) +
+            '</div>'
+          : '';
         return (
           '<article class="dash-course reveal">' +
             '<a class="dash-course-media" href="/course-details.html?slug=' +
@@ -52,9 +66,10 @@
                   ? '<span class="status-pill is-pro">Pro</span>'
                   : '<span class="status-pill is-free">Free</span>') +
               '</div>' +
-              '<h3><a href="/course-details.html?slug=' +
+              '<h3 class="course-title"><a href="/course-details.html?slug=' +
                 encodeURIComponent(slug) + '">' +
-                course.courses_name + '</a></h3>' +
+                TextUtil.stripEmoji(course.courses_name) + '</a></h3>' +
+              dayHint +
               pctBar(progress) +
               '<div class="dash-course-actions">' +
                 '<a class="btn btn-swa" href="/course-details.html?slug=' +
@@ -71,8 +86,8 @@
         }).join('');
         return (
           '<section class="dash-empty reveal">' +
-            '<h2 class="lesson-rule">Your desk is ready</h2>' +
-            '<p>You are not enrolled in a course yet. Start with a free playlist or save one for later.</p>' +
+            '<h2>Your desk is ready</h2>' +
+            '<p>You are not enrolled in a course yet. Start with a free playlist or save one for later</p>' +
             '<div class="dash-actions">' +
               '<a class="btn btn-swa" href="/index.html#catalog">Browse catalog</a>' +
               '<a class="btn btn-ghost" href="/become-pro.html">See Pro</a>' +
@@ -80,14 +95,16 @@
           '</section>' +
           '<section class="dash-section">' +
             '<div class="section-head"><h2>Start here</h2></div>' +
-            '<div class="dash-grid">' + (cards || '<p class="text-muted">No courses seeded yet.</p>') + '</div>' +
+            '<div class="dash-grid">' +
+              (cards || '<p class="text-muted">No courses seeded yet</p>') +
+            '</div>' +
           '</section>'
         );
       }
 
       function renderDashboard(data) {
         const root = document.getElementById('dashboard-root');
-        const name = data.user.display_name || 'Learner';
+        const name = TextUtil.stripEmoji(data.user.display_name || 'Learner');
         const stats = data.stats || {};
         const enrolled = data.enrolled || [];
         const cont = data.continue_learning || [];
@@ -100,24 +117,24 @@
           '<section class="dash-hero reveal">' +
             '<div>' +
               '<p class="hero-kicker">Learning desk</p>' +
-              '<h1 class="lesson-rule">Welcome back, ' + name + '</h1>' +
+              '<h1>' + name + '</h1>' +
               '<p class="hero-lead">' +
                 (data.user.is_pro
-                  ? 'Pro is active. Your premium playlists stay unlocked.'
-                  : 'Track lessons, continue where you left off, and upgrade when you need Pro courses.') +
+                  ? 'Pro is active. Your premium playlists are available'
+                  : 'Track lessons, continue where you left off, and upgrade when you need Pro courses') +
               '</p>' +
               '<div class="hero-cta">' +
                 '<a class="btn btn-swa" href="/index.html#catalog">Browse courses</a>' +
                 (data.user.is_pro
                   ? '<a class="btn btn-ghost" href="/already-pro.html">Pro status</a>'
-                  : '<a class="btn btn-accent" href="/become-pro.html">Upgrade to Pro</a>') +
+                  : '<a class="btn btn-accent" href="/become-pro.html">Go Pro</a>') +
               '</div>' +
             '</div>' +
             '<div class="dash-stat-grid">' +
               '<div class="dash-stat"><div class="label">Enrolled</div><div class="value">' + stats.enrolled_courses + '</div></div>' +
               '<div class="dash-stat"><div class="label">Completed</div><div class="value">' + stats.completed_courses + '</div></div>' +
               '<div class="dash-stat"><div class="label">Lessons done</div><div class="value">' + stats.completed_lessons + '</div></div>' +
-              '<div class="dash-stat"><div class="label">Avg progress</div><div class="value">' + stats.avg_progress + '%</div></div>' +
+              '<div class="dash-stat"><div class="label">Avg progress</div><div class="value is-accent">' + stats.avg_progress + '%</div></div>' +
             '</div>' +
           '</section>';
 
@@ -131,7 +148,7 @@
         if (cont.length) {
           body +=
             '<section class="dash-section">' +
-              '<div class="section-head"><h2 class="lesson-rule">Continue learning</h2></div>' +
+              '<div class="section-head"><h2>Continue learning</h2></div>' +
               '<div class="dash-grid">' +
                 cont.map(function (c) { return courseTile(c); }).join('') +
               '</div>' +
@@ -140,7 +157,7 @@
 
         body +=
           '<section class="dash-section">' +
-            '<div class="section-head"><h2 class="lesson-rule">Enrolled courses</h2></div>' +
+            '<div class="section-head"><h2>Enrolled courses</h2></div>' +
             '<div class="dash-grid">' +
               enrolled.map(function (e) {
                 return courseTile(e.course || e);
@@ -160,24 +177,27 @@
 
         body +=
           '<section class="dash-section">' +
-            '<div class="section-head"><h2>Saved / wishlist</h2>' +
-              '<p>' + (stats.wishlist_count || 0) + ' saved</p></div>' +
+            '<div class="section-head"><h2>Saved</h2>' +
+              '<p class="tabular">' + (stats.wishlist_count || 0) + ' saved</p></div>' +
             '<div class="dash-grid">' +
               (wishlist.length
                 ? wishlist.map(function (w) {
-                    return courseTile(w.course || w);
+                    return courseTile(w.course || w, { cta: 'Open' });
                   }).join('')
-                : '<div class="empty-state">No saved courses yet. Use Save on a course page.</div>') +
+                : '<div class="empty-state">No saved courses yet. Use Save on a course page</div>') +
             '</div>' +
           '</section>';
 
         if (recommended.length) {
           body +=
             '<section class="dash-section">' +
-              '<div class="section-head"><h2>Recommended for you</h2></div>' +
+              '<div class="section-head"><h2>Recommended</h2></div>' +
               '<div class="dash-grid">' +
                 recommended.map(function (c) {
-                  return courseTile(Object.assign({}, c, { progress_percent: 0 }));
+                  return courseTile(
+                    Object.assign({}, c, { progress_percent: 0 }),
+                    { cta: 'Start' }
+                  );
                 }).join('') +
               '</div>' +
             '</section>';
@@ -185,7 +205,7 @@
 
         body +=
           '<section class="dash-section dash-account reveal">' +
-            '<div class="section-head"><h2 class="lesson-rule">Account</h2></div>' +
+            '<div class="section-head"><h2>Account</h2></div>' +
             '<div class="account-card">' +
               '<p><strong>Email</strong><br>' + data.user.email + '</p>' +
               '<p><strong>Membership</strong><br>' +
@@ -194,7 +214,7 @@
                 '<a class="btn btn-ghost" href="/forget-password.html">Reset password</a>' +
                 (data.user.is_pro
                   ? ''
-                  : '<a class="btn btn-accent" href="/become-pro.html">Upgrade</a>') +
+                  : '<a class="btn btn-accent" href="/become-pro.html">Go Pro</a>') +
               '</div>' +
             '</div>' +
           '</section>';

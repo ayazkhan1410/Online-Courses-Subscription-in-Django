@@ -12,33 +12,43 @@
     const title = document.body.dataset.pageTitle || 'Study with Ayaz';
     document.title = title;
     const user = window.API && API.getUser ? API.getUser() : null;
+    const icon = window.Icons ? Icons.svg : function () { return ''; };
 
     shell.innerHTML =
       '<header class="site-header" id="site-header">' +
         '<div class="inner">' +
-          '<a class="brand lesson-rule" href="/index.html">Study with Ayaz<span class="mark">.</span></a>' +
+          '<a class="brand" href="/index.html">Study with Ayaz<span class="mark">.</span></a>' +
           '<ul class="nav-links" id="nav-links-desktop">' +
-            '<li><a href="/index.html"' + (path === 'index.html' ? ' class="is-active"' : '') + '>Courses</a></li>' +
+            '<li><a href="/index.html"' +
+              (path === 'index.html' ? ' class="is-active"' : '') +
+              '>Courses</a></li>' +
             (user
-              ? '<li><a href="/dashboard.html"' + (path === 'dashboard.html' ? ' class="is-active"' : '') + '>Dashboard</a></li>'
+              ? '<li><a href="/dashboard.html"' +
+                (path === 'dashboard.html' ? ' class="is-active"' : '') +
+                '>Dashboard</a></li>'
               : '') +
-            '<li><a href="/about.html"' + (path === 'about.html' ? ' class="is-active"' : '') + '>About</a></li>' +
-            '<li><a href="/contact.html"' + (path === 'contact.html' ? ' class="is-active"' : '') + '>Contact</a></li>' +
+            '<li><a href="/about.html"' +
+              (path === 'about.html' ? ' class="is-active"' : '') +
+              '>About</a></li>' +
+            '<li><a href="/contact.html"' +
+              (path === 'contact.html' ? ' class="is-active"' : '') +
+              '>Contact</a></li>' +
+            '<li><a href="/become-pro.html"' +
+              (path === 'become-pro.html' || path === 'already-pro.html'
+                ? ' class="is-active"'
+                : '') +
+              '>Pro</a></li>' +
           '</ul>' +
           '<div class="nav-spacer"></div>' +
           '<div class="nav-actions">' +
-            '<button type="button" class="btn btn-ghost theme-toggle" id="theme-toggle" aria-label="Toggle theme">' +
-              '<span class="theme-dot" aria-hidden="true"></span>' +
-              '<span class="theme-label">Dark</span>' +
+            '<button type="button" class="theme-toggle" id="theme-toggle" ' +
+              'aria-label="Toggle theme">' +
+              icon('moon') +
             '</button>' +
             '<span id="nav-auth"></span>' +
-            '<span id="nav-pro"></span>' +
-            '<form id="nav-search" role="search">' +
-              '<input class="form-control" name="search" placeholder="Search" aria-label="Search">' +
-              '<button class="btn btn-ghost" type="submit">Go</button>' +
-            '</form>' +
-            '<button type="button" class="nav-toggle" id="nav-toggle" aria-label="Open menu">' +
-              '<span></span>' +
+            '<button type="button" class="nav-toggle" id="nav-toggle" ' +
+              'aria-label="Open menu">' +
+              icon('menu') +
             '</button>' +
           '</div>' +
         '</div>' +
@@ -48,6 +58,7 @@
             (user ? '<li><a href="/dashboard.html">Dashboard</a></li>' : '') +
             '<li><a href="/about.html">About</a></li>' +
             '<li><a href="/contact.html">Contact</a></li>' +
+            '<li><a href="/become-pro.html">Pro</a></li>' +
           '</ul>' +
         '</div>' +
       '</header>';

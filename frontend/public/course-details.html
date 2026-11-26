@@ -4,25 +4,30 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Course — Study with Ayaz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Nastaliq+Urdu:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/css/styles.css?v=20261126b" rel="stylesheet">
-    <script src="/js/theme.js?v=20261126b"></script>
+    <link href="/css/styles.css?v=20261126c" rel="stylesheet">
+    <script src="/js/theme.js?v=20261126c"></script>
   </head>
   <body data-page-title="Course — Study with Ayaz">
     <div id="app-shell"></div>
     <main class="page">
       <div id="alert-box"></div>
       <div id="course-content">
-        <div class="empty-state">Loading course…</div>
+        <div class="empty-state">Loading course</div>
       </div>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/config.js?v=20261126b"></script>
-    <script src="/js/api.js?v=20261126b"></script>
-    <script src="/js/layout.js?v=20261126b"></script>
-    <script src="/js/nav.js?v=20261126b"></script>
-    <script src="/js/motion.js?v=20261126b"></script>
+    <script src="/js/config.js?v=20261126c"></script>
+    <script src="/js/api.js?v=20261126c"></script>
+    <script src="/js/icons.js?v=20261126c"></script>
+    <script src="/js/text.js?v=20261126c"></script>
+    <script src="/js/layout.js?v=20261126c"></script>
+    <script src="/js/nav.js?v=20261126c"></script>
+    <script src="/js/motion.js?v=20261126c"></script>
     <script>
       let courseState = null;
       let activeIndex = 0;
@@ -32,15 +37,15 @@
         return mod.embed_url || mod.module_video || '';
       }
 
-      function renderPlayer(mod, enrolled) {
+      function renderPlayer(mod, enrolled, total) {
         if (!mod) {
           return (
             '<div class="player-shell">' +
               '<div class="player-bezel"><span></span><span></span><span></span>' +
               '<em>lesson player</em></div>' +
-              '<div class="video-container empty-player">' +
-                '<p>No lessons in this course yet.</p>' +
-              '</div>' +
+              '<div class="video-container"><div class="empty-player">' +
+                '<p>No lessons in this course yet</p>' +
+              '</div></div>' +
             '</div>'
           );
         }
@@ -49,37 +54,43 @@
             '<div class="player-shell reveal">' +
               '<div class="player-bezel">' +
                 '<span></span><span></span><span></span>' +
-                '<em>locked until enroll</em>' +
+                '<em>enroll to watch</em>' +
               '</div>' +
-              '<div class="video-container empty-player">' +
-                '<p>Enroll to watch lessons from this playlist.</p>' +
-              '</div>' +
+              '<div class="video-container"><div class="empty-player">' +
+                '<p>Enroll to watch lessons from this playlist</p>' +
+              '</div></div>' +
             '</div>'
           );
         }
         const src = embedSrc(mod);
+        const day = TextUtil.dayLabel(activeIndex, total);
         return (
           '<div class="player-shell reveal">' +
             '<div class="player-bezel">' +
               '<span></span><span></span><span></span>' +
-              '<em>lesson player</em>' +
+              '<em class="lesson-day">' + day + '</em>' +
             '</div>' +
             '<div class="video-container">' +
               (src
                 ? '<iframe src="' + src +
                   '" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" title="' +
-                  (mod.module_name || 'Lesson') + '"></iframe>'
-                : '<div class="empty-player"><p>Video unavailable.</p></div>') +
+                  TextUtil.stripEmoji(mod.module_name || 'Lesson') + '"></iframe>'
+                : '<div class="empty-player"><p>Video unavailable</p></div>') +
             '</div>' +
           '</div>' +
           '<div class="module-desc reveal">' +
             '<div class="module-desc-row">' +
-              '<h3>' + mod.module_name + '</h3>' +
+              '<div>' +
+                '<div class="lesson-day">' + day + '</div>' +
+                '<h3>' + TextUtil.stripEmoji(mod.module_name) + '</h3>' +
+              '</div>' +
               '<button type="button" class="btn btn-ghost" id="mark-complete">' +
-                (mod.is_completed ? 'Completed' : 'Mark complete') +
+                (mod.is_completed
+                  ? Icons.svg('check') + ' Completed'
+                  : 'Mark complete') +
               '</button>' +
             '</div>' +
-            '<div class="rich">' + (mod.module_description || '') + '</div>' +
+            '<div class="rich">' + TextUtil.stripEmoji(mod.module_description || '') + '</div>' +
           '</div>'
         );
       }
@@ -88,6 +99,7 @@
         const enrolled = !!course.is_enrolled;
         const wish = !!course.is_wishlisted;
         const pct = course.progress_percent || 0;
+        const modules = course.course_modules || [];
         let primary = '';
         if (!API.getToken()) {
           primary =
@@ -95,18 +107,16 @@
             encodeURIComponent(window.location.pathname + window.location.search) +
             '">Log in to enroll</a>';
         } else if (!enrolled) {
-          if (course.is_premium) {
-            primary =
-              '<button type="button" class="btn btn-accent" id="btn-enroll">Enroll (Pro)</button>' +
-              '<a class="btn btn-ghost" href="/become-pro.html">Get Pro</a>';
-          } else {
-            primary =
-              '<button type="button" class="btn btn-swa" id="btn-enroll">Enroll free</button>';
-          }
+          primary = course.is_premium
+            ? '<button type="button" class="btn btn-accent" id="btn-enroll">Enroll</button>'
+            : '<button type="button" class="btn btn-swa" id="btn-enroll">Enroll free</button>';
         } else {
           primary =
             '<span class="status-pill is-enrolled">Enrolled</span>' +
-            '<span class="progress-inline">' + pct + '% complete</span>';
+            '<span class="lesson-day">' +
+              TextUtil.dayLabel(activeIndex, modules.length) +
+            '</span>' +
+            '<span class="progress-meta tabular">' + pct + '% complete</span>';
         }
         return (
           '<div class="course-toolbar reveal">' +
@@ -114,19 +124,16 @@
               (course.is_premium
                 ? '<span class="status-pill is-pro">Pro</span>'
                 : '<span class="status-pill is-free">Free</span>') +
-              '<span class="muted">' +
-                (course.module_count || (course.course_modules || []).length) +
+              '<span class="muted tabular">' +
+                (course.module_count || modules.length) +
                 ' lessons</span>' +
             '</div>' +
             '<div class="course-toolbar-actions">' +
               primary +
               '<button type="button" class="btn btn-ghost" id="btn-wish">' +
-                (wish ? 'Saved' : 'Save') +
+                Icons.svg('bookmark') +
+                (wish ? ' Saved' : ' Save') +
               '</button>' +
-              (course.playlist_url
-                ? '<a class="btn btn-ghost" href="' + course.playlist_url +
-                  '" target="_blank" rel="noopener">YouTube playlist</a>'
-                : '') +
             '</div>' +
             (enrolled
               ? '<div class="progress-track course-progress">' +
@@ -151,11 +158,8 @@
           return (
             '<button type="button" class="' + cls + '" data-index="' + index + '"' +
               (enrolled ? '' : ' disabled') + '>' +
-              '<div class="idx">Lesson ' +
-                String(index + 1).padStart(2, '0') +
-                (mod.is_completed ? ' · done' : '') +
-              '</div>' +
-              '<div class="name">' + mod.module_name + '</div>' +
+              '<div class="idx">' + TextUtil.dayLabel(index, modules.length) + '</div>' +
+              '<div class="name">' + TextUtil.stripEmoji(mod.module_name) + '</div>' +
             '</button>'
           );
         }).join('');
@@ -166,24 +170,29 @@
             '<div>' +
               '<div class="learn-copy reveal">' +
                 (thumb
-                  ? '<div class="course-hero-thumb"><img src="' + thumb +
-                    '" alt=""></div>'
+                  ? '<div class="course-hero-thumb"><img src="' + thumb + '" alt=""></div>'
                   : '') +
-                '<h1 class="lesson-rule">' + course.courses_name + '</h1>' +
+                '<h1 class="course-title">' +
+                  TextUtil.stripEmoji(course.courses_name) +
+                '</h1>' +
                 renderToolbar(course) +
-                '<div class="rich">' + (course.courses_description || '') + '</div>' +
+                '<div class="rich">' +
+                  TextUtil.stripEmoji(
+                    TextUtil.stripHtml(course.courses_description || '')
+                  ) +
+                '</div>' +
               '</div>' +
               '<div id="player-area" class="mt-4">' +
-                renderPlayer(active, enrolled) +
+                renderPlayer(active, enrolled, modules.length) +
               '</div>' +
             '</div>' +
             '<aside class="module-panel reveal">' +
               '<div class="module-panel-head">' +
                 '<h2>Lessons</h2>' +
-                '<p>' + modules.length + ' in playlist</p>' +
+                '<p class="tabular">' + modules.length + ' in playlist</p>' +
               '</div>' +
               '<div id="module-list">' +
-                (list || '<p class="p-3 text-muted">No lessons yet.</p>') +
+                (list || '<p class="p-3 text-muted">No lessons yet</p>') +
               '</div>' +
             '</aside>' +
           '</div>';
@@ -275,7 +284,8 @@
       async function refreshCourse() {
         const slug = Nav.qs('slug');
         courseState = await API.getCourse(slug);
-        document.title = courseState.courses_name + ' — Study with Ayaz';
+        document.title =
+          TextUtil.stripEmoji(courseState.courses_name) + ' — Study with Ayaz';
         document.body.dataset.pageTitle = document.title;
         renderPage();
       }
@@ -284,7 +294,7 @@
         const slug = Nav.qs('slug');
         if (!slug) {
           document.getElementById('alert-box').innerHTML =
-            '<div class="alert alert-warning">Missing course slug.</div>';
+            '<div class="alert alert-warning">Missing course slug</div>';
           document.getElementById('course-content').innerHTML = '';
           return;
         }

@@ -28,3 +28,6 @@ dist/
 
 # Docker
 *.pid
+
+frontend/hero/node_modules/
+frontend/hero/dist/
