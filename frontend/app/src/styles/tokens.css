@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f7f4ee;
+  --surface: #fdfbf7;
+  --raised: #f1ece3;
+  --paper: #efe6d6;
+  --ink: #1f1b16;
+  --ink-2: #5e554a;
+  --ink-3: #857b6e;
+  --line: rgba(31, 27, 22, 0.08);
+  --line-strong: rgba(31, 27, 22, 0.16);
+  --accent: #c2410c;
+  --accent-hover: #9a3412;
+  --accent-ink: #9a3412;
+  --accent-on: #ffffff;
+  --accent-soft: rgba(194, 65, 12, 0.1);
+  --ok: #3f9d63;
+  --err: #c43d3d;
+  --notebook-ink: #1f1b16;
+  --notebook-line: rgba(31, 27, 22, 0.14);
+  --font-sans: "Instrument Sans", "Noto Nastaliq Urdu", "Noto Sans Devanagari",
+    ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --ease-swa: cubic-bezier(0.22, 1, 0.36, 1);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #1b1815;
+  --surface: #221e1a;
+  --raised: #2a2520;
+  --paper: #efe6d6;
+  --ink: #f3eee6;
+  --ink-2: #b7aea2;
+  --ink-3: #8f8578;
+  --line: rgba(243, 238, 230, 0.1);
+  --line-strong: rgba(243, 238, 230, 0.18);
+  --accent: #ea7a3c;
+  --accent-hover: #f0905a;
+  --accent-ink: #f0905a;
+  --accent-on: #1b1815;
+  --accent-soft: rgba(234, 122, 60, 0.14);
+  --ok: #5fbf83;
+  --err: #e06a6a;
+  --notebook-ink: #1f1b16;
+  --notebook-line: rgba(31, 27, 22, 0.14);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-on: var(--accent-on);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-err: var(--err);
+  --color-notebook-ink: var(--notebook-ink);
+  --color-notebook-line: var(--notebook-line);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --ease-swa: var(--ease-swa);
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-panel: 16px;
+  --radius-notebook: 6px;
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+  }
+
+  html[data-scroll-lock],
+  html[data-scroll-lock] body {
+    overflow: hidden;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.6;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    margin: 0;
+    font-weight: 500;
+    line-height: 1.15;
+  }
+
+  h1 {
+    font-size: 32px;
+    letter-spacing: -0.01em;
+  }
+
+  h2 {
+    font-size: 32px;
+    letter-spacing: -0.01em;
+  }
+
+  h3 {
+    font-size: 24px;
+  }
+
+  h4 {
+    font-size: 20px;
+  }
+
+  p {
+    margin: 0;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  :focus {
+    outline: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  @media (min-width: 768px) {
+    h1 {
+      font-size: 44px;
+    }
+  }
+}

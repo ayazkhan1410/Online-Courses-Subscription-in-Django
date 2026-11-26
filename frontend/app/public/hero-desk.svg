@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" role="img" aria-label="Notebook and laptop on a desk">
+  <rect width="800" height="520" fill="#2a2520"/>
+  <ellipse cx="400" cy="430" rx="250" ry="28" fill="#1b1815" opacity="0.45"/>
+  <g transform="translate(250 150)">
+    <rect x="70" y="40" width="280" height="170" rx="6" fill="#1b1815"/>
+    <rect x="86" y="54" width="248" height="130" rx="2" fill="#241f1b"/>
+    <text x="100" y="88" fill="#5fbf83" font-family="ui-monospace, monospace" font-size="14">def greet(name):</text>
+    <text x="100" y="112" fill="#efe6d6" font-family="ui-monospace, monospace" font-size="14">    return name</text>
+    <rect x="40" y="200" width="340" height="14" rx="2" fill="#3a332c"/>
+  </g>
+  <g transform="translate(150 250)">
+    <rect x="0" y="20" width="230" height="150" rx="6" fill="#efe6d6"/>
+    <rect x="240" y="20" width="230" height="150" rx="6" fill="#f4ecdf"/>
+    <rect x="222" y="20" width="16" height="150" fill="#c4b6a2"/>
+    <g stroke="#1f1b16" stroke-opacity="0.14" stroke-width="1">
+      <line x1="258" y1="48" x2="450" y2="48"/>
+      <line x1="258" y1="68" x2="450" y2="68"/>
+      <line x1="258" y1="88" x2="450" y2="88"/>
+      <line x1="258" y1="108" x2="450" y2="108"/>
+      <line x1="258" y1="128" x2="450" y2="128"/>
+    </g>
+  </g>
+</svg>
