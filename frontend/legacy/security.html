@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Security — Study with Ayaz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Nastaliq+Urdu:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/styles.css?v=20261126f" rel="stylesheet">
+    <script src="/js/theme.js?v=20261126f"></script>
+  </head>
+  <body data-page-title="Security — Study with Ayaz">
+    <div id="app-shell"></div>
+    <main class="page-narrow">
+      <div class="auth-panel reveal">
+        <h1>Security</h1>
+        <p class="lead">Two-factor authentication for this account</p>
+        <div id="alert-box"></div>
+        <p id="mfa-status" class="lesson-day">Checking authenticator status</p>
+
+        <div id="mfa-off">
+          <button type="button" class="btn btn-swa" id="mfa-setup">Set up authenticator</button>
+        </div>
+
+        <div id="mfa-setup-panel" hidden>
+          <div id="mfa-qr-host"></div>
+          <p id="mfa-secret" class="tabular" style="overflow-wrap:anywhere;"></p>
+          <form id="mfa-confirm-form" class="stack">
+            <div>
+              <label class="form-label" for="confirm-code">6-digit code</label>
+              <input id="confirm-code" name="code" required class="form-control otp-input"
+                inputmode="numeric" autocomplete="one-time-code" maxlength="6"
+                pattern="[0-9]*" placeholder="123456">
+            </div>
+            <button class="btn btn-swa" type="submit">Confirm</button>
+          </form>
+        </div>
+
+        <div id="mfa-recovery" hidden>
+          <p class="lead">Save these recovery codes. Each one works once.</p>
+          <div class="table-scroll">
+            <table class="recovery-table">
+              <tbody id="recovery-codes"></tbody>
+            </table>
+          </div>
+          <div class="dash-actions" style="margin-top:16px;">
+            <button type="button" class="btn btn-ghost" id="copy-codes">Copy codes</button>
+            <button type="button" class="btn btn-ghost" id="download-codes">Download</button>
+          </div>
+        </div>
+
+        <form id="mfa-disable-form" class="stack" hidden>
+          <div>
+            <label class="form-label" for="disable-password">Password</label>
+            <input id="disable-password" type="password" name="password"
+              class="form-control" autocomplete="current-password"
+              placeholder="Account password">
+          </div>
+          <div>
+            <label class="form-label" for="disable-code">Or authenticator / recovery code</label>
+            <input id="disable-code" name="code" class="form-control"
+              autocomplete="one-time-code" placeholder="Code">
+          </div>
+          <button class="btn btn-ghost" type="submit">Disable authenticator</button>
+        </form>
+
+        <div class="auth-links">
+          <a href="/dashboard.html">Back to dashboard</a>
+        </div>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/config.js?v=20261126f"></script>
+    <script src="/js/api.js?v=20261126f"></script>
+    <script src="/js/icons.js?v=20261126f"></script>
+    <script src="/js/text.js?v=20261126f"></script>
+    <script src="/js/layout.js?v=20261126f"></script>
+    <script src="/js/nav.js?v=20261126f"></script>
+    <script src="/js/motion.js?v=20261126f"></script>
+    <script>
+      const alertBox = document.getElementById('alert-box');
+      let recoveryCodes = [];
+
+      function showAlert(kind, message) {
+        alertBox.innerHTML =
+          '<div class="alert alert-' + kind + '">' + message + '</div>';
+      }
+
+      function requireAuth() {
+        if (!API.getToken()) {
+          window.location.href =
+            '/login.html?next=' + encodeURIComponent('/security.html');
+          return false;
+        }
+        return true;
+      }
+
+      function renderQr(data) {
+        const host = document.getElementById('mfa-qr-host');
+        host.innerHTML = '';
+        const raw = data.qr_svg || data.qr_code || data.qr || '';
+        if (typeof raw === 'string' && raw.indexOf('<svg') !== -1) {
+          host.innerHTML = raw;
+          const svg = host.querySelector('svg');
+          if (svg) {
+            svg.classList.add('mfa-qr');
+            svg.setAttribute('role', 'img');
+            svg.setAttribute('aria-label', 'Authenticator QR code');
+          }
+        } else if (raw) {
+          const img = document.createElement('img');
+          img.className = 'mfa-qr';
+          img.alt = 'Authenticator QR code';
+          if (raw.indexOf('data:') === 0 || /^https?:/.test(raw)) {
+            img.src = raw;
+          } else {
+            img.src = 'data:image/svg+xml;base64,' + raw;
+          }
+          host.appendChild(img);
+        }
+        const secret = data.manual_key || data.secret || '';
+        document.getElementById('mfa-secret').textContent = secret
+          ? 'Manual key: ' + secret
+          : '';
+      }
+
+      function renderCodes(codes) {
+        recoveryCodes = codes || [];
+        const body = document.getElementById('recovery-codes');
+        body.replaceChildren();
+        recoveryCodes.forEach(function (code) {
+          const row = document.createElement('tr');
+          const cell = document.createElement('td');
+          cell.textContent = String(code);
+          row.appendChild(cell);
+          body.appendChild(row);
+        });
+        document.getElementById('mfa-recovery').hidden = !recoveryCodes.length;
+      }
+
+      function applyStatus(data) {
+        const enabled = !!(data && (data.enabled || data.mfa_enabled || data.is_enabled));
+        document.getElementById('mfa-status').textContent = enabled
+          ? 'Authenticator is on'
+          : 'Authenticator is off';
+        document.getElementById('mfa-off').hidden = enabled;
+        document.getElementById('mfa-disable-form').hidden = !enabled;
+        if (!enabled) {
+          document.getElementById('mfa-setup-panel').hidden = true;
+        }
+      }
+
+      async function loadStatus() {
+        try {
+          applyStatus(await API.mfaStatus());
+        } catch (err) {
+          if (err.status === 401 || err.status === 403) {
+            API.clearSession();
+            window.location.href =
+              '/login.html?next=' + encodeURIComponent('/security.html');
+            return;
+          }
+          document.getElementById('mfa-status').textContent = 'Authenticator is off';
+          showAlert('warning', API.formatError(err));
+        }
+      }
+
+      document.getElementById('mfa-setup').addEventListener('click', async function () {
+        const button = document.getElementById('mfa-setup');
+        button.disabled = true;
+        try {
+          const data = await API.mfaSetup();
+          renderQr(data);
+          document.getElementById('mfa-setup-panel').hidden = false;
+          document.getElementById('confirm-code').focus();
+        } catch (err) {
+          showAlert('warning', API.formatError(err));
+          button.disabled = false;
+        }
+      });
+
+      document.getElementById('confirm-code').addEventListener('input', function (event) {
+        const input = event.target;
+        input.value = input.value.replace(/\D/g, '').slice(0, 6);
+        if (input.value.length === 6 && !input.dataset.sent) {
+          input.dataset.sent = '1';
+          document.getElementById('mfa-confirm-form').requestSubmit();
+        }
+      });
+
+      document.getElementById('mfa-confirm-form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const input = document.getElementById('confirm-code');
+        try {
+          const data = await API.mfaConfirm({ code: input.value.trim() });
+          if (data.token) {
+            API.setSession(data.token, API.getUser());
+          }
+          renderCodes(data.recovery_codes || data.codes || []);
+          document.getElementById('mfa-setup-panel').hidden = true;
+          document.getElementById('mfa-off').hidden = true;
+          applyStatus({ enabled: true });
+          showAlert('success', 'Authenticator is on. Store the recovery codes.');
+        } catch (err) {
+          input.dataset.sent = '';
+          showAlert('warning', API.formatError(err));
+        }
+      });
+
+      document.getElementById('copy-codes').addEventListener('click', async function () {
+        const text = recoveryCodes.join('\n');
+        try {
+          await navigator.clipboard.writeText(text);
+          showAlert('success', 'Recovery codes copied');
+        } catch (err) {
+          showAlert('warning', 'Could not copy codes');
+        }
+      });
+
+      document.getElementById('download-codes').addEventListener('click', function () {
+        const blob = new Blob([recoveryCodes.join('\n') + '\n'], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'recovery-codes.txt';
+        link.click();
+        URL.revokeObjectURL(link.href);
+      });
+
+      document.getElementById('mfa-disable-form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        try {
+          await API.mfaDisable({
+            password: document.getElementById('disable-password').value,
+            code: document.getElementById('disable-code').value.trim(),
+          });
+          document.getElementById('mfa-disable-form').reset();
+          document.getElementById('mfa-recovery').hidden = true;
+          document.getElementById('mfa-setup').disabled = false;
+          applyStatus({ enabled: false });
+          showAlert('success', 'Authenticator turned off');
+        } catch (err) {
+          showAlert('warning', API.formatError(err));
+        }
+      });
+
+      document.addEventListener('DOMContentLoaded', function () {
+        if (!requireAuth()) {
+          return;
+        }
+        loadStatus();
+      });
+    </script>
+  </body>
+</html>

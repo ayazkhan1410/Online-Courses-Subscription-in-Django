@@ -107,6 +107,72 @@
     return err.message || 'Something went wrong';
   }
 
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      if (global.turnstile) {
+        resolve();
+        return;
+      }
+      const existing = document.querySelector('script[data-turnstile]');
+      if (existing) {
+        existing.addEventListener('load', function () { resolve(); });
+        existing.addEventListener('error', function () {
+          reject(new Error('Turnstile failed to load'));
+        });
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = true;
+      script.defer = true;
+      script.setAttribute('data-turnstile', '1');
+      script.onload = function () { resolve(); };
+      script.onerror = function () {
+        reject(new Error('Turnstile failed to load'));
+      };
+      document.head.appendChild(script);
+    });
+  }
+
+  async function mountTurnstile(container) {
+    const el = typeof container === 'string'
+      ? document.getElementById(container)
+      : container;
+    const idle = {
+      enabled: false,
+      get: function () { return ''; },
+      reset: function () {},
+    };
+    if (!el) {
+      return idle;
+    }
+    let siteKey = '';
+    try {
+      const config = await request('/config/');
+      siteKey = (config && config.turnstile_site_key) || '';
+    } catch (err) {
+      siteKey = '';
+    }
+    if (!siteKey) {
+      el.hidden = true;
+      return idle;
+    }
+    el.hidden = false;
+    await loadScript(
+      'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
+    );
+    const widgetId = global.turnstile.render(el, { sitekey: siteKey });
+    return {
+      enabled: true,
+      get: function () {
+        return global.turnstile.getResponse(widgetId) || '';
+      },
+      reset: function () {
+        global.turnstile.reset(widgetId);
+      },
+    };
+  }
+
   global.API = {
     getToken: getToken,
     getUser: getUser,
@@ -128,6 +194,30 @@
     },
     login: function (payload) {
       return request('/auth/login/', { method: 'POST', body: payload });
+    },
+    mfaVerify: function (payload) {
+      return request('/auth/mfa/verify/', { method: 'POST', body: payload });
+    },
+    mfaResend: function (payload) {
+      return request('/auth/mfa/resend/', { method: 'POST', body: payload });
+    },
+    mfaSetup: function () {
+      return request('/auth/mfa/setup/', { method: 'POST', body: {} });
+    },
+    mfaConfirm: function (payload) {
+      return request('/auth/mfa/confirm/', { method: 'POST', body: payload });
+    },
+    mfaDisable: function (payload) {
+      return request('/auth/mfa/disable/', { method: 'POST', body: payload });
+    },
+    mfaStatus: function () {
+      return request('/auth/mfa/status/');
+    },
+    mountTurnstile: function (container) {
+      return mountTurnstile(container);
+    },
+    googleLogin: function (payload) {
+      return request('/auth/google/', { method: 'POST', body: payload });
     },
     logout: function () {
       return request('/auth/logout/', { method: 'POST' });

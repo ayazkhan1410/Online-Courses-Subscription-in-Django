@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Log in — Study with Ayaz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Nastaliq+Urdu:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/styles.css?v=20261126f" rel="stylesheet">
+    <script src="/js/theme.js?v=20261126e"></script>
+  </head>
+  <body data-page-title="Log in — Study with Ayaz">
+    <div id="app-shell"></div>
+    <main class="page-narrow">
+      <div class="auth-panel reveal">
+        <h1>Log in</h1>
+        <p class="lead">Continue to your courses and Pro modules</p>
+        <div id="alert-box"></div>
+        <div id="google-btn" class="google-btn"></div>
+        <div id="google-divider" class="auth-divider"><span>or</span></div>
+        <form id="login-form" class="stack">
+          <div>
+            <label class="form-label" for="email">Email</label>
+            <input id="email" type="email" name="email" required class="form-control"
+              placeholder="Email" autocomplete="email">
+          </div>
+          <div>
+            <label class="form-label" for="password">Password</label>
+            <input id="password" type="password" name="password" required class="form-control"
+              placeholder="Password" autocomplete="current-password">
+          </div>
+          <div id="turnstile-slot"></div>
+          <button class="btn btn-swa" type="submit">Log in</button>
+        </form>
+        <form id="mfa-form" class="stack" hidden>
+          <p class="lead" id="mfa-lead">Enter the 6-digit code from your authenticator</p>
+          <div>
+            <label class="form-label" for="mfa-code">Authentication code</label>
+            <input id="mfa-code" name="code" required class="form-control otp-input"
+              inputmode="numeric" autocomplete="one-time-code" maxlength="6"
+              pattern="[0-9]*" placeholder="123456">
+          </div>
+          <button class="btn btn-swa" type="submit">Verify</button>
+          <div class="auth-links">
+            <a href="#" id="mfa-email">Use email code</a>
+            <span aria-hidden="true"> · </span>
+            <a href="#" id="mfa-recovery">Use a recovery code</a>
+          </div>
+        </form>
+        <div class="auth-links" id="login-links">
+          <p class="mb-2">No account yet? <a href="/register.html">Join</a></p>
+          <a href="/forget-password.html">Forgot password</a>
+        </div>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="/js/config.js?v=20261126e"></script>
+    <script src="/js/api.js?v=20261126f"></script>
+    <script src="/js/icons.js?v=20261126e"></script>
+    <script src="/js/text.js?v=20261126e"></script>
+    <script src="/js/google-auth.js?v=20261126f"></script>
+    <script src="/js/layout.js?v=20261126f"></script>
+    <script src="/js/nav.js?v=20261126e"></script>
+    <script src="/js/motion.js?v=20261126e"></script>
+    <script>
+      const alertBox = document.getElementById('alert-box');
+      let turnstile = { enabled: false, get: function () { return ''; }, reset: function () {} };
+      let mfaToken = '';
+      let mfaMethod = 'totp';
+
+      function showAlert(kind, message) {
+        alertBox.innerHTML =
+          '<div class="alert alert-' + kind + '">' + message + '</div>';
+      }
+
+      function finishLogin(data) {
+        API.setSession(data.token, data.user);
+        const next = Nav.qs('next') || '/dashboard.html';
+        window.location.href = next;
+      }
+
+      function setMfaMethod(method) {
+        mfaMethod = method;
+        const input = document.getElementById('mfa-code');
+        const label = document.querySelector('label[for="mfa-code"]');
+        const lead = document.getElementById('mfa-lead');
+        input.value = '';
+        input.dataset.sent = '';
+        if (method === 'recovery') {
+          input.classList.remove('otp-input');
+          input.maxLength = 32;
+          input.inputMode = 'text';
+          input.autocomplete = 'off';
+          input.removeAttribute('pattern');
+          input.placeholder = 'Recovery code';
+          label.textContent = 'Recovery code';
+          lead.textContent = 'Enter one unused recovery code';
+        } else {
+          input.classList.add('otp-input');
+          input.maxLength = 6;
+          input.inputMode = 'numeric';
+          input.autocomplete = 'one-time-code';
+          input.pattern = '[0-9]*';
+          input.placeholder = '123456';
+          label.textContent = method === 'email' ? 'Email code' : 'Authentication code';
+          input.setAttribute('pattern', '[0-9]*');
+          lead.textContent = method === 'email'
+            ? 'Enter the 6-digit code we emailed you'
+            : 'Enter the 6-digit code from your authenticator';
+        }
+        input.focus();
+      }
+
+      function showMfa(data) {
+        mfaToken = data.challenge_token || '';
+        document.getElementById('login-form').hidden = true;
+        document.getElementById('google-btn').hidden = true;
+        document.getElementById('google-divider').hidden = true;
+        document.getElementById('login-links').hidden = true;
+        document.getElementById('mfa-form').hidden = false;
+        const methods = data.methods || [];
+        const initial = methods.indexOf('totp') >= 0
+          ? 'totp'
+          : (methods[0] || 'email');
+        setMfaMethod(initial);
+      }
+
+      window.LoginMfa = { show: showMfa };
+
+      function withTurnstile(payload) {
+        const token = turnstile.get();
+        if (turnstile.enabled && !token) {
+          throw new Error('Complete the security check');
+        }
+        if (token) {
+          payload.turnstile_token = token;
+        }
+        return payload;
+      }
+
+      document.getElementById('login-form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const form = event.target;
+        try {
+          const data = await API.login(withTurnstile({
+            email: form.email.value,
+            password: form.password.value,
+          }));
+          if (data && data.mfa_required) {
+            showMfa(data);
+            return;
+          }
+          finishLogin(data);
+        } catch (err) {
+          turnstile.reset();
+          showAlert('warning', API.formatError(err));
+        }
+      });
+
+      document.getElementById('mfa-code').addEventListener('input', function (event) {
+        if (mfaMethod === 'recovery') {
+          return;
+        }
+        const input = event.target;
+        input.value = input.value.replace(/\D/g, '').slice(0, 6);
+        if (input.value.length === 6 && !input.dataset.sent) {
+          input.dataset.sent = '1';
+          document.getElementById('mfa-form').requestSubmit();
+        }
+      });
+
+      document.getElementById('mfa-form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const code = document.getElementById('mfa-code').value.trim();
+        try {
+          const data = await API.mfaVerify({
+            challenge_token: mfaToken,
+            code: code,
+            method: mfaMethod,
+          });
+          finishLogin(data);
+        } catch (err) {
+          showAlert('warning', API.formatError(err));
+        }
+      });
+
+      document.getElementById('mfa-email').addEventListener('click', async function (event) {
+        event.preventDefault();
+        setMfaMethod('email');
+        try {
+          const data = await API.mfaResend({ challenge_token: mfaToken });
+          showAlert('success', (data && data.message) || 'Email code sent');
+        } catch (err) {
+          showAlert('warning', API.formatError(err));
+        }
+      });
+
+      document.getElementById('mfa-recovery').addEventListener('click', function (event) {
+        event.preventDefault();
+        setMfaMethod('recovery');
+      });
+
+      window.addEventListener('load', async function () {
+        GoogleAuth.mount('google-btn');
+        try {
+          turnstile = await API.mountTurnstile('turnstile-slot');
+        } catch (err) {
+          turnstile = { enabled: false, get: function () { return ''; }, reset: function () {} };
+        }
+      });
+    </script>
+  </body>
+</html>

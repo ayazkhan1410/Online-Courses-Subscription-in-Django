@@ -1,15 +1,13 @@
-FROM node:20-alpine AS hero
-WORKDIR /hero
-COPY hero/package.json hero/package-lock.json* ./
+FROM node:20-alpine AS build
+WORKDIR /app
+ARG VITE_API_BASE_URL=http://localhost:4781/api
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+COPY app/package.json app/package-lock.json app/.npmrc ./
 RUN npm install
-COPY hero/ ./
+COPY app/ ./
 RUN npm run build
 
-FROM nginx:1.27-alpine
+FROM nginx:alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY public/ /usr/share/nginx/html/
-COPY --from=hero /hero/dist/hero-desk.js /usr/share/nginx/html/js/hero-desk.js
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 4780
-ENTRYPOINT ["/docker-entrypoint.sh"]

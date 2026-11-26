@@ -47,7 +47,8 @@
             '</button>' +
             '<span id="nav-auth"></span>' +
             '<button type="button" class="nav-toggle" id="nav-toggle" ' +
-              'aria-label="Open menu">' +
+              'aria-label="Open menu" aria-expanded="false" ' +
+              'aria-controls="nav-mobile">' +
               icon('menu') +
             '</button>' +
           '</div>' +
@@ -65,10 +66,73 @@
 
     const toggle = document.getElementById('nav-toggle');
     const header = document.getElementById('site-header');
-    if (toggle && header) {
+    const sheet = document.getElementById('nav-mobile');
+    if (toggle && header && sheet) {
+      function sheetItems() {
+        return Array.prototype.slice.call(
+          sheet.querySelectorAll('a[href], button:not([disabled])')
+        );
+      }
+
+      function setMenu(open) {
+        header.classList.toggle('is-open', open);
+        document.body.classList.toggle('nav-locked', open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+        if (open) {
+          const first = sheetItems()[0];
+          if (first) {
+            first.focus();
+          }
+        }
+      }
+
       toggle.addEventListener('click', function () {
-        header.classList.toggle('is-open');
+        setMenu(!header.classList.contains('is-open'));
       });
+
+      sheet.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
+          setMenu(false);
+        });
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (!header.classList.contains('is-open')) {
+          return;
+        }
+        if (event.key === 'Escape') {
+          setMenu(false);
+          toggle.focus();
+          return;
+        }
+        if (event.key !== 'Tab') {
+          return;
+        }
+        const items = [toggle].concat(sheetItems());
+        if (!items.length) {
+          return;
+        }
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      });
+
+      const desktopNav = window.matchMedia('(min-width: 768px)');
+      function closeOnDesktop(event) {
+        if (event.matches) {
+          setMenu(false);
+        }
+      }
+      if (desktopNav.addEventListener) {
+        desktopNav.addEventListener('change', closeOnDesktop);
+      }
     }
     if (window.Theme) {
       Theme.bind();

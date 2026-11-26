@@ -57,14 +57,11 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:4781/api
     container_name: courses-frontend
     ports:
       - "4780:4780"
-    environment:
-      API_BASE_URL: http://localhost:4781/api
-    volumes:
-      # Live-reload static UI; entrypoint still writes js/config.js at boot
-      - ./frontend/public:/usr/share/nginx/html
     depends_on:
       backend:
         condition: service_healthy
