@@ -24,7 +24,7 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
-AUTH_USER_MODEL = 'study.CustomUser'
+AUTH_USER_MODEL = 'accounts.CustomUser'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -38,7 +38,10 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'ckeditor',
     'embed_video',
-    'study',
+    'accounts',
+    'courses',
+    'subscriptions',
+    'contact',
 ]
 
 MIDDLEWARE = [
@@ -72,11 +75,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-_db_name = os.getenv('DJANGO_DB_PATH', str(BASE_DIR / 'db.sqlite3'))
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': _db_name,
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'courses'),
+        'USER': os.getenv('POSTGRES_USER', 'courses'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'courses'),
+        'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
+        'PORT': os.getenv('POSTGRES_PORT', '5432'),
     }
 }
 

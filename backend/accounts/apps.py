@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 
 
-class StudyConfig(AppConfig):
+class AccountsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'study'
+    name = 'accounts'
+    verbose_name = 'Accounts'

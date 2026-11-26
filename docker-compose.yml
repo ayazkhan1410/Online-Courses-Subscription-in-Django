@@ -1,4 +1,24 @@
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: courses-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-courses}
+      POSTGRES_USER: ${POSTGRES_USER:-courses}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-courses}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Host 5433 avoids clashing with a local Postgres on 5432.
+    # Inside the Docker network the DB still listens on 5432.
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   backend:
     build:
       context: ./backend
@@ -9,12 +29,18 @@ services:
       - ./backend/.env
     environment:
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,backend
-      DJANGO_DB_PATH: /app/data/db.sqlite3
       CORS_ALLOWED_ORIGINS: http://localhost:4780,http://127.0.0.1:4780
       FRONTEND_URL: http://localhost:4780
+      POSTGRES_DB: ${POSTGRES_DB:-courses}
+      POSTGRES_USER: ${POSTGRES_USER:-courses}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-courses}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
     volumes:
       - ./backend/media:/app/media
-      - backend_db:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
       test:
         [
@@ -26,7 +52,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 25s
+      start_period: 40s
 
   frontend:
     build:
@@ -41,4 +67,4 @@ services:
         condition: service_healthy
 
 volumes:
-  backend_db:
+  postgres_data:

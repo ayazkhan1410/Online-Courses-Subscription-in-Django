@@ -1,13 +1,38 @@
 #!/bin/sh
 set -e
 
-# Seed persistent DB volume from image copy on first boot
-if [ -n "${DJANGO_DB_PATH}" ]; then
-  mkdir -p "$(dirname "${DJANGO_DB_PATH}")"
-  if [ ! -f "${DJANGO_DB_PATH}" ] && [ -f /app/db.sqlite3 ]; then
-    cp /app/db.sqlite3 "${DJANGO_DB_PATH}"
-  fi
-fi
+echo "Waiting for PostgreSQL at ${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}..."
+python <<'PY'
+import os
+import time
+
+import psycopg
+
+host = os.getenv('POSTGRES_HOST', 'db')
+port = os.getenv('POSTGRES_PORT', '5432')
+user = os.getenv('POSTGRES_USER', 'courses')
+password = os.getenv('POSTGRES_PASSWORD', 'courses')
+dbname = os.getenv('POSTGRES_DB', 'courses')
+
+for attempt in range(60):
+    try:
+        with psycopg.connect(
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            dbname=dbname,
+            connect_timeout=3,
+        ) as conn:
+            conn.execute('SELECT 1')
+        print('PostgreSQL is ready.')
+        break
+    except Exception as exc:
+        print(f'Attempt {attempt + 1}/60: {exc}')
+        time.sleep(2)
+else:
+    raise SystemExit('PostgreSQL did not become ready in time.')
+PY
 
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput

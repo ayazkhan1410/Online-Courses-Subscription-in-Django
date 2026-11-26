@@ -1,9 +1,12 @@
 __pycache__
 *.py[cod]
+*.sqlite3
 *.sqlite3-journal
 .env
 .venv
 venv
+ocs_backend_venv
 staticfiles
 .git
 *.md
+requirements.freeze.txt

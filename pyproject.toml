@@ -25,7 +25,14 @@ ignore = [
 ban-relative-imports = "all"
 
 [tool.ruff.lint.isort]
-known-first-party = ["config", "study"]
+known-first-party = [
+  "config",
+  "accounts",
+  "courses",
+  "subscriptions",
+  "contact",
+  "utils",
+]
 force-single-line = false
 
 [tool.ruff.format]

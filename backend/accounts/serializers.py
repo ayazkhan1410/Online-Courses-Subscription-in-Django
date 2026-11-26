@@ -1,63 +1,8 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 
-from study.models import (
-    Contact,
-    CourseModule,
-    Courses,
-    CustomUser,
-    Subscription,
-    SubscriptionList,
-)
-
-
-class CourseModuleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CourseModule
-        fields = [
-            'id',
-            'module_name',
-            'module_description',
-            'module_video',
-            'can_view',
-        ]
-
-
-class CourseSerializer(serializers.ModelSerializer):
-    course_image = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Courses
-        fields = [
-            'id',
-            'courses_name',
-            'courses_description',
-            'is_premium',
-            'course_image',
-            'slug',
-        ]
-
-    def get_course_image(self, obj: Courses) -> str | None:
-        if not obj.course_image:
-            return None
-        request = self.context.get('request')
-        url = obj.course_image.url
-        if request is not None:
-            return request.build_absolute_uri(url)
-        return url
-
-
-class CourseDetailSerializer(CourseSerializer):
-    course_modules = CourseModuleSerializer(many=True, read_only=True)
-
-    class Meta(CourseSerializer.Meta):
-        fields = CourseSerializer.Meta.fields + ['course_modules']
-
-
-class ContactSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Contact
-        fields = ['id', 'name', 'email', 'message']
+from accounts.models import CustomUser
+from subscriptions.models import Subscription
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -79,8 +24,6 @@ class RegisterSerializer(serializers.Serializer):
             user_choices='expert',
         )
         user.set_password(validated_data['password'])
-        # shortcut: password hash may exceed CharField(40); SQLite stores it.
-        # Upgrade CustomUser.password max_length to 128 when schema change allowed.
         user.confirm_password = ''
         user.save()
         return user
@@ -127,25 +70,6 @@ class ChangePasswordSerializer(serializers.Serializer):
                 {'confirm_password': 'Password does not match'}
             )
         return attrs
-
-
-class SubscriptionListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SubscriptionList
-        fields = ['id', 'subscription_list', 'subscription_price']
-
-
-class SubscriptionSerializer(serializers.ModelSerializer):
-    subscription_list = SubscriptionListSerializer(read_only=True)
-
-    class Meta:
-        model = Subscription
-        fields = ['id', 'subscription_list', 'is_pro']
-
-
-class BecomeProSerializer(serializers.Serializer):
-    membership = serializers.IntegerField()
-    stripe_token = serializers.CharField()
 
 
 class UserSerializer(serializers.ModelSerializer):

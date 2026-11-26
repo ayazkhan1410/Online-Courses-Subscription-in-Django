@@ -6,7 +6,7 @@ from django.core.mail import send_mail
 logger = logging.getLogger(__name__)
 
 
-def send_email(email: str, token: str) -> bool:
+def send_password_reset_email(email: str, token: str) -> bool:
     """Send password-reset email with a frontend recovery link."""
     frontend_url = settings.FRONTEND_URL.rstrip('/')
     subject = 'Forget Password Recovery'

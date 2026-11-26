@@ -1,34 +1,53 @@
 # Online Courses Subscription
 
-Separated **Django REST Framework** backend and static **frontend**, fully Dockerized.
+Full-stack online courses platform with a **Django REST Framework** API, **PostgreSQL** database, and a separate static **frontend**, all runnable via Docker Compose.
+
+| Service  | Technology                    | Port  |
+|----------|-------------------------------|-------|
+| Frontend | nginx + HTML/CSS/JS           | 4780  |
+| Backend  | Django 5 + DRF + Gunicorn     | 4781  |
+| Database | PostgreSQL 16                 | 5433→5432 |
 
 ## Project structure
 
 ```
 .
-├── backend/                 # Django + DRF API (port 4781)
-│   ├── config/              # Project settings & root URLs
-│   ├── study/               # Domain app (models, serializers, views, APIs)
-│   ├── media/               # Uploaded course images
+├── backend/
+│   ├── ocs_backend_venv/        # Local Python virtualenv (gitignored)
+│   ├── config/                  # Django project settings & root URLs
+│   ├── accounts/                # Users, profiles, auth APIs
+│   ├── courses/                 # Course catalog & modules
+│   ├── subscriptions/           # Plans, Stripe become-pro, public config
+│   ├── contact/                 # Contact form messages
+│   ├── utils/                   # Shared helpers (e.g. utils/email.py)
+│   ├── media/                   # Uploaded course images
 │   ├── Dockerfile
 │   ├── entrypoint.sh
-│   ├── requirements.txt
+│   ├── requirements.txt         # Runtime dependencies
+│   ├── requirements-dev.txt     # + Ruff
+│   ├── requirements.freeze.txt  # Exact pip freeze from ocs_backend_venv
 │   ├── .env.example
 │   └── manage.py
-├── frontend/                # Static UI served by nginx (port 4780)
-│   ├── public/              # HTML / CSS / JS
-│   ├── Dockerfile
-│   ├── nginx.conf
-│   └── .env.example
-├── docker-compose.yml
+├── frontend/                    # Static UI (nginx) on port 4780
+├── docker-compose.yml           # frontend + backend + postgres
+├── pyproject.toml               # Ruff (bans relative imports)
 └── README.md
 ```
 
-## Features preserved
+### Domain apps
 
-- Course listing, search, pagination
-- Course details with modules (auth required)
-- Register / login / logout (token auth)
+| App             | Models                         | Responsibility                          |
+|-----------------|--------------------------------|-----------------------------------------|
+| `accounts`      | `CustomUser`, `Profile`        | Auth, password reset, `/auth/*`         |
+| `courses`       | `Courses`, `CourseModule`      | Catalog listing & detail                |
+| `subscriptions` | `SubscriptionList`, `Subscription` | Memberships, Stripe, `/config/`     |
+| `contact`       | `Contact`                      | Contact form submissions                |
+
+## Features
+
+- Course listing, search, and pagination
+- Course details with modules (token auth required)
+- Register / login / logout (DRF TokenAuthentication)
 - Contact form
 - Forget / change password
 - Stripe “Become Pro” subscription flow
@@ -36,116 +55,109 @@ Separated **Django REST Framework** backend and static **frontend**, fully Docke
 
 ## Quick start (Docker)
 
-1. Copy env files and fill secrets as needed:
-
 ```bash
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
-```
-
-2. Build and start:
-
-```bash
 docker compose up --build
 ```
 
-3. Open:
-
-| Service  | URL                         |
-|----------|-----------------------------|
-| Frontend | http://localhost:4780       |
-| Backend  | http://localhost:4781/api/  |
-| Admin    | http://localhost:4781/admin/|
-
-Stop:
+| Service  | URL                               |
+|----------|-----------------------------------|
+| Frontend | http://localhost:4780             |
+| Backend  | http://localhost:4781/api/        |
+| Admin    | http://localhost:4781/admin/      |
+| Postgres | localhost:5433 (container `5432`) |
 
 ```bash
-docker compose down
+docker compose exec backend python manage.py createsuperuser
+docker compose down          # stop
+docker compose down -v       # stop + wipe Postgres volume
 ```
 
-## API contract (frontend ↔ backend)
+Compose sets `POSTGRES_HOST=db` for the backend container. Host clients use `localhost:5433`.
 
-Base URL: `http://localhost:4781/api`
+## Local backend (virtualenv)
 
-| Method | Endpoint                 | Auth  | Purpose                |
-|--------|--------------------------|-------|------------------------|
-| GET    | `/courses/`              | No    | List/search courses    |
-| GET    | `/courses/<slug>/`       | Yes   | Course + modules       |
-| POST   | `/contact/`              | No    | Contact message        |
-| POST   | `/auth/register/`        | No    | Create account         |
-| POST   | `/auth/login/`           | No    | Login → token          |
-| POST   | `/auth/logout/`          | Yes   | Invalidate token       |
-| GET    | `/auth/me/`              | Yes   | Current user           |
-| POST   | `/auth/forget-password/` | No    | Email reset token      |
-| POST   | `/auth/change-password/` | No    | Reset with token       |
-| GET    | `/subscriptions/`        | Yes   | Membership plans       |
-| POST   | `/become-pro/`           | Yes   | Stripe charge + pro    |
-| GET    | `/config/`               | No    | Public Stripe key      |
-
-Auth header: `Authorization: Token <key>`
-
-## Linting (Ruff)
-
-Every PR and push to `main` runs Ruff via GitHub Actions (`.github/workflows/ruff.yml`).
-
-Locally:
-
-```bash
-pip install "ruff>=0.8,<1"
-ruff check backend
-ruff format backend
-```
-
-Relative imports are banned (`from study...` only). Config lives in `pyproject.toml`.
-
-## Local development (without Docker)
-
-### Backend
+Virtualenv name: **`ocs_backend_venv`** (Online Courses Subscription backend).
 
 ```bash
 cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
+python3 -m venv ocs_backend_venv
+source ocs_backend_venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+
+# Start Postgres only, then migrate
+cd .. && docker compose up -d db && cd backend
+# backend/.env should use POSTGRES_HOST=localhost and POSTGRES_PORT=5433
 python manage.py migrate
 python manage.py runserver 0.0.0.0:4781
 ```
 
-### Frontend
+Refresh the exact lock file from the active venv when deps change:
 
-Serve `frontend/public` on port 4780 (any static server), e.g.:
+```bash
+source ocs_backend_venv/bin/activate
+pip freeze > requirements.freeze.txt
+```
+
+### Frontend (local)
 
 ```bash
 cd frontend/public
 python -m http.server 4780
 ```
 
-Ensure `js/config.js` points at `http://localhost:4781/api`.
+## API contract
+
+Base URL: `http://localhost:4781/api`
+
+| Method | Endpoint                 | Auth | App           |
+|--------|--------------------------|------|---------------|
+| GET    | `/courses/`              | No   | `courses`     |
+| GET    | `/courses/<slug>/`       | Yes  | `courses`     |
+| POST   | `/contact/`              | No   | `contact`     |
+| POST   | `/auth/register/`        | No   | `accounts`    |
+| POST   | `/auth/login/`           | No   | `accounts`    |
+| POST   | `/auth/logout/`          | Yes  | `accounts`    |
+| GET    | `/auth/me/`              | Yes  | `accounts`    |
+| POST   | `/auth/forget-password/` | No   | `accounts`    |
+| POST   | `/auth/change-password/` | No   | `accounts`    |
+| GET    | `/subscriptions/`        | Yes  | `subscriptions` |
+| POST   | `/become-pro/`           | Yes  | `subscriptions` |
+| GET    | `/config/`               | No   | `subscriptions` |
+
+Auth header: `Authorization: Token <key>`
+
+## Linting (Ruff)
+
+```bash
+cd backend
+source ocs_backend_venv/bin/activate
+ruff check .
+ruff format .
+```
+
+CI runs the same checks on every PR (`.github/workflows/ruff.yml`). Relative imports are banned.
 
 ## Environment variables
 
-See `backend/.env.example` and `frontend/.env.example`.
+See `backend/.env.example`. Important keys:
 
-Important backend vars:
+- `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`
+- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT`
+- `CORS_ALLOWED_ORIGINS`, `FRONTEND_URL`
+- `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`
+- `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`
 
-- `DJANGO_SECRET_KEY`
-- `DJANGO_DEBUG`
-- `DJANGO_ALLOWED_HOSTS`
-- `CORS_ALLOWED_ORIGINS`
-- `FRONTEND_URL`
-- `STRIPE_SECRET_KEY` / `STRIPE_PUBLISHABLE_KEY`
-- `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD`
+Never commit `backend/.env` or `ocs_backend_venv/`.
 
 ## Team roles
 
-- **Frontend (Cursor):** UI architecture, components, API integration, validation
-- **Backend (Ayaz):** DRF APIs, models, auth, business logic, security
-
-Coordinate through the API contract above. Do not couple frontend templates into Django.
+- **Frontend (Cursor):** UI, components, API integration
+- **Backend (Ayaz):** DRF apps, Postgres, auth, business logic, security
 
 ## Notes
 
-- SQLite is used for simplicity; the Docker volume `backend_db` persists DB data.
-- Course media is bind-mounted from `backend/media`.
-- The legacy monolithic `courses/` tree was replaced by this split architecture.
+- Fresh Postgres has no seed courses — add via admin after `createsuperuser`.
+- Media files are bind-mounted from `backend/media`.
+- SQLite is not used; PostgreSQL is required.
