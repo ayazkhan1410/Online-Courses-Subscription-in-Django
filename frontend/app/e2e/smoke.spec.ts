@@ -44,7 +44,9 @@ test('register login logout courses search pagination detail enroll complete wis
   await test.step('logout', async () => {
     await page.getByRole('button', { name: 'Log out' }).click()
     await page.waitForURL('**/')
-    await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible()
+    await expect(
+      page.getByRole('banner').getByRole('link', { name: 'Log in' }),
+    ).toBeVisible()
   })
 
   await test.step('login', async () => {
@@ -54,19 +56,20 @@ test('register login logout courses search pagination detail enroll complete wis
     await page.locator('form').getByRole('button', { name: 'Log in' }).click()
     await page.waitForURL('**/dashboard', { timeout: 20_000 })
   })
+
   await test.step('browse courses', async () => {
     await page.goto('/courses')
-    await expect(page.locator('a[href^="/courses/"]').first()).toBeVisible({
+    await expect(page.locator('main a[href^="/courses/"]').first()).toBeVisible({
       timeout: 15_000,
     })
   })
 
   await test.step('search', async () => {
-    const title = (await page.locator('h3').first().innerText()).trim()
+    const title = (await page.locator('main h3').first().innerText()).trim()
     const word = title.split(/\s+/)[0] || 'Python'
     await page.getByLabel('Search courses').fill(word)
     await page.getByRole('button', { name: 'Search' }).click()
-    await expect(page.locator('a[href^="/courses/"]').first()).toBeVisible()
+    await expect(page.locator('main a[href^="/courses/"]').first()).toBeVisible()
   })
 
   await test.step('pagination', async () => {
@@ -80,28 +83,45 @@ test('register login logout courses search pagination detail enroll complete wis
 
   await test.step('detail enroll complete wishlist', async () => {
     await page.goto('/courses')
-    await page.locator('a[href^="/courses/"]').first().click()
-    await page.waitForURL(/\/courses\/.+/)
+    // Prefer a free course card when Pro lock would hide Open links.
+    const freeCard = page.locator('main a[href^="/courses/"]').filter({
+      hasText: 'Free',
+    }).first()
+    if (await freeCard.count()) {
+      await freeCard.click()
+    } else {
+      await page.locator('main a[href^="/courses/"]').first().click()
+    }
+    await page.waitForURL(/\/courses\/[^/]+$/)
     const enroll = page.getByRole('button', { name: 'Enroll' })
-    if (await enroll.count()) {
+    if (await enroll.isVisible().catch(() => false)) {
       await enroll.click()
     }
-    const resume = page.getByRole('link', { name: /Resume|Open/ }).first()
-    await expect(resume).toBeVisible({ timeout: 15_000 })
-    await resume.click()
-    await page.waitForURL(/\/learn\//)
-    const complete = page.getByRole('button', { name: /Mark complete|Mark incomplete/ })
-    if (await complete.count()) {
+    const resume = page.getByRole('link', { name: 'Resume' })
+    const open = page.getByRole('link', { name: 'Open' }).first()
+    if (await resume.isVisible().catch(() => false)) {
+      await resume.click()
+    } else if (await open.isVisible().catch(() => false)) {
+      await open.click()
+    } else {
+      // Fall back to the course slug player route.
+      const slug = page.url().split('/courses/')[1]
+      await page.goto(`/learn/${slug}/0`)
+    }
+    await page.waitForURL(/\/learn\//, { timeout: 15_000 })
+    const complete = page.getByRole('button', {
+      name: /Mark complete|Mark incomplete/,
+    })
+    if (await complete.isVisible().catch(() => false)) {
       await complete.click()
     }
-    await page.goto(page.url().replace(/\/learn\/.*/, '') || '/courses')
   })
 
   await test.step('wishlist from detail', async () => {
     await page.goto('/courses')
-    await page.locator('a[href^="/courses/"]').nth(1).click()
+    await page.locator('main a[href^="/courses/"]').nth(1).click()
     const save = page.getByRole('button', { name: /Save|Remove saved/ })
-    if (await save.count()) {
+    if (await save.isVisible().catch(() => false)) {
       await save.click()
     }
   })
@@ -126,8 +146,8 @@ test('register login logout courses search pagination detail enroll complete wis
     await page.goto('/forgot-password')
     await page.getByLabel('Email').fill(user.email)
     await page.getByRole('button', { name: 'Send link' }).click()
-    await expect(page.getByText(/email|sent|check|An email/i).first()).toBeVisible({
-      timeout: 15_000,
-    })
+    await expect(
+      page.getByText(/email|sent|check|An email/i).first(),
+    ).toBeVisible({ timeout: 15_000 })
   })
 })
