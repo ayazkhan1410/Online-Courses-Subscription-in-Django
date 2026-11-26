@@ -12,8 +12,8 @@ export default function PrivacyPage() {
           you mark complete. Passwords are stored as hashes.
         </p>
         <p>
-          Card details are sent to Stripe during Pro checkout. This app stores the
-          membership result, not the card number.
+          Lesson video is embedded from YouTube. This app stores your account and which
+          lessons you finish, not the video file.
         </p>
         <p>
           Contact messages are kept so they can be answered. Sign-in can require a

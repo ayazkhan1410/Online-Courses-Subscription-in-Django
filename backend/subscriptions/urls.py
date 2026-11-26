@@ -13,5 +13,4 @@ urlpatterns = [
         views.BecomeProAPIView.as_view(),
         name='become-pro',
     ),
-    path('config/', views.ConfigAPIView.as_view(), name='config'),
 ]

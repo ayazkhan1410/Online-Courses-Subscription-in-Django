@@ -71,11 +71,6 @@ def progress_for_courses(user, course_ids: set[int]) -> dict[int, int]:
 
 
 def enroll_user(user, course: Courses) -> Enrollment:
-    if course.is_premium:
-        is_pro = Subscription.objects.filter(user=user, is_pro=True).exists()
-        if not is_pro and not user.is_staff:
-            raise PermissionError('Pro membership required for this course')
-
     enrollment, _ = Enrollment.objects.get_or_create(user=user, course=course)
     enrollment.last_accessed_at = timezone.now()
     enrollment.save(update_fields=['last_accessed_at'])
@@ -158,9 +153,10 @@ def build_dashboard(user) -> dict:
         :4
     ]
     recommended = (
-        Courses.objects.annotate(module_count=Count('course_modules'))
+        Courses.objects.filter(status=Courses.STATUS_PUBLISHED)
+        .annotate(module_count=Count('course_modules'))
         .exclude(id__in=enrolled_ids)
-        .order_by('courses_name')[:8]
+        .order_by('sort_order', 'courses_name')[:8]
     )
     is_pro = Subscription.objects.filter(user=user, is_pro=True).exists()
     display_name = (

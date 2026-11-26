@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { PageHeader, PageMain } from '@/components/PageHeader'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
@@ -9,8 +10,12 @@ export default function TermsPage() {
       <div className="max-w-2xl space-y-4 text-ink-2">
         <p>Use your own account. Do not share the login or recovery codes.</p>
         <p>
-          Premium lessons stay available while your Pro membership is active. Free
-          lessons follow the enrollment rules on each course.
+          Third-party courses belong to their creators. Videos are embedded from YouTube.
+          A creator can ask for a playlist to be removed through the{' '}
+          <Link to="/contact" className="text-ink underline">
+            contact page
+          </Link>
+          .
         </p>
         <p>
           Lessons can be removed if they can no longer be hosted. Progress already

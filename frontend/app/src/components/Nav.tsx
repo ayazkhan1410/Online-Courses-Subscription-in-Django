@@ -9,9 +9,9 @@ import { cn } from '@/lib/cn'
 
 const links = [
   { to: '/courses', label: 'Courses' },
+  { to: '/categories', label: 'Categories' },
   { to: '/paths', label: 'Paths' },
   { to: '/services', label: 'Services' },
-  { to: '/work', label: 'Work' },
   { to: '/about', label: 'About' },
 ]
 
@@ -57,7 +57,7 @@ export function Nav() {
               <Link to="/login" className="hidden h-9 items-center px-3 text-sm text-ink-2 sm:inline-flex">
                 Log in
               </Link>
-              <Link to="/register" className={buttonClass('primary', 'sm')}>
+              <Link to="/courses" className={buttonClass('primary', 'sm')}>
                 Start learning
               </Link>
             </>

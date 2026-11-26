@@ -10,7 +10,7 @@ export default function SearchPage() {
   return (
     <PageMain>
       <PageHeader title="Search" lead="Find a course by name." />
-      <CourseBrowser key={initial} initialSearch={initial} />
+      <CourseBrowser key={initial} />
     </PageMain>
   )
 }

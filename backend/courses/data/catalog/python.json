@@ -1,0 +1,37 @@
+{
+  "category": {
+    "name": "Python",
+    "slug": "python",
+    "icon": "code",
+    "sort_order": 1,
+    "description": "Python language playlists from public YouTube channels.",
+    "is_featured": false
+  },
+  "playlists": [
+    {
+      "url": "https://www.youtube.com/playlist?list=PL-osiE80TeTskrapNbzXhwoFUiLCjGgY7",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLsyeobzWxl7poL9JTVyndKe62ieoN-MZ3",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLWKjhJtqVAbnqBxcdjVGgT3uVR10bzTEB",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLu0W_9lII9agICnT8t4iYVSZ3eykIAOME",
+      "level": "beginner",
+      "language": "hi"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLu0W_9lII9aiJWQ7VhY712fuimEpQZYp4",
+      "level": "intermediate",
+      "language": "hi"
+    }
+  ]
+}

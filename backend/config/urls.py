@@ -13,7 +13,6 @@ urlpatterns = [
     path('api/', include('accounts.urls')),
     path('api/', include('mfa.urls')),
     path('api/', include('courses.urls')),
-    path('api/', include('subscriptions.urls')),
     path('api/', include('contact.urls')),
     path('api/', include('learning.urls')),
     # Serve uploads under gunicorn (static() helper is DEBUG-only).

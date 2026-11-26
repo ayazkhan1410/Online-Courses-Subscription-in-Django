@@ -1,0 +1,42 @@
+{
+  "category": {
+    "name": "Data Structures and Interviews",
+    "slug": "data-structures-and-interviews",
+    "icon": "binary",
+    "sort_order": 6,
+    "description": "DSA and algorithms playlists from public YouTube channels.",
+    "is_featured": false
+  },
+  "playlists": [
+    {
+      "url": "https://www.youtube.com/playlist?list=PLDN4rrl48XKpZkf03iYFl-O29szjTrs_O",
+      "level": "intermediate",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLAXnLdrLnQpRcveZTtD644gM9uzYqJCwr",
+      "level": "intermediate",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLDzeHZWIZsTryvtXdMr6rPh4IDexB5NIA",
+      "level": "intermediate",
+      "language": "hi"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLDzeHZWIZsTo87y1ytEAqp7wYlEP3nner",
+      "level": "intermediate",
+      "language": "hi"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLgUwDviBIf0oF6QL8m22w1hIDC1vJ_BHz",
+      "level": "intermediate",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLfqMhTWNBTe137I_EPQd34TsgV6IO55pt",
+      "level": "beginner",
+      "language": "hi"
+    }
+  ]
+}

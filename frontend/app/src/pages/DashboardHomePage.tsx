@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { formatApiError } from '@/api/client'
 import { getDashboard } from '@/api/learning'
+import type { Course, Enrollment } from '@/api/types'
 import { buttonClass } from '@/components/Button'
 import { Card } from '@/components/Card'
 import { CourseCard } from '@/components/CourseCard'
@@ -12,6 +13,20 @@ import { Skeleton } from '@/components/Skeleton'
 import { Stat } from '@/components/Stat'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { lessonIndex, lessonLabel, stripEmoji } from '@/lib/text'
+
+function preferEnrolledCategories(recommended: Course[], enrolled: Enrollment[]): Course[] {
+  const slugs = new Set(
+    enrolled
+      .map((item) => item.course.category?.slug)
+      .filter((slug): slug is string => Boolean(slug)),
+  )
+  if (slugs.size === 0) return recommended
+  return [...recommended].sort((a, b) => {
+    const aHit = a.category && slugs.has(a.category.slug) ? 0 : 1
+    const bHit = b.category && slugs.has(b.category.slug) ? 0 : 1
+    return aHit - bHit
+  })
+}
 
 export default function DashboardHomePage() {
   usePageTitle('Dashboard')
@@ -33,6 +48,7 @@ export default function DashboardHomePage() {
   const data = query.data
   const current = data.continue_learning[0]
   const stats = data.stats
+  const recommended = preferEnrolledCategories(data.recommended, data.enrolled)
 
   return (
     <div>
@@ -44,6 +60,7 @@ export default function DashboardHomePage() {
           <Card className="grid gap-6 md:grid-cols-[280px_1fr] md:items-center">
             <CourseCover
               title={stripEmoji(current.courses_name)}
+              categorySlug={current.category?.slug}
               meta={lessonLabel(
                 lessonIndex(current.progress_percent, current.module_count),
                 current.module_count,
@@ -98,11 +115,11 @@ export default function DashboardHomePage() {
       )}
 
       <h2 className="mt-10 text-2xl">Suggested next</h2>
-      {data.recommended.length === 0 ? (
+      {recommended.length === 0 ? (
         <p className="mt-3 text-ink-2">No further courses to suggest.</p>
       ) : (
         <div className="mt-4 grid gap-4 md:grid-cols-2">
-          {data.recommended.slice(0, 4).map((course) => (
+          {recommended.slice(0, 4).map((course) => (
             <CourseCard key={course.id} course={course} />
           ))}
         </div>

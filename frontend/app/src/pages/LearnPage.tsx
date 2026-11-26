@@ -4,7 +4,8 @@ import { formatApiError } from '@/api/client'
 import { getCourse } from '@/api/courses'
 import { enrollCourse, markLessonProgress } from '@/api/learning'
 import type { Module } from '@/api/types'
-import { Button, buttonClass } from '@/components/Button'
+import { Button } from '@/components/Button'
+import { CourseAttribution } from '@/components/CourseAttribution'
 import { ErrorState } from '@/components/ErrorState'
 import { Skeleton } from '@/components/Skeleton'
 import { Tabs } from '@/components/Tabs'
@@ -14,6 +15,7 @@ import { usePageTitle } from '@/hooks/usePageTitle'
 import { cn } from '@/lib/cn'
 import { lessonLabel, stripEmoji, stripHtml } from '@/lib/text'
 import { useState } from 'react'
+
 
 export default function LearnPage() {
   const { slug = '', lessonId } = useParams()
@@ -85,6 +87,9 @@ export default function LearnPage() {
           <h1 className="mt-2 text-[32px]">
             {current ? stripEmoji(current.module_name) : stripEmoji(course.courses_name)}
           </h1>
+          <div className="mt-4">
+            <CourseAttribution course={course} />
+          </div>
           {!course.is_enrolled ? (
             <Button className="mt-6" onClick={() => enroll.mutate()} disabled={!token || enroll.isPending}>
               Enroll
@@ -107,14 +112,9 @@ export default function LearnPage() {
             <div className="mt-6 rounded-card border border-line bg-surface p-6">
               <p className="text-ink-2">
                 {current?.is_locked
-                  ? 'This lesson is locked until you enroll and, for premium courses, have Pro.'
+                  ? 'Enroll to open this lesson.'
                   : 'This lesson has no video yet.'}
               </p>
-              {course.is_premium && current?.is_locked ? (
-                <Link to="/pro" className={buttonClass('primary', 'md', 'mt-4')}>
-                  See Pro
-                </Link>
-              ) : null}
             </div>
           ) : (
             <iframe

@@ -21,6 +21,31 @@ export type Module = {
   is_locked: boolean
 }
 
+export type Category = {
+  id: number
+  name: string
+  slug: string
+  description: string
+  icon: string
+  sort_order: number
+  is_featured: boolean
+  published_course_count: number
+}
+
+export type CategoryBrief = {
+  name: string
+  slug: string
+  icon: string
+}
+
+export type Creator = {
+  name: string
+  slug: string
+  avatar_url: string
+  channel_url: string
+  is_owner: boolean
+}
+
 export type Course = {
   id: number
   courses_name: string
@@ -31,6 +56,12 @@ export type Course = {
   playlist_url: string
   youtube_playlist_id: string | null
   slug: string
+  status?: string
+  level: string
+  language: string
+  category: CategoryBrief | null
+  creator: Creator | null
+  attribution: string
   module_count: number
   is_enrolled: boolean
   is_wishlisted: boolean
@@ -90,12 +121,6 @@ export type AppConfig = {
   stripe_publishable_key: string
   google_client_id: string
   turnstile_site_key: string
-}
-
-export type Plan = {
-  id: number
-  subscription_list: string
-  subscription_price: number
 }
 
 export type MfaStatus = {

@@ -6,12 +6,7 @@ const items = [
   {
     id: 'enroll',
     title: 'How do I enroll?',
-    body: 'Open a course and choose Enroll. Free courses open after that. Premium courses need an active Pro membership.',
-  },
-  {
-    id: 'pro',
-    title: 'What is Pro?',
-    body: 'Pro is a paid membership that unlocks premium courses. Plan prices load after you sign in.',
+    body: 'Open a course and choose Enroll. The lessons open after that.',
   },
   {
     id: 'mfa',
@@ -34,7 +29,7 @@ export default function FaqPage() {
   usePageTitle('FAQ')
   return (
     <PageMain>
-      <PageHeader title="FAQ" lead="How accounts, lessons, and Pro work." />
+      <PageHeader title="FAQ" lead="How accounts and lessons work." />
       <Accordion items={items} />
     </PageMain>
   )

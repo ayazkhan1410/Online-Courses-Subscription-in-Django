@@ -1,0 +1,42 @@
+{
+  "category": {
+    "name": "DevOps and Cloud",
+    "slug": "devops-and-cloud",
+    "icon": "cloud",
+    "sort_order": 5,
+    "description": "Docker, Kubernetes, and DevOps playlists from public YouTube channels.",
+    "is_featured": false
+  },
+  "playlists": [
+    {
+      "url": "https://www.youtube.com/playlist?list=PLy7NrYWoggjzfAHlUusx2wuDwfCrmJYcs",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLy7NrYWoggjziYQIDorlXjTvvwweTYoNC",
+      "level": "intermediate",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLdpzxOOAlwvIKMhk8WhzN1pYoJ1YU8Csa",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLlfy9GnSVerQu-uL0AdI3O5VzUmIv5pPf",
+      "level": "beginner",
+      "language": "hi"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLlfy9GnSVerQzwhT644uP14iqZa0ZC4pn",
+      "level": "intermediate",
+      "language": "hi"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLBGx66SQNZ8aPsFDwb79JrS2KQBTIZo10",
+      "level": "beginner",
+      "language": "ur-hi"
+    }
+  ]
+}

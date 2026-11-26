@@ -1,20 +1,3 @@
-export type StripeCard = {
-  mount: (el: HTMLElement) => void
-  unmount: () => void
-  on: (
-    event: 'change',
-    cb: (ev: { error?: { message?: string } }) => void,
-  ) => void
-}
-
-export type StripeClient = {
-  elements: () => { create: (type: 'card') => StripeCard }
-  createToken: (card: StripeCard) => Promise<{
-    token?: { id: string }
-    error?: { message: string }
-  }>
-}
-
 declare global {
   interface Window {
     google?: {
@@ -38,7 +21,6 @@ declare global {
         }
       }
     }
-    Stripe?: (key: string) => StripeClient
     turnstile?: {
       render: (el: HTMLElement, opts: { sitekey: string }) => string
       getResponse: (id: string) => string

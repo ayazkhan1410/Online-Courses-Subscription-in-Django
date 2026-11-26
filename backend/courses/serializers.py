@@ -1,8 +1,46 @@
 from rest_framework import serializers
 
-from courses.models import CourseModule, Courses
+from courses.models import Category, CourseModule, Courses, Creator
 from learning.models import Enrollment, LessonProgress, WishlistItem
-from subscriptions.models import Subscription
+
+
+def _nocookie_embed(video_id: str) -> str:
+    return f'https://www.youtube-nocookie.com/embed/{video_id}'
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    published_course_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Category
+        fields = [
+            'id',
+            'name',
+            'slug',
+            'description',
+            'icon',
+            'sort_order',
+            'is_featured',
+            'published_course_count',
+        ]
+
+    def get_published_course_count(self, obj: Category) -> int:
+        annotated = getattr(obj, 'published_course_count', None)
+        if annotated is not None:
+            return int(annotated)
+        return obj.courses.filter(status=Courses.STATUS_PUBLISHED).count()
+
+
+class CategoryBriefSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['name', 'slug', 'icon']
+
+
+class CreatorBriefSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Creator
+        fields = ['name', 'slug', 'avatar_url', 'channel_url', 'is_owner']
 
 
 class CourseModuleSerializer(serializers.ModelSerializer):
@@ -21,6 +59,7 @@ class CourseModuleSerializer(serializers.ModelSerializer):
             'youtube_video_id',
             'thumbnail_url',
             'sort_order',
+            'duration_seconds',
             'can_view',
             'is_completed',
             'is_locked',
@@ -29,18 +68,19 @@ class CourseModuleSerializer(serializers.ModelSerializer):
     def get_embed_url(self, obj: CourseModule) -> str | None:
         video_id = (obj.youtube_video_id or '').strip()
         if video_id:
-            return f'https://www.youtube.com/embed/{video_id}'
+            return _nocookie_embed(video_id)
         url = (obj.module_video or '').strip()
-        if 'youtube.com/embed/' in url:
-            return url
+        if 'youtube.com/embed/' in url or 'youtube-nocookie.com/embed/' in url:
+            vid = url.split('/embed/', 1)[1].split('?', 1)[0].split('/', 1)[0]
+            return _nocookie_embed(vid) if vid else None
         if 'watch?v=' in url:
             vid = url.split('watch?v=', 1)[1].split('&', 1)[0]
             if vid:
-                return f'https://www.youtube.com/embed/{vid}'
+                return _nocookie_embed(vid)
         if 'youtu.be/' in url:
             vid = url.rstrip('/').split('/')[-1].split('?', 1)[0]
             if vid:
-                return f'https://www.youtube.com/embed/{vid}'
+                return _nocookie_embed(vid)
         return url or None
 
     def get_is_completed(self, obj: CourseModule) -> bool:
@@ -61,12 +101,6 @@ class CourseModuleSerializer(serializers.ModelSerializer):
         user = getattr(request, 'user', None) if request else None
         if user is None or not user.is_authenticated:
             return False
-        if obj.course.is_premium:
-            is_pro = self.context.get('is_pro')
-            if is_pro is None:
-                is_pro = Subscription.objects.filter(user=user, is_pro=True).exists()
-            if not is_pro and not user.is_staff:
-                return False
         enrolled_ids = self.context.get('enrolled_ids')
         if enrolled_ids is not None:
             return obj.course_id in enrolled_ids
@@ -91,6 +125,9 @@ class CourseSerializer(serializers.ModelSerializer):
     is_enrolled = serializers.SerializerMethodField()
     is_wishlisted = serializers.SerializerMethodField()
     progress_percent = serializers.SerializerMethodField()
+    category = CategoryBriefSerializer(read_only=True)
+    creator = CreatorBriefSerializer(read_only=True)
+    attribution = serializers.SerializerMethodField()
 
     class Meta:
         model = Courses
@@ -104,11 +141,25 @@ class CourseSerializer(serializers.ModelSerializer):
             'playlist_url',
             'youtube_playlist_id',
             'slug',
+            'status',
+            'level',
+            'language',
+            'category',
+            'creator',
+            'attribution',
             'module_count',
             'is_enrolled',
             'is_wishlisted',
             'progress_percent',
         ]
+
+    def get_attribution(self, obj: Courses) -> str:
+        creator = obj.creator
+        if creator is not None:
+            return f'YouTube playlist by {creator.name}'
+        if obj.playlist_url:
+            return 'YouTube playlist'
+        return ''
 
     def get_course_image(self, obj: Courses) -> str | None:
         if obj.thumbnail_url:

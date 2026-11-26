@@ -29,10 +29,6 @@ export default function ProfilePage() {
           <dt className="text-ink-2">Username</dt>
           <dd className="font-mono">{user.username}</dd>
         </div>
-        <div className="flex justify-between gap-4 border-b border-line py-2">
-          <dt className="text-ink-2">Membership</dt>
-          <dd>{user.is_pro ? 'Pro' : 'Free'}</dd>
-        </div>
       </dl>
     </div>
   )

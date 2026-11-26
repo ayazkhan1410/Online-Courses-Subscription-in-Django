@@ -5,13 +5,13 @@ import { getCourse } from '@/api/courses'
 import { addWishlist, enrollCourse, removeWishlist } from '@/api/learning'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { Button, buttonClass } from '@/components/Button'
+import { CourseAttribution } from '@/components/CourseAttribution'
 import { CourseCover } from '@/components/CourseCover'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { PageMain } from '@/components/PageHeader'
 import { Progress } from '@/components/Progress'
 import { Skeleton } from '@/components/Skeleton'
-import { Tag } from '@/components/Tag'
 import { useToast } from '@/components/Toast'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -91,23 +91,28 @@ export default function CourseDetailPage() {
   const modules = course.course_modules ?? []
   const meta = course.is_enrolled
     ? lessonLabel(lessonIndex(course.progress_percent, course.module_count), course.module_count)
-    : `${course.module_count} lessons`
+    : course.module_count === 1
+      ? '1 lesson'
+      : `${course.module_count} lessons`
 
   return (
     <PageMain>
       <Breadcrumbs
         items={[
           { label: 'Courses', to: '/courses' },
+          ...(course.category
+            ? [{ label: course.category.name, to: `/categories/${course.category.slug}` }]
+            : []),
           { label: title },
         ]}
       />
       <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
         <div>
-          <div className="flex items-start justify-between gap-3">
-            <h1>{title}</h1>
-            {course.is_premium ? <Tag>Pro</Tag> : null}
-          </div>
+          <h1>{title}</h1>
           <p className="mt-3 font-mono text-sm text-accent-ink">{meta}</p>
+          <div className="mt-4">
+            <CourseAttribution course={course} />
+          </div>
           <p className="mt-6 max-w-2xl text-ink-2">{stripHtml(course.courses_description)}</p>
           {course.is_enrolled ? (
             <div className="mt-6">
@@ -140,7 +145,7 @@ export default function CourseDetailPage() {
             </Button>
           </div>
         </div>
-        <CourseCover title={title} meta={meta} />
+        <CourseCover title={title} meta={meta} categorySlug={course.category?.slug} />
       </div>
       <h2 className="mt-12">Lessons</h2>
       {modules.length === 0 ? (
@@ -156,9 +161,7 @@ export default function CourseDetailPage() {
                 <p>{stripEmoji(mod.module_name)}</p>
               </div>
               {mod.is_locked ? (
-                <Link to="/pro" className="text-sm text-ink-2">
-                  Locked
-                </Link>
+                <span className="text-sm text-ink-3">Enroll to open</span>
               ) : (
                 <Link to={`/learn/${course.slug}/${mod.id}`} className="text-sm">
                   Open

@@ -5,8 +5,8 @@ const columns = [
     title: 'Learn',
     links: [
       { to: '/courses', label: 'Courses' },
+      { to: '/categories', label: 'Categories' },
       { to: '/paths', label: 'Paths' },
-      { to: '/pricing', label: 'Pricing' },
     ],
   },
   {

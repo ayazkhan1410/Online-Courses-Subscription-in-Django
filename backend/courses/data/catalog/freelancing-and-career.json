@@ -1,0 +1,27 @@
+{
+  "category": {
+    "name": "Freelancing and Career",
+    "slug": "freelancing-and-career",
+    "icon": "briefcase",
+    "sort_order": 7,
+    "description": "Fiverr and Upwork playlists from public YouTube channels.",
+    "is_featured": false
+  },
+  "playlists": [
+    {
+      "url": "https://www.youtube.com/playlist?list=PLadi8rkUyvZ6beUm6KzdEh5dUzUWU1KVE",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLBpyC2XF4-63iFvz_BkuUn63Hz3kdnP21",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLjVfK1-aLReJIR-ESg4bFADnMFrWvsd3l",
+      "level": "beginner",
+      "language": "en"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "category": {
+    "name": "Frontend Engineering",
+    "slug": "frontend-engineering",
+    "icon": "layout",
+    "sort_order": 3,
+    "description": "React and interface playlists from public YouTube channels.",
+    "is_featured": false
+  },
+  "playlists": [
+    {
+      "url": "https://www.youtube.com/playlist?list=PL4cUxeGkcC9gZD-Tvwfod2gaISzfRiP9d",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PL0Zuz27SZ-6PrE9srvEn8nbhOOyxnWXfp",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PL0Zuz27SZ-6PRCpm9clX0WiBEMB70FWwd",
+      "level": "intermediate",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLu0W_9lII9agx66oZnT6IyhcMIbUMNMdt",
+      "level": "beginner",
+      "language": "hi"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLu71SKxNbfoDqgPchmvIsL4hTnJIrtige",
+      "level": "beginner",
+      "language": "hi"
+    }
+  ]
+}

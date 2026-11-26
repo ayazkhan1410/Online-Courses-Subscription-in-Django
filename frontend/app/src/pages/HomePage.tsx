@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { getCategory, listCategories } from '@/api/categories'
+import { ApiError, formatApiError } from '@/api/client'
 import { getCourses } from '@/api/courses'
-import { formatApiError } from '@/api/client'
 import { buttonClass } from '@/components/Button'
+import { CategoryGlyph } from '@/components/CategoryGlyph'
 import { CourseCard } from '@/components/CourseCard'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
@@ -10,12 +12,29 @@ import { Skeleton } from '@/components/Skeleton'
 import { HeroCanvas } from '@/features/hero/HeroCanvas'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
+const AYAZ = 'study-with-ayaz'
+
 export default function HomePage() {
   usePageTitle('Courses')
-  const query = useQuery({
-    queryKey: ['courses', '', 1],
+  const ayaz = useQuery({
+    queryKey: ['category', AYAZ],
+    queryFn: () => getCategory(AYAZ),
+  })
+  const categories = useQuery({
+    queryKey: ['categories'],
+    queryFn: listCategories,
+  })
+  const courses = useQuery({
+    queryKey: ['courses', 'home'],
     queryFn: () => getCourses({ page: 1 }),
   })
+
+  const ayazMissing = ayaz.error instanceof ApiError && ayaz.error.status === 404
+  const ayazCourses = ayaz.data?.results ?? []
+  const featured = (courses.data?.results ?? [])
+    .filter((course) => course.category?.slug !== AYAZ)
+    .slice(0, 4)
+  const featuredCourses = featured.length > 0 ? featured : (courses.data?.results ?? []).slice(0, 4)
 
   return (
     <>
@@ -38,34 +57,96 @@ export default function HomePage() {
       </section>
 
       <section className="mx-auto w-full max-w-[1200px] px-4 py-16 md:px-6 md:py-24">
-        <h2>How a lesson works</h2>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {[
-            ['Pick a course', 'Open the catalog and enroll. Premium courses need Pro.'],
-            ['Watch the lesson', 'The player keeps the video and the lesson list together.'],
-            ['Mark it complete', 'Progress is saved on your account.'],
-          ].map(([title, body]) => (
-            <article key={title} className="rounded-card border border-line bg-surface p-5">
-              <h3 className="text-xl">{title}</h3>
-              <p className="mt-3 text-sm text-ink-2">{body}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-[1200px] px-4 pb-16 md:px-6 md:pb-24">
-        <h2>From the catalog</h2>
+        <h2>{ayaz.data?.category.name ?? 'Study with Ayaz'}</h2>
+        {ayaz.data?.category.description ? (
+          <p className="mt-3 max-w-2xl text-ink-2">{ayaz.data.category.description}</p>
+        ) : null}
         <div className="mt-8">
-          {query.isLoading ? (
+          {ayaz.isLoading ? (
             <div className="grid gap-4 sm:grid-cols-2">
               <Skeleton className="h-64" />
               <Skeleton className="h-64" />
             </div>
           ) : null}
-          {query.isError ? (
-            <ErrorState message={formatApiError(query.error)} onRetry={() => void query.refetch()} />
+          {ayaz.isError && !ayazMissing ? (
+            <ErrorState message={formatApiError(ayaz.error)} onRetry={() => void ayaz.refetch()} />
           ) : null}
-          {query.data && query.data.results.length === 0 ? (
+          {ayazMissing || (ayaz.data && ayazCourses.length === 0) ? (
+            <EmptyState
+              title="No courses in this category"
+              body="Study with Ayaz playlists are not published yet."
+              actionLabel="Browse courses"
+              to="/courses"
+            />
+          ) : null}
+          {ayazCourses.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {ayazCourses.map((course) => (
+                <CourseCard key={course.id} course={course} />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-[1200px] px-4 py-16 md:px-6 md:py-24">
+        <h2>Categories</h2>
+        <div className="mt-8">
+          {categories.isLoading ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Skeleton className="h-28" />
+              <Skeleton className="h-28" />
+              <Skeleton className="h-28" />
+              <Skeleton className="h-28" />
+            </div>
+          ) : null}
+          {categories.isError ? (
+            <ErrorState
+              message={formatApiError(categories.error)}
+              onRetry={() => void categories.refetch()}
+            />
+          ) : null}
+          {categories.data && categories.data.length === 0 ? (
+            <EmptyState
+              title="No categories yet"
+              body="The catalog has no categories to browse."
+              actionLabel="Contact"
+              to="/contact"
+            />
+          ) : null}
+          {categories.data && categories.data.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {categories.data.map((item) => (
+                <Link
+                  key={item.slug}
+                  to={`/categories/${item.slug}`}
+                  className="rounded-card border border-line bg-surface p-5 transition-colors duration-200 ease-swa hover:border-line-strong"
+                >
+                  <CategoryGlyph icon={item.icon} slug={item.slug} />
+                  <h3 className="mt-4 text-xl">{item.name}</h3>
+                  <p className="mt-2 font-mono text-xs text-ink-3">
+                    {item.published_course_count} courses
+                  </p>
+                </Link>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-[1200px] px-4 py-16 md:px-6 md:py-24">
+        <h2>Featured</h2>
+        <div className="mt-8">
+          {courses.isLoading ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Skeleton className="h-64" />
+              <Skeleton className="h-64" />
+            </div>
+          ) : null}
+          {courses.isError ? (
+            <ErrorState message={formatApiError(courses.error)} onRetry={() => void courses.refetch()} />
+          ) : null}
+          {courses.data && featuredCourses.length === 0 ? (
             <EmptyState
               title="No courses yet"
               body="The catalog is empty right now."
@@ -73,9 +154,9 @@ export default function HomePage() {
               to="/contact"
             />
           ) : null}
-          {query.data && query.data.results.length > 0 ? (
+          {featuredCourses.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2">
-              {query.data.results.slice(0, 4).map((course) => (
+              {featuredCourses.map((course) => (
                 <CourseCard key={course.id} course={course} />
               ))}
             </div>
@@ -84,10 +165,15 @@ export default function HomePage() {
       </section>
 
       <section className="border-t border-line">
-        <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 px-4 py-16 md:flex-row md:items-center md:justify-between md:px-6">
-          <h2>Start with a free lesson</h2>
-          <Link to="/register" className={buttonClass('primary')}>
-            Create account
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 px-4 py-16 md:flex-row md:items-center md:justify-between md:px-6 md:py-24">
+          <div>
+            <h2>Freelance work</h2>
+            <p className="mt-3 max-w-xl text-ink-2">
+              Project help sits beside the course library.
+            </p>
+          </div>
+          <Link to="/services" className={buttonClass('primary')}>
+            See services
           </Link>
         </div>
       </section>

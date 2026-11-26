@@ -1,0 +1,117 @@
+{
+  "category": {
+    "name": "Study with Ayaz",
+    "slug": "study-with-ayaz",
+    "icon": "notebook-pen",
+    "sort_order": 0,
+    "description": "Playlists from the Study with Ayaz YouTube channel.",
+    "is_featured": true
+  },
+  "playlists": [
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOpOw8PH-w9x7A-chWaCueu4",
+      "level": "beginner",
+      "language": "ur-hi"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOqNQEbxvJdM7epWGZzr1PF1",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOoFVWiKBsobmUxdOM7VXge2",
+      "level": "advanced",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOp5BhKgq4E11g1-ODZD4-zf",
+      "level": "intermediate",
+      "language": "ur-hi"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOrWwWwNLy_s5uh2dLI5rOPD",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOp_ZbTP6cbEs9cLBTirw6ve",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOqCwKaqh5i23qQU2OcXbnXG",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOpvSZkBWDVFzxMjDIWZYvwS",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOrKLGvRGtgkTayYvNC7RRud",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOon2zA0UD66UTwHAEKtfvAR",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOrfSmz2RY4p95asOaB2cytd",
+      "level": "intermediate",
+      "language": "ur-hi"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOoIVIWZCtmQI_YOlHuoXBpJ",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOqh6c5JWLBoEeyTFxr3wG9B",
+      "level": "beginner",
+      "language": "ur-hi"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOrY40t9UedxZnDUBOShDil5",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOqYbSHuANBYobdUZRaUhUiS",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOq0o1o7KDcSJQ0v5FPFhkxq",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOoC4ghGnbLPZHkTTpTaGqfN",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOrVUD2Ua8AcaCOth1bTx7Fa",
+      "level": "beginner",
+      "language": "ur-hi"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOpx8bUpC0ELA1JbGXoxIhax",
+      "level": "beginner",
+      "language": "ur-hi"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOr7Xj9M3HgJSrc3bo5u-Tf_",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLqG7o8rLExOr1InjoAXy7xjVvAb2zseIj",
+      "level": "beginner",
+      "language": "en"
+    }
+  ]
+}

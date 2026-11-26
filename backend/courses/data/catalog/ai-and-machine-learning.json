@@ -1,0 +1,47 @@
+{
+  "category": {
+    "name": "AI and Machine Learning",
+    "slug": "ai-and-machine-learning",
+    "icon": "brain",
+    "sort_order": 4,
+    "description": "Machine learning and deep learning playlists from public YouTube channels.",
+    "is_featured": false
+  },
+  "playlists": [
+    {
+      "url": "https://www.youtube.com/playlist?list=PLWKjhJtqVAblStefaz_YOVpDWqcRScc2s",
+      "level": "beginner",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLZoTAELRMXVPBTrWtJkn3wWQxZkmTXGwe",
+      "level": "intermediate",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLZoTAELRMXVPGU70ZGsckrMdr0FteeRUi",
+      "level": "intermediate",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLZoTAELRMXVPS-dOaVbAux22vzqdgoGhG",
+      "level": "intermediate",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLTDARY42LDV7WGmlzZtY-w9pemyPrKNUZ",
+      "level": "beginner",
+      "language": "hi"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLQVvvaa0QuDfKTOs3Keq_kaG2P55YRn5v",
+      "level": "intermediate",
+      "language": "en"
+    },
+    {
+      "url": "https://www.youtube.com/playlist?list=PLQVvvaa0QuDd0flgGphKCej-9jp-QdzZ3",
+      "level": "intermediate",
+      "language": "en"
+    }
+  ]
+}

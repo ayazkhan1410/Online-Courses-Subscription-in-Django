@@ -64,12 +64,23 @@ test('register login logout courses search pagination detail enroll complete wis
     })
   })
 
+  await test.step('categories', async () => {
+    await page.goto('/categories')
+    await expect(page.getByRole('heading', { name: 'Categories' })).toBeVisible({
+      timeout: 15_000,
+    })
+  })
+
   await test.step('search', async () => {
+    await page.goto('/courses')
+    await expect(page.locator('main h3').first()).toBeVisible({ timeout: 15_000 })
     const title = (await page.locator('main h3').first().innerText()).trim()
-    const word = title.split(/\s+/)[0] || 'Python'
+    const word = title.split(/\s+/).find((part) => part.length > 2) || 'Python'
     await page.getByLabel('Search courses').fill(word)
     await page.getByRole('button', { name: 'Search' }).click()
-    await expect(page.locator('main a[href^="/courses/"]').first()).toBeVisible()
+    await expect(page.locator('main a[href^="/courses/"]').first()).toBeVisible({
+      timeout: 15_000,
+    })
   })
 
   await test.step('pagination', async () => {
@@ -83,16 +94,11 @@ test('register login logout courses search pagination detail enroll complete wis
 
   await test.step('detail enroll complete wishlist', async () => {
     await page.goto('/courses')
-    // Prefer a free course card when Pro lock would hide Open links.
-    const freeCard = page.locator('main a[href^="/courses/"]').filter({
-      hasText: 'Free',
-    }).first()
-    if (await freeCard.count()) {
-      await freeCard.click()
-    } else {
-      await page.locator('main a[href^="/courses/"]').first().click()
-    }
+    await page.locator('main a[href^="/courses/"]').first().click()
     await page.waitForURL(/\/courses\/[^/]+$/)
+    await expect(page.getByTestId('course-attribution')).toContainText(
+      /By Ayaz|Watch on YouTube/,
+    )
     const enroll = page.getByRole('button', { name: 'Enroll' })
     if (await enroll.isVisible().catch(() => false)) {
       await enroll.click()

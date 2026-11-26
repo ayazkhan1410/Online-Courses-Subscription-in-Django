@@ -4,7 +4,72 @@ from django.utils.text import slugify
 from embed_video.fields import EmbedVideoField
 
 
+class Category(models.Model):
+    name = models.CharField(max_length=120)
+    slug = models.SlugField(max_length=120, unique=True)
+    description = models.TextField(blank=True, default='')
+    icon = models.CharField(max_length=64, blank=True, default='')
+    sort_order = models.PositiveIntegerField(default=0)
+    is_featured = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['sort_order', 'name']
+        verbose_name_plural = 'Categories'
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Creator(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255, unique=True)
+    youtube_channel_id = models.CharField(
+        max_length=64,
+        unique=True,
+        blank=True,
+        null=True,
+    )
+    channel_url = models.URLField(max_length=500, blank=True, default='')
+    avatar_url = models.URLField(max_length=500, blank=True, default='')
+    is_owner = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class Courses(models.Model):
+    STATUS_PUBLISHED = 'published'
+    STATUS_PENDING = 'pending_review'
+    STATUS_HIDDEN = 'hidden'
+    STATUS_CHOICES = [
+        (STATUS_PUBLISHED, 'Published'),
+        (STATUS_PENDING, 'Pending review'),
+        (STATUS_HIDDEN, 'Hidden'),
+    ]
+
+    LEVEL_BEGINNER = 'beginner'
+    LEVEL_INTERMEDIATE = 'intermediate'
+    LEVEL_ADVANCED = 'advanced'
+    LEVEL_CHOICES = [
+        (LEVEL_BEGINNER, 'Beginner'),
+        (LEVEL_INTERMEDIATE, 'Intermediate'),
+        (LEVEL_ADVANCED, 'Advanced'),
+    ]
+
+    LANGUAGE_EN = 'en'
+    LANGUAGE_UR = 'ur'
+    LANGUAGE_HI = 'hi'
+    LANGUAGE_UR_HI = 'ur-hi'
+    LANGUAGE_CHOICES = [
+        (LANGUAGE_EN, 'English'),
+        (LANGUAGE_UR, 'Urdu'),
+        (LANGUAGE_HI, 'Hindi'),
+        (LANGUAGE_UR_HI, 'Urdu / Hindi'),
+    ]
+
     courses_name = models.CharField(max_length=255)
     courses_description = RichTextField(blank=True, default='')
     is_premium = models.BooleanField(default=False)
@@ -22,9 +87,41 @@ class Courses(models.Model):
     )
     playlist_url = models.URLField(max_length=500, blank=True, default='')
     slug = models.SlugField(max_length=255, blank=True, unique=True)
+    category = models.ForeignKey(
+        Category,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='courses',
+    )
+    creator = models.ForeignKey(
+        Creator,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='courses',
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+    )
+    level = models.CharField(
+        max_length=20,
+        choices=LEVEL_CHOICES,
+        blank=True,
+        default=LEVEL_BEGINNER,
+    )
+    language = models.CharField(
+        max_length=16,
+        choices=LANGUAGE_CHOICES,
+        blank=True,
+        default=LANGUAGE_EN,
+    )
+    sort_order = models.PositiveIntegerField(default=0)
 
     class Meta:
-        ordering = ['courses_name']
+        ordering = ['sort_order', 'courses_name']
         verbose_name_plural = 'Courses'
 
     def save(self, *args, **kwargs):
@@ -59,6 +156,7 @@ class CourseModule(models.Model):
     )
     thumbnail_url = models.URLField(max_length=500, blank=True, default='')
     sort_order = models.PositiveIntegerField(default=0)
+    duration_seconds = models.PositiveIntegerField(null=True, blank=True)
     can_view = models.BooleanField(default=True)
 
     class Meta:
