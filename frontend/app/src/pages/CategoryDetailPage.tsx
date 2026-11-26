@@ -1,103 +1,95 @@
 import { useQuery } from '@tanstack/react-query'
+import { Search } from 'lucide-react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { getCategory } from '@/api/categories'
-import { ApiError, formatApiError } from '@/api/client'
-import { Breadcrumbs } from '@/components/Breadcrumbs'
-import { CourseCard } from '@/components/CourseCard'
+import { getCategory, listCategories } from '@/api/categories'
+import { ApiError } from '@/api/client'
+import { CourseBrowser } from '@/features/catalog/CourseBrowser'
 import { EmptyState } from '@/components/EmptyState'
-import { ErrorState } from '@/components/ErrorState'
-import { PageMain } from '@/components/PageHeader'
-import { pageCount, Pagination } from '@/components/Pagination'
 import { Skeleton } from '@/components/Skeleton'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
 export default function CategoryDetailPage() {
   const { slug = '' } = useParams()
   const [params, setParams] = useSearchParams()
-  const page = Math.max(1, Number(params.get('page') || '1') || 1)
-  const query = useQuery({
-    queryKey: ['category', slug, page],
-    queryFn: () => getCategory(slug, page),
+  const search = params.get('search') ?? ''
+  const [draft, setDraft] = useState(search)
+
+  useEffect(() => {
+    setDraft(search)
+  }, [search])
+
+  const probe = useQuery({
+    queryKey: ['category', slug, 1],
+    queryFn: () => getCategory(slug, 1),
     enabled: Boolean(slug),
   })
-  usePageTitle(query.data?.category.name ?? 'Category')
+  const categories = useQuery({ queryKey: ['categories'], queryFn: listCategories })
 
-  if (query.isLoading) {
+  usePageTitle(probe.data?.category.name ?? 'Category')
+
+  function onSearch(event: FormEvent) {
+    event.preventDefault()
+    const next = new URLSearchParams(params)
+    const value = draft.trim()
+    if (value) next.set('search', value)
+    else next.delete('search')
+    next.delete('page')
+    setParams(next)
+  }
+
+  if (probe.isLoading) {
     return (
-      <PageMain>
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="mt-6 h-24" />
-      </PageMain>
+      <main className="wrap">
+        <Skeleton className="h-24" />
+      </main>
     )
   }
 
-  const missing = query.error instanceof ApiError && query.error.status === 404
-  if (missing) {
+  const missing = probe.error instanceof ApiError && probe.error.status === 404
+  if (missing || !slug) {
     return (
-      <PageMain>
+      <main className="wrap">
         <EmptyState
           title="Category not found"
           body="That category is not in the catalog."
           actionLabel="All categories"
           to="/categories"
         />
-      </PageMain>
-    )
-  }
-  if (query.isError || !query.data) {
-    return (
-      <PageMain>
-        <ErrorState message={formatApiError(query.error)} onRetry={() => void query.refetch()} />
-      </PageMain>
+      </main>
     )
   }
 
-  const { category, results, count } = query.data
+  const category = probe.data?.category
+  const totalCourses =
+    categories.data?.reduce((sum, item) => sum + item.published_course_count, 0) ?? 0
+  const categoryCount = categories.data?.length ?? 0
 
   return (
-    <PageMain>
-      <Breadcrumbs
-        items={[
-          { label: 'Categories', to: '/categories' },
-          { label: category.name },
-        ]}
-      />
-      <h1>{category.name}</h1>
-      {category.description ? (
-        <p className="mt-3 max-w-2xl text-lg text-ink-2">{category.description}</p>
-      ) : null}
-      <p className="mt-4 font-mono text-sm text-ink-3">
-        {category.published_course_count} courses
-      </p>
-      <h2 className="mt-12">Playlists</h2>
-      {results.length === 0 ? (
-        <div className="mt-6">
-          <EmptyState
-            title="No courses in this category"
-            body="Nothing is published here yet."
-            actionLabel="Browse courses"
-            to="/courses"
-          />
+    <main className="wrap">
+      <div className="page-head">
+        <div>
+          <h1 className="h1">{category?.name ?? 'Courses'}</h1>
+          <p>
+            {category
+              ? category.description ||
+                `${category.published_course_count} courses in this category.`
+              : `${totalCourses} playlists in ${categoryCount} categories.`}
+          </p>
         </div>
-      ) : (
-        <>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {results.map((course) => (
-              <CourseCard key={course.id} course={course} />
-            ))}
-          </div>
-          <Pagination
-            page={page}
-            pages={pageCount(count)}
-            onPage={(next) => {
-              const queryParams = new URLSearchParams(params)
-              if (next > 1) queryParams.set('page', String(next))
-              else queryParams.delete('page')
-              setParams(queryParams)
-            }}
+        <form className="search" role="search" onSubmit={onSearch}>
+          <Search className="i" size={16} strokeWidth={1.5} aria-hidden />
+          <input
+            className="input"
+            type="search"
+            placeholder="Search"
+            aria-label="Search courses"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
           />
-        </>
-      )}
-    </PageMain>
+        </form>
+      </div>
+      <CourseBrowser lockedCategory={slug} />
+    </main>
   )
 }

@@ -73,11 +73,12 @@ test('register login logout courses search pagination detail enroll complete wis
 
   await test.step('search', async () => {
     await page.goto('/courses')
-    await expect(page.locator('main h3').first()).toBeVisible({ timeout: 15_000 })
-    const title = (await page.locator('main h3').first().innerText()).trim()
+    const cardTitle = page.locator('main .card-title').first()
+    await expect(cardTitle).toBeVisible({ timeout: 15_000 })
+    const title = (await cardTitle.innerText()).trim()
     const word = title.split(/\s+/).find((part) => part.length > 2) || 'Python'
     await page.getByLabel('Search courses').fill(word)
-    await page.getByRole('button', { name: 'Search' }).click()
+    await page.getByLabel('Search courses').press('Enter')
     await expect(page.locator('main a[href^="/courses/"]').first()).toBeVisible({
       timeout: 15_000,
     })
@@ -97,20 +98,21 @@ test('register login logout courses search pagination detail enroll complete wis
     await page.locator('main a[href^="/courses/"]').first().click()
     await page.waitForURL(/\/courses\/[^/]+$/)
     await expect(page.getByTestId('course-attribution')).toContainText(
-      /By Ayaz|Watch on YouTube/,
+      /By Ayaz|Watch on YouTube|YouTube/,
     )
-    const enroll = page.getByRole('button', { name: 'Enroll' })
+    const enroll = page.getByRole('button', { name: /Enroll/i })
     if (await enroll.isVisible().catch(() => false)) {
       await enroll.click()
     }
-    const resume = page.getByRole('link', { name: 'Resume' })
-    const open = page.getByRole('link', { name: 'Open' }).first()
+    const resume = page.getByRole('link', {
+      name: /Continue learning|Start course|Resume/i,
+    })
+    const lesson = page.locator('.lessons a.t').first()
     if (await resume.isVisible().catch(() => false)) {
       await resume.click()
-    } else if (await open.isVisible().catch(() => false)) {
-      await open.click()
+    } else if (await lesson.isVisible().catch(() => false)) {
+      await lesson.click()
     } else {
-      // Fall back to the course slug player route.
       const slug = page.url().split('/courses/')[1]
       await page.goto(`/learn/${slug}/0`)
     }
@@ -126,7 +128,9 @@ test('register login logout courses search pagination detail enroll complete wis
   await test.step('wishlist from detail', async () => {
     await page.goto('/courses')
     await page.locator('main a[href^="/courses/"]').nth(1).click()
-    const save = page.getByRole('button', { name: /Save|Remove saved/ })
+    const save = page.getByRole('button', {
+      name: /Save for later|Remove from saved|Save|Remove saved/i,
+    })
     if (await save.isVisible().catch(() => false)) {
       await save.click()
     }

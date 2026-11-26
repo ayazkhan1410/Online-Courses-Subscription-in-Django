@@ -9,6 +9,7 @@ import { Input } from '@/components/Input'
 import { useToast } from '@/components/Toast'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { accessFromAuth } from '@/lib/session'
 
 function QrCode({ svg }: { svg: string }) {
   const clean = svg.trim()
@@ -47,7 +48,13 @@ export default function SecurityPage() {
     mutationFn: () => mfaConfirm(code),
     onSuccess: async (data) => {
       setCodes(data.recovery_codes)
-      if (user) setSession(data.token, user)
+      if (user) {
+        setSession(
+          accessFromAuth({ token: data.token, access: data.access, user }),
+          user,
+          data.refresh,
+        )
+      }
       setQr('')
       await queryClient.invalidateQueries({ queryKey: ['mfa-status'] })
       toast.push('Authenticator is on')

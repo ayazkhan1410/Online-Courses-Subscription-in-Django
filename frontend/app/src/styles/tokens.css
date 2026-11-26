@@ -1,50 +1,87 @@
 @import "tailwindcss";
+@import "./design.css";
+@import "./pages.css";
 
 :root {
-  --bg: #f7f4ee;
-  --surface: #fdfbf7;
-  --raised: #f1ece3;
-  --paper: #efe6d6;
-  --ink: #1f1b16;
-  --ink-2: #5e554a;
-  --ink-3: #857b6e;
-  --line: rgba(31, 27, 22, 0.08);
-  --line-strong: rgba(31, 27, 22, 0.16);
-  --accent: #c2410c;
-  --accent-hover: #9a3412;
-  --accent-ink: #9a3412;
-  --accent-on: #ffffff;
-  --accent-soft: rgba(194, 65, 12, 0.1);
-  --ok: #3f9d63;
-  --err: #c43d3d;
-  --notebook-ink: #1f1b16;
-  --notebook-line: rgba(31, 27, 22, 0.14);
-  --font-sans: "Instrument Sans", "Noto Nastaliq Urdu", "Noto Sans Devanagari",
-    ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* light: paper */
+  --bg: #f5f2ec;
+  --surface: #fdfbf7;
+  --raised: #ffffff;
+  --sunken: #ece7df;
+  --text: #1d1a16;
+  --text-2: #5c554b;
+  --text-3: #8a8276;
+  --line: rgba(29, 26, 22, 0.09);
+  --line-strong: rgba(29, 26, 22, 0.16);
+  --accent: #c2410c;
+  --accent-ink: #b13a0a;
+  --accent-soft: rgba(194, 65, 12, 0.08);
+  --on-accent: #ffffff;
+  --btn-bg: var(--accent);
+  --btn-text: var(--on-accent);
+  --good: #3f7a4f;
+  --shadow: 0 1px 2px rgba(29, 26, 22, 0.06), 0 4px 12px rgba(29, 26, 22, 0.05);
+  --cover-bg: #efe9df;
+
+  --ink-ayaz: #c2410c;
+  --ink-python: #3d6a88;
+  --ink-backend: #627336;
+  --ink-frontend: #94505f;
+  --ink-ai: #56658a;
+  --ink-devops: #367169;
+  --ink-dsa: #8a682c;
+  --ink-career: #76583f;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --maxw: 1240px;
+
+  /* bridge for leftover Tailwind utilities */
+  --ink: var(--text);
+  --ink-2: var(--text-2);
+  --ink-3: var(--text-3);
+  --paper: var(--cover-bg);
+  --accent-on: var(--on-accent);
+  --accent-hover: var(--accent-ink);
+  --ok: var(--good);
+  --err: #c43d3d;
+  --notebook-ink: var(--text);
+  --notebook-line: var(--line);
   --ease-swa: cubic-bezier(0.22, 1, 0.36, 1);
   color-scheme: light;
 }
 
-[data-theme="dark"] {
-  --bg: #1b1815;
-  --surface: #221e1a;
-  --raised: #2a2520;
-  --paper: #efe6d6;
-  --ink: #f3eee6;
-  --ink-2: #b7aea2;
-  --ink-3: #8f8578;
-  --line: rgba(243, 238, 230, 0.1);
-  --line-strong: rgba(243, 238, 230, 0.18);
-  --accent: #ea7a3c;
-  --accent-hover: #f0905a;
-  --accent-ink: #f0905a;
-  --accent-on: #1b1815;
-  --accent-soft: rgba(234, 122, 60, 0.14);
-  --ok: #5fbf83;
-  --err: #e06a6a;
-  --notebook-ink: #1f1b16;
-  --notebook-line: rgba(31, 27, 22, 0.14);
+:root[data-theme="dark"] {
+  --bg: #13110f;
+  --surface: #1a1714;
+  --raised: #221e1a;
+  --sunken: #0f0d0b;
+  --text: #ece6dc;
+  --text-2: #b2a99b;
+  --text-3: #80776b;
+  --line: rgba(236, 230, 220, 0.08);
+  --line-strong: rgba(236, 230, 220, 0.14);
+  --accent: #e8763a;
+  --accent-ink: #ef8a52;
+  --accent-soft: rgba(232, 118, 58, 0.1);
+  --on-accent: #1a1714;
+  --btn-bg: #ece6dc;
+  --btn-text: #1a1714;
+  --good: #79b089;
+  --shadow: none;
+  --cover-bg: #201c18;
+  --ink-python: #7aa3c0;
+  --ink-backend: #9cae6c;
+  --ink-frontend: #c98a98;
+  --ink-ai: #95a3c6;
+  --ink-devops: #6fb0a6;
+  --ink-dsa: #c9a160;
+  --ink-career: #b8977b;
+  --ink-ayaz: #e8763a;
   color-scheme: dark;
 }
 
@@ -52,107 +89,34 @@
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-raised: var(--raised);
-  --color-paper: var(--paper);
-  --color-ink: var(--ink);
-  --color-ink-2: var(--ink-2);
-  --color-ink-3: var(--ink-3);
+  --color-sunken: var(--sunken);
+  --color-paper: var(--cover-bg);
+  --color-ink: var(--text);
+  --color-ink-2: var(--text-2);
+  --color-ink-3: var(--text-3);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
+  --color-accent-hover: var(--accent-ink);
   --color-accent-ink: var(--accent-ink);
-  --color-accent-on: var(--accent-on);
+  --color-accent-on: var(--on-accent);
   --color-accent-soft: var(--accent-soft);
-  --color-ok: var(--ok);
+  --color-ok: var(--good);
   --color-err: var(--err);
   --color-notebook-ink: var(--notebook-ink);
   --color-notebook-line: var(--notebook-line);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --ease-swa: var(--ease-swa);
-  --radius-control: 8px;
-  --radius-card: 12px;
-  --radius-panel: 16px;
+  --radius-control: var(--r-sm);
+  --radius-card: var(--r-md);
+  --radius-panel: var(--r-lg);
   --radius-notebook: 6px;
 }
 
 @layer base {
-  html {
-    background: var(--bg);
-  }
-
   html[data-scroll-lock],
   html[data-scroll-lock] body {
     overflow: hidden;
-  }
-
-  body {
-    margin: 0;
-    min-height: 100vh;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: var(--font-sans);
-    font-size: 16px;
-    font-weight: 400;
-    line-height: 1.6;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4 {
-    margin: 0;
-    font-weight: 500;
-    line-height: 1.15;
-  }
-
-  h1 {
-    font-size: 32px;
-    letter-spacing: -0.01em;
-  }
-
-  h2 {
-    font-size: 32px;
-    letter-spacing: -0.01em;
-  }
-
-  h3 {
-    font-size: 24px;
-  }
-
-  h4 {
-    font-size: 20px;
-  }
-
-  p {
-    margin: 0;
-  }
-
-  a {
-    color: inherit;
-    text-decoration: none;
-  }
-
-  button,
-  input,
-  select,
-  textarea {
-    font: inherit;
-    color: inherit;
-  }
-
-  :focus {
-    outline: none;
-  }
-
-  :focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-
-  @media (min-width: 768px) {
-    h1 {
-      font-size: 44px;
-    }
   }
 }

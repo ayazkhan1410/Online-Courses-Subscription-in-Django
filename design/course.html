@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>50 Days of Python · Study with Ayaz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="app.js"></script>
+<script src="data.js"></script>
+<style>
+  .crumbs { display: flex; gap: 8px; align-items: center; padding: 24px 0 0; font-size: 13px; color: var(--text-3); }
+  .crumbs a:hover { color: var(--text); }
+  .crumbs .i { width: 14px; height: 14px; }
+  .c-head { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 56px; padding: 32px 0 48px; align-items: center; }
+  .c-copy { display: flex; flex-direction: column; gap: 20px; }
+  .c-facts { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+  .c-facts div { display: flex; flex-direction: column; gap: 2px; }
+  .c-facts dt { font-size: 12px; color: var(--text-3); }
+  .c-facts dd { margin: 0; font-size: 14px; }
+  .c-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .c-head .cover { aspect-ratio: 4 / 3; padding: 24px 24px 24px 40px; }
+  .c-head .cover::before { width: 12px; }
+  .c-head .cover::after { left: 26px; }
+  .c-head .cover-title { font-size: 34px; }
+
+  .c-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 56px; align-items: start; border-top: 1px solid var(--line); padding-top: 40px; }
+  .lessons { list-style: none; margin: 16px 0 0; padding: 0; border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; background: var(--surface); }
+  .lesson { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 56px; padding: 0 16px; border-top: 1px solid var(--line); }
+  .lesson:first-child { border-top: 0; }
+  .lesson:hover { background: var(--raised); }
+  .lesson .n { font: 400 12px/1 var(--font-mono); color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .lesson .t { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lesson .st { color: var(--text-3); display: flex; }
+  .lesson.done .t { color: var(--text-3); }
+  .lesson.done .st { color: var(--good); }
+  .lesson.now { background: var(--accent-soft); }
+  .lesson.now .n { color: var(--accent-ink); }
+  .more { display: flex; justify-content: center; padding: 12px; border-top: 1px solid var(--line); }
+  .side { position: sticky; top: 88px; display: flex; flex-direction: column; gap: 16px; }
+  .side .panel { padding: 20px; }
+  .side h3 { font-size: 13px; font-weight: 500; margin: 0 0 12px; }
+  .progress-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .progress-head .counter b { font-size: 24px; }
+  .about p { margin: 0 0 12px; color: var(--text-2); font-size: 14px; }
+  .attr { display: flex; gap: 12px; align-items: center; }
+  .attr p { margin: 0; font-size: 13px; color: var(--text-2); }
+  @media (max-width: 960px) {
+    .c-head, .c-body { grid-template-columns: 1fr; gap: 32px; }
+    .c-head .cover { order: -1; aspect-ratio: 16 / 9; }
+    .c-head .cover-title { font-size: 26px; }
+    .side { position: static; }
+  }
+  @media (max-width: 520px) { .lesson { grid-template-columns: 40px minmax(0, 1fr) auto; } }
+</style>
+</head>
+<body>
+<div data-nav="Courses"></div>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="courses.html">Courses</a><span data-icon="chevron-right"></span><a href="courses.html">Study with Ayaz</a></nav>
+
+  <section class="c-head">
+    <div class="c-copy">
+      <h1 class="h1">50 Days of Python Programming challenge</h1>
+      <p class="lead">One short lesson a day, from installing Python to writing real programs. Taught in Hindi and Urdu, for complete beginners.</p>
+      <div class="creator"><span class="avatar avatar-lg">SA</span><div><div style="color:var(--text)">Ayaz Khan</div><div class="meta">Study with Ayaz on YouTube</div></div></div>
+      <dl class="c-facts" style="margin:0">
+        <div><dt>Lessons</dt><dd class="num">50</dd></div>
+        <div><dt>Language</dt><dd>Hindi and Urdu</dd></div>
+        <div><dt>Level</dt><dd>Beginner</dd></div>
+        <div><dt>Price</dt><dd>Free</dd></div>
+      </dl>
+      <div class="c-actions">
+        <a class="btn btn-primary btn-lg" href="learn.html">Continue day 08</a>
+        <button class="btn btn-lg btn-icon" style="width:48px" aria-label="Save for later"><span data-icon="bookmark"></span></button>
+        <a class="link small" href="#" style="display:inline-flex;gap:6px;align-items:center">Watch on YouTube <span data-icon="external" class="i-16"></span></a>
+      </div>
+    </div>
+    <div class="cover ink-ayaz">
+      <div class="cover-top"><span>Python</span><span>50 lessons</span></div>
+      <div class="cover-title">Python in 50 days</div>
+    </div>
+  </section>
+
+  <section class="c-body">
+    <div>
+      <div class="section-head" style="margin:0">
+        <h2 class="h2">Lessons</h2>
+        <span class="meta">7 of 50 done</span>
+      </div>
+      <ol class="lessons" data-lessons></ol>
+    </div>
+
+    <aside class="side">
+      <div class="panel">
+        <div class="progress-head"><span class="counter"><b>07</b><span>/ 50</span></span><span class="meta">14%</span></div>
+        <div class="ticks" data-ticks="7/50"></div>
+        <p class="small dim" style="margin:12px 0 0">Next up: How to create a list in Python</p>
+      </div>
+      <div class="panel about">
+        <h3>About this course</h3>
+        <p>Each day covers one idea with a small example you type along with: variables, input, lists, strings, loops, functions and files.</p>
+        <p>Notes for every lesson are in the video description on YouTube.</p>
+      </div>
+      <div class="panel">
+        <div class="attr"><span class="avatar avatar-lg">SA</span><p>This playlist is from the Study with Ayaz channel. Videos play from YouTube.</p></div>
+      </div>
+    </aside>
+  </section>
+</main>
+
+<div data-footer></div>
+<script>
+  // Titles from YouTube are cleaned: "Day 08/50 - How to Create List in Python | Python Full Course" → counter + short title
+  const L = ["Basic introduction and setup", "How the Python interpreter works", "Variables in Python", "Python comments", "Taking user input", "Typecasting in Python", "Types of typecasting", "How to create a list", "List methods", "Strings in Python", "Positive slicing", "Negative slicing", "Important string methods", "F-strings and string formatting"];
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelector("[data-lessons]").innerHTML = L.map((t, k) => {
+      const s = k < 7 ? "done" : k === 7 ? "now" : "";
+      const st = s === "done" ? icon("check", "i-16") : s === "now" ? '<span class="meta" style="color:var(--accent-ink)">Up next</span>' : icon("play", "i-16");
+      return `<li class="lesson ${s}"><span class="n">Day ${String(k + 1).padStart(2, "0")}</span><a class="t" href="learn.html">${t}</a><span class="st">${st}</span></li>`;
+    }).join("") + '<li class="more"><button class="btn btn-ghost btn-sm">Show all 50 lessons</button></li>';
+  });
+</script>
+</body>
+</html>

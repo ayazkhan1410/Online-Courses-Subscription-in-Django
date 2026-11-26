@@ -1,4 +1,9 @@
-import { clearSession, readToken } from '@/lib/session'
+import {
+  clearSession,
+  readRefresh,
+  readToken,
+  writeAccessToken,
+} from '@/lib/session'
 
 const DEFAULT_BASE = 'http://localhost:4781/api'
 
@@ -26,6 +31,7 @@ type Options = {
   body?: unknown
   auth?: boolean
   redirectOn401?: boolean
+  _retried?: boolean
 }
 
 function flatten(value: unknown): string {
@@ -78,11 +84,50 @@ function messageFrom(data: unknown, status: number): string {
   return `Request failed (${status})`
 }
 
+let refreshInFlight: Promise<string | null> | null = null
+
+async function refreshAccessToken(): Promise<string | null> {
+  if (refreshInFlight) return refreshInFlight
+  refreshInFlight = (async () => {
+    const refresh = readRefresh()
+    if (!refresh) return null
+    try {
+      const response = await fetch(`${apiBase()}/auth/token/refresh/`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh }),
+      })
+      if (!response.ok) return null
+      const data = (await response.json()) as { access?: string }
+      if (!data.access) return null
+      writeAccessToken(data.access)
+      return data.access
+    } catch {
+      return null
+    } finally {
+      refreshInFlight = null
+    }
+  })()
+  return refreshInFlight
+}
+
+function redirectToLogin(): void {
+  clearSession()
+  const pathName = window.location.pathname
+  if (!pathName.startsWith('/login')) {
+    const next = `${pathName}${window.location.search}`
+    window.location.assign(`/login?next=${encodeURIComponent(next)}`)
+  }
+}
+
 export async function api<T>(path: string, options: Options = {}): Promise<T> {
   const headers = new Headers({ Accept: 'application/json' })
   const token = readToken()
   if (options.auth !== false && token) {
-    headers.set('Authorization', `Token ${token}`)
+    headers.set('Authorization', `Bearer ${token}`)
   }
   let body: string | undefined
   if (options.body !== undefined) {
@@ -108,14 +153,21 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
     }
   }
 
+  if (
+    response.status === 401 &&
+    options.auth !== false &&
+    !options._retried &&
+    readRefresh()
+  ) {
+    const nextAccess = await refreshAccessToken()
+    if (nextAccess) {
+      return api<T>(path, { ...options, _retried: true })
+    }
+  }
+
   if (!response.ok) {
     if (response.status === 401 && options.redirectOn401 !== false) {
-      clearSession()
-      const pathName = window.location.pathname
-      if (!pathName.startsWith('/login')) {
-        const next = `${pathName}${window.location.search}`
-        window.location.assign(`/login?next=${encodeURIComponent(next)}`)
-      }
+      redirectToLogin()
     }
     throw new ApiError(messageFrom(data, response.status), response.status, data)
   }

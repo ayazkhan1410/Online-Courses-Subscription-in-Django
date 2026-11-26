@@ -66,14 +66,14 @@ export const router = createBrowserRouter([
       { path: '/privacy', element: lazyPage(() => import('@/pages/PrivacyPage')) },
       { path: '/terms', element: lazyPage(() => import('@/pages/TermsPage')) },
       { path: '/search', element: lazyPage(() => import('@/pages/SearchPage')) },
-      { path: '/login', element: lazyPage(() => import('@/pages/LoginPage')) },
-      { path: '/register', element: lazyPage(() => import('@/pages/RegisterPage')) },
       { path: '/verify-email', element: lazyPage(() => import('@/pages/VerifyEmailPage')) },
-      { path: '/forgot-password', element: lazyPage(() => import('@/pages/ForgotPasswordPage')) },
-      { path: '/reset-password', element: lazyPage(() => import('@/pages/ResetPasswordPage')) },
       { path: '*', element: lazyPage(() => import('@/pages/NotFoundPage')) },
     ],
   },
+  { path: '/login', element: lazyPage(() => import('@/pages/LoginPage')) },
+  { path: '/register', element: lazyPage(() => import('@/pages/RegisterPage')) },
+  { path: '/forgot-password', element: lazyPage(() => import('@/pages/ForgotPasswordPage')) },
+  { path: '/reset-password', element: lazyPage(() => import('@/pages/ResetPasswordPage')) },
   {
     element: <ProtectedRoute />,
     children: [

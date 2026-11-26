@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Mail } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
@@ -6,16 +7,16 @@ import { googleLogin, isMfaChallenge, login } from '@/api/auth'
 import { formatApiError } from '@/api/client'
 import { mfaResend, mfaVerify } from '@/api/mfa'
 import type { MfaChallenge, User } from '@/api/types'
-import { Button } from '@/components/Button'
 import { GoogleButton } from '@/components/GoogleButton'
-import { Input } from '@/components/Input'
-import { AuthSplit } from '@/components/PageHeader'
-import { useToast } from '@/components/Toast'
+import { Logo } from '@/components/Logo'
+import { OtpInput } from '@/components/OtpInput'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { TurnstileWidget, type TurnstileHandle } from '@/components/TurnstileWidget'
+import { useToast } from '@/components/Toast'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { loginSchema, type LoginValues } from '@/lib/schemas'
-import { safeNext } from '@/lib/session'
+import { accessFromAuth, safeNext } from '@/lib/session'
 
 export default function LoginPage() {
   usePageTitle('Log in')
@@ -32,8 +33,8 @@ export default function LoginPage() {
     defaultValues: { email: '', password: '' },
   })
 
-  function finish(token: string, user: User) {
-    setSession(token, user)
+  function finish(data: { token: string; access?: string; refresh?: string; user: User }) {
+    setSession(accessFromAuth(data), data.user, data.refresh)
     navigate(safeNext(params.get('next')))
   }
 
@@ -49,7 +50,7 @@ export default function LoginPage() {
         setChallenge(data)
         return
       }
-      finish(data.token, data.user)
+      finish(data)
     } catch (error) {
       turnstile.current?.reset()
       toast.push(formatApiError(error), 'err')
@@ -64,7 +65,7 @@ export default function LoginPage() {
         code: nextCode.trim(),
         method,
       })
-      finish(data.token, data.user)
+      finish(data)
     } catch (error) {
       toast.push(formatApiError(error), 'err')
     }
@@ -79,98 +80,156 @@ export default function LoginPage() {
         setChallenge(data)
         return
       }
-      finish(data.token, data.user)
+      finish(data)
     } catch (error) {
       toast.push(formatApiError(error), 'err')
     }
   }
 
   return (
-    <AuthSplit title="Log in" lead="Use the email on your account.">
-      {challenge ? (
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={(event) => {
-            event.preventDefault()
-            void submitCode(code)
-          }}
-        >
-          <p className="text-sm text-ink-2">
-            {method === 'email'
-              ? 'Enter the 6-digit code from email.'
-              : method === 'recovery'
-                ? 'Enter one unused recovery code.'
-                : 'Enter the 6-digit code from your authenticator.'}
-          </p>
-          <Input
-            label={method === 'recovery' ? 'Recovery code' : '6-digit code'}
-            value={code}
-            inputMode={method === 'recovery' ? 'text' : 'numeric'}
-            autoComplete="one-time-code"
-            maxLength={method === 'recovery' ? 32 : 6}
-            onChange={(event) => {
-              const next = method === 'recovery'
-                ? event.target.value
-                : event.target.value.replace(/\D/g, '').slice(0, 6)
-              setCode(next)
-              if (method !== 'recovery' && next.length === 6) void submitCode(next)
+    <div className="auth-page">
+      <header className="wrap top">
+        <Logo />
+        <ThemeToggle />
+      </header>
+      <main className="center">
+        {challenge ? (
+          <form
+            className="panel box"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void submitCode(code)
             }}
-          />
-          <Button type="submit">Verify</Button>
-          <div className="flex gap-4 text-sm">
-            {challenge.methods.includes('email') ? (
+          >
+            <div>
+              <h1 className="h2">Enter your code</h1>
+              <p className="dim small" style={{ marginTop: 6 }}>
+                {method === 'email'
+                  ? 'Type the 6-digit code we emailed you.'
+                  : method === 'recovery'
+                    ? 'Enter one unused recovery code.'
+                    : 'Open your authenticator app and type the 6-digit code for Study with Ayaz.'}
+              </p>
+            </div>
+            {method === 'recovery' ? (
+              <label className="field">
+                <span className="label">Recovery code</span>
+                <input
+                  className="input"
+                  value={code}
+                  onChange={(event) => setCode(event.target.value)}
+                  autoComplete="one-time-code"
+                />
+              </label>
+            ) : (
+              <OtpInput
+                value={code}
+                onChange={(next) => {
+                  setCode(next)
+                  if (next.length === 6) void submitCode(next)
+                }}
+              />
+            )}
+            <button className="btn btn-primary btn-lg" type="submit">
+              Verify
+            </button>
+            <EmailMfaOption
+              show={challenge.methods.includes('email')}
+              onEmail={() => {
+                setMethod('email')
+                void mfaResend(challenge.challenge_token)
+                  .then((data) => toast.push(data.message))
+                  .catch((error: unknown) => toast.push(formatApiError(error), 'err'))
+              }}
+            />
+            <p className="foot">
+              <button type="button" className="link" onClick={() => setMethod('recovery')}>
+                Use a recovery code
+              </button>
+              <span aria-hidden> · </span>
               <button
                 type="button"
-                className="text-ink-2"
+                className="dim link"
                 onClick={() => {
-                  setMethod('email')
-                  void mfaResend(challenge.challenge_token)
-                    .then((data) => toast.push(data.message))
-                    .catch((error: unknown) => toast.push(formatApiError(error), 'err'))
+                  setChallenge(null)
+                  setCode('')
                 }}
               >
-                Email a code
+                Back to log in
               </button>
-            ) : null}
-            <button type="button" className="text-ink-2" onClick={() => setMethod('recovery')}>
-              Use a recovery code
+            </p>
+          </form>
+        ) : (
+          <form
+            className="panel box"
+            onSubmit={(event) => {
+              const token = turnstile.current?.getToken() ?? ''
+              void form.handleSubmit((values) => onSubmit(values, token))(event)
+            }}
+          >
+            <div>
+              <h1 className="h2">Log in</h1>
+              <p className="dim small" style={{ marginTop: 6 }}>
+                Pick up the lesson where you stopped.
+              </p>
+            </div>
+            <GoogleButton onCredential={(credential) => void onGoogle(credential)} />
+            <div className="or">or</div>
+            <label className="field">
+              <span className="label">Email</span>
+              <input
+                className="input"
+                type="email"
+                autoComplete="email"
+                {...form.register('email')}
+              />
+            </label>
+            <label className="field">
+              <span className="row">
+                <span className="label">Password</span>
+                <Link className="link small" to="/forgot-password">
+                  Forgot password
+                </Link>
+              </span>
+              <input
+                className="input"
+                type="password"
+                autoComplete="current-password"
+                {...form.register('password')}
+              />
+            </label>
+            <TurnstileWidget ref={turnstile} />
+            <button
+              className="btn btn-primary btn-lg"
+              type="submit"
+              disabled={form.formState.isSubmitting}
+            >
+              Log in
             </button>
-          </div>
-        </form>
-      ) : (
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={(event) => {
-            const token = turnstile.current?.getToken() ?? ''
-            void form.handleSubmit((values) => onSubmit(values, token))(event)
-          }}
-        >
-          <Input
-            label="Email"
-            type="email"
-            autoComplete="email"
-            error={form.formState.errors.email?.message}
-            {...form.register('email')}
-          />
-          <Input
-            label="Password"
-            type="password"
-            autoComplete="current-password"
-            error={form.formState.errors.password?.message}
-            {...form.register('password')}
-          />
-          <TurnstileWidget ref={turnstile} />
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            Log in
-          </Button>
-          <GoogleButton onCredential={(credential) => void onGoogle(credential)} />
-          <p className="text-sm text-ink-2">
-            <Link to="/forgot-password">Forgot password</Link>
-            <span aria-hidden="true"> · </span>
-            <Link to="/register">Create account</Link>
-          </p>
-        </form>
-      )}
-    </AuthSplit>
+            <p className="foot">
+              New here?{' '}
+              <Link className="link" to="/register">
+                Create a free account
+              </Link>
+            </p>
+          </form>
+        )}
+      </main>
+    </div>
+  )
+}
+
+function EmailMfaOption({ show, onEmail }: { show: boolean; onEmail: () => void }) {
+  if (!show) return null
+  return (
+    <div className="method">
+      <Mail size={18} strokeWidth={1.5} aria-hidden />
+      <span>
+        No phone nearby?{' '}
+        <button type="button" className="link" onClick={onEmail}>
+          Email me a code
+        </button>
+      </span>
+    </div>
   )
 }

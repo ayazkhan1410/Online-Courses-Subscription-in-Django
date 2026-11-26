@@ -1,18 +1,19 @@
 import { useQuery } from '@tanstack/react-query'
+import { Play } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatApiError } from '@/api/client'
 import { getDashboard } from '@/api/learning'
 import type { Course, Enrollment } from '@/api/types'
-import { buttonClass } from '@/components/Button'
-import { Card } from '@/components/Card'
+import { Counter, Ticks } from '@/components/Counter'
 import { CourseCard } from '@/components/CourseCard'
-import { CourseCover } from '@/components/CourseCover'
+import { Cover } from '@/components/Cover'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
+import { Panel } from '@/components/Panel'
 import { Skeleton } from '@/components/Skeleton'
-import { Stat } from '@/components/Stat'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { lessonIndex, lessonLabel, stripEmoji } from '@/lib/text'
+import { cleanLessonTitle } from '@/lib/lessonTitle'
+import { lessonIndex, stripEmoji } from '@/lib/text'
 
 function preferEnrolledCategories(recommended: Course[], enrolled: Enrollment[]): Course[] {
   const slugs = new Set(
@@ -28,10 +29,19 @@ function preferEnrolledCategories(recommended: Course[], enrolled: Enrollment[])
   })
 }
 
+function progressLessons(percent: number, total: number): number {
+  if (total <= 0) return 0
+  return Math.min(total, Math.round((percent / 100) * total))
+}
+
 export default function DashboardHomePage() {
   usePageTitle('Dashboard')
   const query = useQuery({ queryKey: ['dashboard'], queryFn: getDashboard })
-  const month = new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric' }).format(new Date())
+  const today = new Intl.DateTimeFormat('en', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(new Date())
 
   if (query.isLoading) {
     return (
@@ -41,6 +51,7 @@ export default function DashboardHomePage() {
       </div>
     )
   }
+
   if (query.isError || !query.data) {
     return <ErrorState message={formatApiError(query.error)} onRetry={() => void query.refetch()} />
   }
@@ -51,81 +62,140 @@ export default function DashboardHomePage() {
   const recommended = preferEnrolledCategories(data.recommended, data.enrolled)
 
   return (
-    <div>
-      <h1 className="text-[32px]">Your learning · {month}</h1>
-      <p className="mt-2 text-ink-2">{data.user.display_name}</p>
+    <>
+      <div className="top">
+        <div>
+          <div className="meta">{today}</div>
+          <h1 className="h1">Your learning</h1>
+        </div>
+        <Link className="btn btn-sm" to="/courses">
+          Find a course
+        </Link>
+      </div>
 
-      <div className="mt-8">
-        {current ? (
-          <Card className="grid gap-6 md:grid-cols-[280px_1fr] md:items-center">
-            <CourseCover
-              title={stripEmoji(current.courses_name)}
-              categorySlug={current.category?.slug}
-              categoryIcon={current.category?.icon}
-              imageUrl={current.thumbnail_url || current.course_image}
-              meta={lessonLabel(
-                lessonIndex(current.progress_percent, current.module_count),
-                current.module_count,
-              )}
-            />
-            <div>
-              <p className="font-mono text-sm text-accent-ink">
-                {lessonLabel(
-                  lessonIndex(current.progress_percent, current.module_count),
-                  current.module_count,
-                )}
-              </p>
-              <h2 className="mt-2 text-2xl">{stripEmoji(current.courses_name)}</h2>
-              <Link to={`/learn/${current.slug}/0`} className={buttonClass('primary', 'md', 'mt-6')}>
-                Resume
-              </Link>
-            </div>
-          </Card>
-        ) : (
+      {current ? (
+        <ContinuePanel course={current} />
+      ) : (
+        <Panel>
           <EmptyState
             title="Nothing in progress"
             body="Enroll in a course to pick up a lesson here."
             actionLabel="Browse courses"
             to="/courses"
           />
+        </Panel>
+      )}
+
+      <section className="stats">
+        <Panel className="stat">
+          <div className="label">Lessons completed</div>
+          <div className="fig">{stats.completed_lessons}</div>
+        </Panel>
+        <Panel className="stat">
+          <div className="label">Courses in progress</div>
+          <div className="fig">{stats.enrolled_courses - stats.completed_courses}</div>
+        </Panel>
+        <Panel className="stat">
+          <div className="label">Courses finished</div>
+          <div className="fig">{stats.completed_courses}</div>
+        </Panel>
+      </section>
+
+      <section className="split">
+        <Panel>
+          <div className="p-head">
+            <h2 className="h3">Lessons this week</h2>
+          </div>
+          <p className="dim small">Daily lesson counts are not tracked yet.</p>
+        </Panel>
+        <Panel>
+          <div className="p-head">
+            <h2 className="h3">In progress</h2>
+            <Link className="link small" to="/dashboard/courses">
+              All
+            </Link>
+          </div>
+          {data.enrolled.length === 0 ? (
+            <p className="dim small">No enrollments yet.</p>
+          ) : (
+            <ul className="prog-list">
+              {data.enrolled.slice(0, 5).map((item) => {
+                const course = item.course
+                const done = progressLessons(course.progress_percent, course.module_count)
+                return (
+                  <li key={item.id}>
+                    <div className="prog-row">
+                      <Link to={`/courses/${course.slug}`}>{stripEmoji(course.courses_name)}</Link>
+                      <span className="meta">
+                        {done}/{course.module_count}
+                      </span>
+                    </div>
+                    <div className="thin">
+                      <i style={{ width: `${course.progress_percent}%` }} />
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </Panel>
+      </section>
+
+      <section style={{ marginTop: 48 }}>
+        <div className="section-head">
+          <div>
+            <h2 className="h2">Next for you</h2>
+            <p>Based on courses you have open</p>
+          </div>
+          <Link className="link small" to="/courses">
+            See catalog
+          </Link>
+        </div>
+        {recommended.length === 0 ? (
+          <p className="dim">No further courses to suggest.</p>
+        ) : (
+          <div className="grid">
+            {recommended.slice(0, 4).map((course) => (
+              <CourseCard key={course.id} course={course} />
+            ))}
+          </div>
         )}
-      </div>
+      </section>
+    </>
+  )
+}
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label="Enrolled" value={stats.enrolled_courses} />
-        <Stat label="Lessons complete" value={stats.completed_lessons} />
-        <Stat label="Courses finished" value={stats.completed_courses} />
-        <Stat label="Average progress" value={`${stats.avg_progress}%`} />
-      </div>
+function ContinuePanel({ course }: { course: Course }) {
+  const done = progressLessons(course.progress_percent, course.module_count)
+  const index = lessonIndex(course.progress_percent, course.module_count)
+  const module = course.course_modules?.[index]
+  const lesson = module ? cleanLessonTitle(module.module_name) : null
 
-      <Card className="mt-8">
-        <h2 className="text-xl">Lesson days</h2>
-        <p className="mt-2 text-sm text-ink-2">
-          Completed lesson days are not tracked yet, so there is no streak calendar.
-        </p>
-      </Card>
-
-      <h2 className="mt-10 text-2xl">Enrolled</h2>
-      {data.enrolled.length === 0 ? (
-        <p className="mt-3 text-ink-2">No enrollments yet.</p>
-      ) : (
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          {data.enrolled.map((item) => (
-            <CourseCard key={item.id} course={item.course} />
-          ))}
+  return (
+    <Panel className="continue">
+      <Cover
+        title={stripEmoji(course.courses_name)}
+        categoryLabel={course.category?.name}
+        lessons={course.module_count}
+        categorySlug={course.creator?.is_owner ? 'study-with-ayaz' : course.category?.slug}
+      />
+      <div className="cont-body">
+        <div className="meta">Continue · {stripEmoji(course.courses_name)}</div>
+        <h2 className="h2">
+          {lesson?.counter ? `${lesson.counter} · ` : ''}
+          {lesson?.title ?? stripEmoji(course.courses_name)}
+        </h2>
+        <div className="cont-count">
+          <Counter done={done} total={course.module_count} />
         </div>
-      )}
-
-      <h2 className="mt-10 text-2xl">Suggested next</h2>
-      {recommended.length === 0 ? (
-        <p className="mt-3 text-ink-2">No further courses to suggest.</p>
-      ) : (
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          {recommended.slice(0, 4).map((course) => (
-            <CourseCard key={course.id} course={course} />
-          ))}
+        <Ticks done={done} total={course.module_count} />
+        <div>
+          <Link className="btn btn-primary" to={`/learn/${course.slug}/${module?.id ?? 0}`}>
+            <Play className="i-16" size={16} strokeWidth={1.5} aria-hidden />
+            Resume
+          </Link>
         </div>
-      )}
-    </div>
+      </div>
+    </Panel>
   )
 }

@@ -82,10 +82,18 @@ class MfaConfirmAPIView(APIView):
             codes = confirm_setup(request.user, serializer.validated_data['code'])
         except MfaError as exc:
             return _mfa_error(exc)
-        # The token used to reach this point was issued before 2FA existed.
+        # Rotate API tokens after MFA is first enabled.
         Token.objects.filter(user=request.user).delete()
-        token = Token.objects.create(user=request.user)
-        return Response({'recovery_codes': codes, 'token': token.key})
+        Token.objects.create(user=request.user)
+        payload = login_payload(request.user)
+        return Response(
+            {
+                'recovery_codes': codes,
+                'token': payload['token'],
+                'access': payload['access'],
+                'refresh': payload['refresh'],
+            }
+        )
 
 
 class MfaDisableAPIView(APIView):

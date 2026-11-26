@@ -144,6 +144,8 @@ export type MfaChallenge = {
 
 export type AuthSuccess = {
   token: string
+  access?: string
+  refresh?: string
   user: User
   message?: string
 }

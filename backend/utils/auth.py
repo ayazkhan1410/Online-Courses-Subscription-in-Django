@@ -11,6 +11,7 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token as google_id_token
 from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.models import CustomUser
 from utils.email import send_password_reset_email
@@ -48,8 +49,11 @@ def login_payload(user: CustomUser) -> dict:
     from accounts.serializers import UserSerializer
 
     token, _ = Token.objects.get_or_create(user=user)
+    refresh = RefreshToken.for_user(user)
     return {
         'token': token.key,
+        'access': str(refresh.access_token),
+        'refresh': str(refresh),
         'user': UserSerializer(user).data,
     }
 

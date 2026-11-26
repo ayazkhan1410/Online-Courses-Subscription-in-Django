@@ -52,7 +52,43 @@ class AuthAPITests(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('token', response.data)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
         self.assertEqual(response.data['user']['email'], 'learner@example.com')
+
+    def test_jwt_bearer_access_and_refresh(self):
+        login = self.client.post(
+            '/api/auth/login/',
+            {
+                'email': 'learner@example.com',
+                'password': 'StrongPass123',
+                **_TURNSTILE,
+            },
+            format='json',
+        )
+        self.assertEqual(login.status_code, status.HTTP_200_OK)
+        access = login.data['access']
+        refresh = login.data['refresh']
+
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
+        me = self.client.get('/api/auth/me/')
+        self.assertEqual(me.status_code, status.HTTP_200_OK)
+        self.assertEqual(me.data['email'], 'learner@example.com')
+
+        self.client.credentials()
+        refreshed = self.client.post(
+            '/api/auth/token/refresh/',
+            {'refresh': refresh},
+            format='json',
+        )
+        self.assertEqual(refreshed.status_code, status.HTTP_200_OK)
+        self.assertIn('access', refreshed.data)
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f'Bearer {refreshed.data["access"]}'
+        )
+        me_again = self.client.get('/api/auth/me/')
+        self.assertEqual(me_again.status_code, status.HTTP_200_OK)
 
     def test_login_invalid_credentials_single_error(self):
         response = self.client.post(

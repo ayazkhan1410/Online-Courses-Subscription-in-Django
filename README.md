@@ -83,6 +83,8 @@ Compose sets `POSTGRES_HOST=db` for the backend container. Host clients use `loc
 ## Local backend (virtualenv)
 
 Virtualenv name: **`ocs_backend_venv`** (Online Courses Subscription backend).
+Cursor / VS Code should use `backend/ocs_backend_venv/bin/python` (see `.vscode/settings.json`
+and `backend/pyrightconfig.json`) so Django imports resolve in the editor.
 
 ```bash
 cd backend

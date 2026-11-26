@@ -1,99 +1,140 @@
 import {
   BookOpen,
   Bookmark,
-  Award,
-  Bell,
-  Gauge,
-  LineChart,
+  Grid3x3,
+  Home,
+  LayoutList,
   LogOut,
   Menu,
-  Settings,
   Shield,
   UserRound,
 } from 'lucide-react'
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Logo } from '@/components/Logo'
 import { Sheet } from '@/components/Sheet'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { useAuth } from '@/hooks/useAuth'
-import { cn } from '@/lib/cn'
 
-const links = [
-  { to: '/dashboard', label: 'Overview', icon: Gauge, end: true },
-  { to: '/dashboard/courses', label: 'Courses', icon: BookOpen, end: false },
-  { to: '/dashboard/progress', label: 'Progress', icon: LineChart, end: false },
-  { to: '/dashboard/saved', label: 'Saved', icon: Bookmark, end: false },
-  { to: '/dashboard/certificates', label: 'Certificates', icon: Award, end: false },
-  { to: '/dashboard/notifications', label: 'Notifications', icon: Bell, end: false },
-  { to: '/dashboard/profile', label: 'Profile', icon: UserRound, end: false },
-  { to: '/dashboard/settings', label: 'Settings', icon: Settings, end: false },
-  { to: '/dashboard/security', label: 'Security', icon: Shield, end: false },
-]
+function userInitials(name: string, email: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length > 1) return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase()
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return email.slice(0, 2).toUpperCase()
+}
 
-function SideLinks({ onNavigate }: { onNavigate?: () => void }) {
-  const { logout } = useAuth()
-  const navigate = useNavigate()
+function SideItem({
+  to,
+  end,
+  icon: Icon,
+  children,
+  meta,
+  onNavigate,
+}: {
+  to: string
+  end?: boolean
+  icon: typeof Home
+  children: React.ReactNode
+  meta?: React.ReactNode
+  onNavigate?: () => void
+}) {
   return (
-    <nav aria-label="Dashboard" className="flex flex-col gap-1">
-      {links.map((link) => {
-        const Icon = link.icon
-        return (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            end={link.end}
-            onClick={onNavigate}
-            className={({ isActive }) =>
-              cn(
-                'flex h-9 items-center gap-2 rounded-control px-3 text-sm',
-                isActive ? 'bg-raised text-ink' : 'text-ink-2 hover:bg-raised',
-              )
-            }
-          >
-            <Icon size={18} strokeWidth={1.5} aria-hidden="true" />
-            {link.label}
-          </NavLink>
-        )
-      })}
-      <button
-        type="button"
-        className="mt-4 flex h-9 items-center gap-2 rounded-control px-3 text-left text-sm text-ink-2 hover:bg-raised"
-        onClick={() => {
-          void logout().then(() => navigate('/'))
-        }}
-      >
-        <LogOut size={18} strokeWidth={1.5} aria-hidden="true" />
-        Log out
-      </button>
-    </nav>
+    <NavLink to={to} end={end} className="item" onClick={onNavigate}>
+      <Icon size={18} strokeWidth={1.5} aria-hidden />
+      {children}
+      {meta ? <span className="meta">{meta}</span> : null}
+    </NavLink>
+  )
+}
+
+function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const name = user?.full_name || user?.username || 'Student'
+  const email = user?.email ?? ''
+
+  return (
+    <aside className="side">
+      <Logo />
+      <nav className="side-group" aria-label="Learning">
+        <SideItem to="/dashboard" end icon={Home} onNavigate={onNavigate}>
+          Home
+        </SideItem>
+        <SideItem to="/dashboard/courses" icon={BookOpen} onNavigate={onNavigate}>
+          My courses
+        </SideItem>
+        <SideItem to="/dashboard/saved" icon={Bookmark} onNavigate={onNavigate}>
+          Saved
+        </SideItem>
+      </nav>
+      <nav className="side-group" aria-label="Browse">
+        <div className="side-label">Browse</div>
+        <SideItem to="/courses" icon={Grid3x3} onNavigate={onNavigate}>
+          All courses
+        </SideItem>
+        <SideItem to="/categories" icon={LayoutList} onNavigate={onNavigate}>
+          Categories
+        </SideItem>
+      </nav>
+      <nav className="side-group" aria-label="Account">
+        <div className="side-label">Account</div>
+        <SideItem to="/dashboard/profile" icon={UserRound} onNavigate={onNavigate}>
+          Profile
+        </SideItem>
+        <SideItem to="/dashboard/security" icon={Shield} onNavigate={onNavigate}>
+          Security
+        </SideItem>
+      </nav>
+      <div className="side-foot">
+        <span className="avatar avatar-lg">{userInitials(name, email)}</span>
+        <div className="who">
+          <div>{name}</div>
+          <div>{email}</div>
+        </div>
+        <div style={{ marginLeft: 'auto' }}>
+          <ThemeToggle />
+        </div>
+        <button
+          type="button"
+          className="btn btn-ghost btn-icon"
+          aria-label="Log out"
+          onClick={() => {
+            void logout().then(() => navigate('/'))
+          }}
+        >
+          <LogOut size={18} strokeWidth={1.5} />
+        </button>
+      </div>
+    </aside>
   )
 }
 
 export function DashboardLayout() {
   const [open, setOpen] = useState(false)
+
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[1440px]">
-      <aside className="hidden w-64 shrink-0 border-r border-line px-3 py-6 lg:block">
-        <p className="mb-4 px-3 text-sm font-medium">Study with Ayaz</p>
-        <SideLinks />
-      </aside>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-3 border-b border-line px-4 py-3 lg:hidden">
+    <div className="app">
+      <Sidebar />
+      <div>
+        <div className="mob-top">
+          <Link className="logo" to="/">
+            Study with Ayaz
+          </Link>
           <button
             type="button"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-control"
-            aria-label="Open dashboard menu"
+            className="btn btn-ghost btn-icon"
+            aria-label="Open menu"
             onClick={() => setOpen(true)}
           >
             <Menu size={18} strokeWidth={1.5} />
           </button>
-          <p className="text-sm font-medium">Dashboard</p>
         </div>
-        <div className="px-4 py-6 md:px-6">
+        <main className="content">
           <Outlet />
-        </div>
+        </main>
       </div>
       <Sheet open={open} title="Dashboard" onClose={() => setOpen(false)}>
-        <SideLinks onNavigate={() => setOpen(false)} />
+        <Sidebar onNavigate={() => setOpen(false)} />
       </Sheet>
     </div>
   )

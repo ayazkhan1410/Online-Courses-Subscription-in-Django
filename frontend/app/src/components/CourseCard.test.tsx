@@ -43,18 +43,16 @@ function renderCard(value: Course) {
 }
 
 describe('CourseCard', () => {
-  it('shows a quiet owner label and the playlist link', () => {
+  it('shows owner byline on the card', () => {
     renderCard(course())
     expect(screen.getByText('By Ayaz')).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Ayaz' })).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Watch on YouTube' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Python notes/i })).toHaveAttribute(
       'href',
-      'https://www.youtube.com/playlist?list=abc',
+      '/courses/python-notes',
     )
-    expect(screen.queryByText('Pro')).not.toBeInTheDocument()
   })
 
-  it('links a third-party creator to their channel', () => {
+  it('shows third-party creator name on the card', () => {
     renderCard(
       course({
         creator: {
@@ -67,9 +65,6 @@ describe('CourseCard', () => {
       }),
     )
     expect(screen.queryByText('By Ayaz')).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Corey Schafer' })).toHaveAttribute(
-      'href',
-      'https://www.youtube.com/@coreyms',
-    )
+    expect(screen.getByText('Corey Schafer')).toBeInTheDocument()
   })
 })

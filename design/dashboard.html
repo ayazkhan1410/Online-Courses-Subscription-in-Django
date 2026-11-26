@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard · Study with Ayaz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="app.js"></script>
+<script src="data.js"></script>
+<style>
+  .app { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
+  .side { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 24px; padding: 16px 12px; border-right: 1px solid var(--line); background: var(--surface); }
+  .side .logo { padding: 8px 10px; }
+  .side-group { display: flex; flex-direction: column; gap: 2px; }
+  .side-label { font-size: 12px; color: var(--text-3); padding: 0 10px 8px; }
+  .side a.item { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border-radius: var(--r-sm); font-size: 14px; color: var(--text-2); }
+  .side a.item:hover { background: var(--sunken); color: var(--text); }
+  .side a.item[aria-current] { background: var(--raised); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
+  .side a.item .meta { margin-left: auto; }
+  .side-foot { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 10px; border-top: 1px solid var(--line); }
+  .side-foot .who { font-size: 13px; line-height: 1.3; min-width: 0; }
+  .side-foot .who div:last-child { color: var(--text-3); overflow: hidden; text-overflow: ellipsis; }
+
+  .content { padding: 32px 40px 64px; max-width: 1320px; width: 100%; }
+  .top { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 28px; }
+  .top .meta { margin-bottom: 6px; }
+  .mob-top { display: none; }
+
+  .continue { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 32px; padding: 24px; align-items: center; }
+  .continue .cover-title { font-size: 26px; }
+  .cont-body { display: flex; flex-direction: column; gap: 16px; }
+  .cont-count { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .cont-count .counter b { font-size: 40px; line-height: 1; letter-spacing: -0.02em; }
+  .cont-count .counter span { font-size: 18px; }
+  .continue .ticks { height: 18px; gap: 3px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 16px 0; }
+  .stat { padding: 20px; display: flex; flex-direction: column; gap: 6px; }
+  .stat .label { font-size: 13px; color: var(--text-2); font-weight: 400; }
+  .stat .fig { font: 500 30px/1.1 var(--font-sans); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .stat .chg { font-size: 12px; color: var(--text-3); }
+  .stat .chg b { color: var(--good); font-weight: 500; }
+
+  .split { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; }
+  .split .panel { padding: 20px 24px; }
+  .p-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 20px; }
+  .chart { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 8px; height: 220px; }
+  .chart-y { display: flex; flex-direction: column; justify-content: space-between; font: 400 11px/1 var(--font-mono); color: var(--text-3); text-align: right; padding-bottom: 22px; }
+  .chart-plot { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); gap: 16px; align-items: end; padding-bottom: 22px;
+                background: repeating-linear-gradient(to top, var(--line) 0 1px, transparent 1px calc((100% - 22px) / 4)); background-size: 100% calc(100% - 22px); background-repeat: no-repeat; }
+  .bar { position: relative; justify-self: center; width: min(100%, 48px); background: var(--text-3); opacity: .55; border-radius: 4px 4px 0 0; }
+  .bar.today { background: var(--accent); opacity: 1; }
+  .bar span { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font: 400 11px/1 var(--font-mono); color: var(--text-3); }
+  .bar.today span { color: var(--text); }
+  .prog-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .prog-list li { padding: 14px 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+  .prog-list li:first-child { border-top: 0; padding-top: 0; }
+  .prog-row { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+  .prog-row a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .thin { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  .thin i { display: block; height: 100%; background: var(--text-2); }
+
+  @media (max-width: 1100px) { .continue { grid-template-columns: 200px minmax(0, 1fr); } .split { grid-template-columns: minmax(0, 1fr); } .chart-plot { gap: 8px; } }
+  @media (max-width: 860px) {
+    .app { grid-template-columns: minmax(0, 1fr); }
+    .side { display: none; }
+    .mob-top { display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 16px; border-bottom: 1px solid var(--line); }
+    .content { padding: 24px 16px 48px; }
+    .continue { grid-template-columns: minmax(0, 1fr); padding: 16px; gap: 16px; }
+    .continue .cover { aspect-ratio: 16 / 7; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .stats .stat:last-child { grid-column: span 2; }
+    .cont-count .counter b { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <a class="logo" href="index.html"><svg class="logo-mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="2.5" width="17" height="19" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 2.5v19" stroke="currentColor" stroke-width="1.5"/><path d="M11 8h6M11 12h6" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/></svg>Study with Ayaz</a>
+    <nav class="side-group">
+      <a class="item" href="dashboard.html" aria-current="page"><span data-icon="home"></span>Home</a>
+      <a class="item" href="#"><span data-icon="book"></span>My courses<span class="meta">3</span></a>
+      <a class="item" href="#"><span data-icon="bookmark"></span>Saved<span class="meta">5</span></a>
+      <a class="item" href="#"><span data-icon="note"></span>Notes</a>
+    </nav>
+    <nav class="side-group">
+      <div class="side-label">Browse</div>
+      <a class="item" href="courses.html"><span data-icon="grid"></span>All courses</a>
+      <a class="item" href="courses.html"><span data-icon="list"></span>Categories</a>
+    </nav>
+    <nav class="side-group">
+      <div class="side-label">Account</div>
+      <a class="item" href="#"><span data-icon="user"></span>Profile</a>
+      <a class="item" href="#"><span data-icon="shield"></span>Security<span class="meta">2FA on</span></a>
+    </nav>
+    <div class="side-foot">
+      <span class="avatar avatar-lg">HR</span>
+      <div class="who"><div>Hamza Rauf</div><div>hamza.rauf@gmail.com</div></div>
+      <button class="btn btn-ghost btn-icon theme-toggle" style="margin-left:auto" aria-label="Switch theme"><span data-icon="sun" class="i-sun"></span><span data-icon="moon" class="i-moon"></span></button>
+    </div>
+  </aside>
+
+  <div>
+    <div class="mob-top">
+      <a class="logo" href="index.html">Study with Ayaz</a>
+      <button class="btn btn-ghost btn-icon" aria-label="Open menu"><span data-icon="menu"></span></button>
+    </div>
+    <main class="content">
+      <div class="top">
+        <div><div class="meta">Thursday, 26 November</div><h1 class="h1">Your learning</h1></div>
+        <a class="btn btn-sm" href="courses.html">Find a course</a>
+      </div>
+
+      <section class="panel continue">
+        <div class="cover ink-ayaz"><div class="cover-top"><span>Python</span><span>50 lessons</span></div><div class="cover-title">Python in 50 days</div></div>
+        <div class="cont-body">
+          <div class="meta">Continue · 50 Days of Python Programming challenge</div>
+          <h2 class="h2">Day 08 · How to create a list in Python</h2>
+          <div class="cont-count"><span class="counter"><b>07</b><span>/ 50</span></span><span class="meta">last watched yesterday</span></div>
+          <div class="ticks" data-ticks="7/50"></div>
+          <div><a class="btn btn-primary" href="learn.html"><span data-icon="play" class="i-16"></span>Resume day 08</a></div>
+        </div>
+      </section>
+
+      <section class="stats">
+        <div class="panel stat"><div class="label">Lessons completed</div><div class="fig">23</div><div class="chg"><b>+9</b> vs last week</div></div>
+        <div class="panel stat"><div class="label">Courses in progress</div><div class="fig">3</div><div class="chg">1 finished in October</div></div>
+        <div class="panel stat"><div class="label">Days in a row</div><div class="fig">6</div><div class="chg">Best run: 11 days</div></div>
+      </section>
+
+      <section class="split">
+        <div class="panel">
+          <div class="p-head"><h2 class="h3">Lessons this week</h2><span class="meta">14 total</span></div>
+          <div class="chart" role="img" aria-label="Lessons per day: Fri 1, Sat 3, Sun 4, Mon 0, Tue 2, Wed 2, Thu 2">
+            <div class="chart-y"><span>4</span><span>3</span><span>2</span><span>1</span><span>0</span></div>
+            <div class="chart-plot">
+              <div class="bar" style="height:25%"><span>Fri</span></div>
+              <div class="bar" style="height:75%"><span>Sat</span></div>
+              <div class="bar" style="height:100%"><span>Sun</span></div>
+              <div class="bar" style="height:2px"><span>Mon</span></div>
+              <div class="bar" style="height:50%"><span>Tue</span></div>
+              <div class="bar" style="height:50%"><span>Wed</span></div>
+              <div class="bar today" style="height:50%"><span>Thu</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="p-head"><h2 class="h3">In progress</h2><a class="link small" href="#">All</a></div>
+          <ul class="prog-list">
+            <li><div class="prog-row"><a href="course.html">50 Days of Python Programming challenge</a><span class="meta">7/50</span></div><div class="thin"><i style="width:14%"></i></div></li>
+            <li><div class="prog-row"><a href="course.html">Django Tutorials · Corey Schafer</a><span class="meta">11/17</span></div><div class="thin"><i style="width:65%"></i></div></li>
+            <li><div class="prog-row"><a href="course.html">Docker Tutorial for Beginners · TechWorld with Nana</a><span class="meta">5/10</span></div><div class="thin"><i style="width:50%"></i></div></li>
+          </ul>
+        </div>
+      </section>
+
+      <section style="margin-top:48px">
+        <div class="section-head"><div><h2 class="h2">Next for you</h2><p>Based on Django and Docker, the courses you have open</p></div><a class="link small" href="courses.html">See category</a></div>
+        <div class="grid" data-rec></div>
+      </section>
+    </main>
+  </div>
+</div>
+<script>
+  document.addEventListener("DOMContentLoaded", () => fill("[data-rec]", [FEATURED[8], FEATURED[2], FEATURED[7], FEATURED[4]]));
+</script>
+</body>
+</html>

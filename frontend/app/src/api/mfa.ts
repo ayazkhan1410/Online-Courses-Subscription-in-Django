@@ -34,6 +34,8 @@ export function mfaSetup(): Promise<MfaSetup> {
 export function mfaConfirm(code: string): Promise<{
   recovery_codes: string[]
   token: string
+  access?: string
+  refresh?: string
 }> {
   return api('/auth/mfa/confirm/', { method: 'POST', body: { code } })
 }

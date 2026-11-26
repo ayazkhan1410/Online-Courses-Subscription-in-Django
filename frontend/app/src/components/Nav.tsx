@@ -1,11 +1,10 @@
 import { Menu } from 'lucide-react'
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { buttonClass } from '@/components/Button'
+import { Logo } from '@/components/Logo'
 import { Sheet } from '@/components/Sheet'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { useAuth } from '@/hooks/useAuth'
-import { cn } from '@/lib/cn'
 
 const links = [
   { to: '/courses', label: 'Courses' },
@@ -15,70 +14,67 @@ const links = [
   { to: '/about', label: 'About' },
 ]
 
-function Item({ to, label, onClick }: { to: string; label: string; onClick?: () => void }) {
-  return (
-    <NavLink
-      to={to}
-      onClick={onClick}
-      className={({ isActive }) =>
-        cn(
-          'inline-flex h-9 items-center rounded-control px-3 text-sm',
-          isActive ? 'bg-raised text-ink' : 'text-ink-2 hover:bg-raised hover:text-ink',
-        )
-      }
-    >
-      {label}
-    </NavLink>
-  )
-}
-
 export function Nav() {
   const { token } = useAuth()
   const [open, setOpen] = useState(false)
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-bg">
-      <div className="mx-auto flex h-16 w-full max-w-[1200px] items-center gap-4 px-4 md:px-6">
-        <Link to="/" className="text-base font-medium">
-          Study with Ayaz
-        </Link>
-        <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
+    <header className="nav">
+      <div className="wrap nav-in">
+        <Logo />
+        <nav className="nav-links" aria-label="Main">
           {links.map((link) => (
-            <Item key={link.to} {...link} />
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className={({ isActive }) => (isActive ? 'is-active' : undefined)}
+              aria-current={undefined}
+            >
+              {({ isActive }) => (
+                <span aria-current={isActive ? 'page' : undefined}>{link.label}</span>
+              )}
+            </NavLink>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="nav-end">
           <ThemeToggle />
           {token ? (
-            <Link to="/dashboard" className={buttonClass('primary', 'sm')}>
+            <Link to="/dashboard" className="btn btn-primary btn-sm">
               Dashboard
             </Link>
           ) : (
             <>
-              <Link to="/login" className="hidden h-9 items-center px-3 text-sm text-ink-2 sm:inline-flex">
+              <Link to="/login" className="nav-login">
                 Log in
               </Link>
-              <Link to="/courses" className={buttonClass('primary', 'sm')}>
+              <Link to="/courses" className="btn btn-primary btn-sm">
                 Start learning
               </Link>
             </>
           )}
           <button
             type="button"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-control lg:hidden"
+            className="btn btn-ghost btn-icon nav-menu"
             aria-label="Open menu"
             onClick={() => setOpen(true)}
           >
-            <Menu size={18} strokeWidth={1.5} />
+            <Menu className="i" size={18} strokeWidth={1.5} />
           </button>
         </div>
       </div>
       <Sheet open={open} title="Menu" onClose={() => setOpen(false)}>
-        <nav aria-label="Mobile" className="flex flex-col gap-1">
+        <nav aria-label="Mobile" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {links.map((link) => (
-            <Item key={link.to} {...link} onClick={() => setOpen(false)} />
+            <Link
+              key={link.to}
+              to={link.to}
+              className="btn btn-ghost"
+              onClick={() => setOpen(false)}
+            >
+              {link.label}
+            </Link>
           ))}
           {token ? null : (
-            <Link to="/login" className="inline-flex h-9 items-center px-3 text-sm" onClick={() => setOpen(false)}>
+            <Link to="/login" className="btn btn-ghost" onClick={() => setOpen(false)}>
               Log in
             </Link>
           )}

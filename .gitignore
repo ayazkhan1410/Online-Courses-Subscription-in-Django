@@ -23,8 +23,10 @@ dist/
 
 # IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
 *.swp
+study-with-ayaz.zip
 
 # Docker
 *.pid

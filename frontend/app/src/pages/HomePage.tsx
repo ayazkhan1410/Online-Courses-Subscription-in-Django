@@ -3,19 +3,17 @@ import { Link } from 'react-router-dom'
 import { getCategory, listCategories } from '@/api/categories'
 import { ApiError, formatApiError } from '@/api/client'
 import { getCourses } from '@/api/courses'
-import { buttonClass } from '@/components/Button'
 import { CategoryGlyph } from '@/components/CategoryGlyph'
 import { CourseCard } from '@/components/CourseCard'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { Skeleton } from '@/components/Skeleton'
-import { HeroCanvas } from '@/features/hero/HeroCanvas'
+import { DeskScene } from '@/features/hero/DeskScene'
 import { usePageTitle } from '@/hooks/usePageTitle'
-
 const AYAZ = 'study-with-ayaz'
 
 export default function HomePage() {
-  usePageTitle('Courses')
+  usePageTitle('Study with Ayaz')
   const ayaz = useQuery({
     queryKey: ['category', AYAZ],
     queryFn: () => getCategory(AYAZ),
@@ -31,42 +29,84 @@ export default function HomePage() {
 
   const ayazMissing = ayaz.error instanceof ApiError && ayaz.error.status === 404
   const ayazCourses = ayaz.data?.results ?? []
+  const ayazCount =
+    ayaz.data?.category.published_course_count ?? ayaz.data?.count ?? ayazCourses.length
+  const totalCourses = courses.data?.count ?? 0
+  const categoryCount = categories.data?.length ?? 0
+  const ownerCourses = categories.data?.find((c) => c.slug === AYAZ)?.published_course_count ?? ayazCount
+
   const featured = (courses.data?.results ?? [])
-    .filter((course) => course.category?.slug !== AYAZ)
+    .filter((course) => course.category?.slug !== AYAZ && !course.creator?.is_owner)
     .slice(0, 4)
-  const featuredCourses = featured.length > 0 ? featured : (courses.data?.results ?? []).slice(0, 4)
+  const featuredCourses =
+    featured.length > 0 ? featured : (courses.data?.results ?? []).slice(0, 4)
+
+  const heroCourse =
+    ayazCourses[0]?.slug
+      ? `/courses/${ayazCourses[0].slug}`
+      : '/categories/python'
 
   return (
-    <>
-      <section className="mx-auto grid w-full max-w-[1200px] items-center gap-10 px-4 py-16 md:grid-cols-2 md:px-6 md:py-24">
-        <div>
-          <h1>Learn at the desk, then use it</h1>
-          <p className="mt-4 max-w-md text-lg text-ink-2">
-            Programming and freelance practice, one lesson at a time.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/courses" className={buttonClass('primary')}>
-              Browse courses
-            </Link>
-            <Link to="/contact" className={buttonClass('secondary')}>
-              Hire me
-            </Link>
-          </div>
+  <>
+    <section className="wrap hero">
+      <div className="hero-copy">
+        <h1 className="h-display">
+          Free coding courses from YouTube, in an order you can finish
+        </h1>
+        <p className="lead">
+          I pick the clearest playlists on Python, Django, React and more, sort them by topic,
+          and keep track of every lesson you watch. Nothing to pay.
+        </p>
+        <div className="hero-actions">
+          <Link className="btn btn-primary btn-lg" to="/courses">
+            Browse courses
+          </Link>
+          <Link className="btn btn-lg" to={heroCourse}>
+            Start the Python challenge
+          </Link>
         </div>
-        <HeroCanvas />
-      </section>
+        <div className="hero-facts meta">
+          {totalCourses > 0 ? (
+            <span>
+              <b>{totalCourses}</b> courses
+            </span>
+          ) : null}
+          {categoryCount > 0 ? (
+            <span>
+              <b>{categoryCount}</b> categories
+            </span>
+          ) : null}
+          {ownerCourses > 0 ? (
+            <span>
+              <b>{ownerCourses}</b> taught by me
+            </span>
+          ) : null}
+        </div>
+      </div>
+      <DeskScene />
+    </section>
 
-      <section className="mx-auto w-full max-w-[1200px] px-4 py-16 md:px-6 md:py-24">
-        <h2>{ayaz.data?.category.name ?? 'Study with Ayaz'}</h2>
-        {ayaz.data?.category.description ? (
-          <p className="mt-3 max-w-2xl text-ink-2">{ayaz.data.category.description}</p>
-        ) : null}
-        <div className="mt-8">
+    <section className="section">
+      <div className="wrap">
+        <div className="section-head">
+          <div>
+            <h2 className="h2">My courses</h2>
+            <p>
+              Recorded in Urdu and Hindi, with notes. Python, Java and tools for students.
+            </p>
+          </div>
+          {ayazCount > 0 ? (
+            <Link className="link small" to={`/categories/${AYAZ}`}>
+              All {ayazCount}
+            </Link>
+          ) : null}
+        </div>
+        <div className="row-scroll">
           {ayaz.isLoading ? (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <>
               <Skeleton className="h-64" />
               <Skeleton className="h-64" />
-            </div>
+            </>
           ) : null}
           {ayaz.isError && !ayazMissing ? (
             <ErrorState message={formatApiError(ayaz.error)} onRetry={() => void ayaz.refetch()} />
@@ -79,104 +119,126 @@ export default function HomePage() {
               to="/courses"
             />
           ) : null}
-          {ayazCourses.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {ayazCourses.map((course) => (
-                <CourseCard key={course.id} course={course} />
-              ))}
-            </div>
-          ) : null}
+          {ayazCourses.map((course) => (
+            <CourseCard key={course.id} course={course} />
+          ))}
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section className="mx-auto w-full max-w-[1200px] px-4 py-16 md:px-6 md:py-24">
-        <h2>Categories</h2>
-        <div className="mt-8">
-          {categories.isLoading ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Skeleton className="h-28" />
-              <Skeleton className="h-28" />
-              <Skeleton className="h-28" />
-              <Skeleton className="h-28" />
-            </div>
-          ) : null}
-          {categories.isError ? (
-            <ErrorState
-              message={formatApiError(categories.error)}
-              onRetry={() => void categories.refetch()}
-            />
-          ) : null}
-          {categories.data && categories.data.length === 0 ? (
-            <EmptyState
-              title="No categories yet"
-              body="The catalog has no categories to browse."
-              actionLabel="Contact"
-              to="/contact"
-            />
-          ) : null}
-          {categories.data && categories.data.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {categories.data.map((item) => (
-                <Link
-                  key={item.slug}
-                  to={`/categories/${item.slug}`}
-                  className="rounded-card border border-line bg-surface p-5 transition-colors duration-200 ease-swa hover:border-line-strong"
-                >
-                  <CategoryGlyph icon={item.icon} slug={item.slug} />
-                  <h3 className="mt-4 text-xl">{item.name}</h3>
-                  <p className="mt-2 font-mono text-xs text-ink-3">
-                    {item.published_course_count} courses
-                  </p>
-                </Link>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-[1200px] px-4 py-16 md:px-6 md:py-24">
-        <h2>Featured</h2>
-        <div className="mt-8">
-          {courses.isLoading ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Skeleton className="h-64" />
-              <Skeleton className="h-64" />
-            </div>
-          ) : null}
-          {courses.isError ? (
-            <ErrorState message={formatApiError(courses.error)} onRetry={() => void courses.refetch()} />
-          ) : null}
-          {courses.data && featuredCourses.length === 0 ? (
-            <EmptyState
-              title="No courses yet"
-              body="The catalog is empty right now."
-              actionLabel="Contact"
-              to="/contact"
-            />
-          ) : null}
-          {featuredCourses.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {featuredCourses.map((course) => (
-                <CourseCard key={course.id} course={course} />
-              ))}
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      <section className="border-t border-line">
-        <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 px-4 py-16 md:flex-row md:items-center md:justify-between md:px-6 md:py-24">
+    <section className="section" id="categories">
+      <div className="wrap">
+        <div className="section-head">
           <div>
-            <h2>Freelance work</h2>
-            <p className="mt-3 max-w-xl text-ink-2">
-              Project help sits beside the course library.
-            </p>
+            <h2 className="h2">Categories</h2>
+            <p>Each one holds playlists I&apos;ve watched and would recommend.</p>
           </div>
-          <Link to="/services" className={buttonClass('primary')}>
-            See services
+        </div>
+        {categories.isLoading ? (
+          <div className="cats">
+            <Skeleton className="h-36" />
+            <Skeleton className="h-36" />
+          </div>
+        ) : null}
+        {categories.isError ? (
+          <ErrorState
+            message={formatApiError(categories.error)}
+            onRetry={() => void categories.refetch()}
+          />
+        ) : null}
+        {categories.data && categories.data.length > 0 ? (
+          <div className="cats">
+            {categories.data.map((item) => (
+              <Link
+                key={item.slug}
+                to={`/categories/${item.slug}`}
+                className={`cat${item.slug === AYAZ ? ' owner' : ''}`}
+              >
+                <div className="cat-top">
+                  <CategoryGlyph icon={item.icon} slug={item.slug} />
+                  <span className="cat-count meta">{item.published_course_count}</span>
+                </div>
+                <h3 className="h3">{item.name}</h3>
+                {item.description ? <p>{item.description}</p> : null}
+              </Link>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </section>
+
+    <section className="section">
+      <div className="wrap">
+        <div className="section-head">
+          <div>
+            <h2 className="h2">From other teachers</h2>
+            <p>Picked from creators who explain well. Every video plays from their channel.</p>
+          </div>
+          <Link className="link small" to="/courses">
+            All courses
           </Link>
         </div>
-      </section>
-    </>
+        {courses.isLoading ? (
+          <div className="grid">
+            <Skeleton className="h-64" />
+            <Skeleton className="h-64" />
+          </div>
+        ) : null}
+        {courses.isError ? (
+          <ErrorState message={formatApiError(courses.error)} onRetry={() => void courses.refetch()} />
+        ) : null}
+        {featuredCourses.length > 0 ? (
+          <div className="grid">
+            {featuredCourses.map((course) => (
+              <CourseCard key={course.id} course={course} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="No courses yet"
+            body="The catalog is empty right now."
+            actionLabel="Contact"
+            to="/contact"
+          />
+        )}
+      </div>
+    </section>
+
+    <section className="section">
+      <div className="wrap">
+        <div className="panel work">
+          <div>
+            <h2 className="h2">I also build software for clients</h2>
+            <p className="dim" style={{ margin: '12px 0 24px' }}>
+              Backend APIs, dashboards and full products with Django and React. The site
+              you&apos;re on is one of them.
+            </p>
+            <div className="hero-actions">
+              <Link className="btn btn-primary" to="/services">
+                See services
+              </Link>
+              <Link className="btn btn-ghost" to="/contact">
+                Contact me
+              </Link>
+            </div>
+          </div>
+          <ul>
+            <li>
+              <span>Django and DRF APIs</span>
+              <span className="meta">backend</span>
+            </li>
+            <li>
+              <span>React frontends and dashboards</span>
+              <span className="meta">frontend</span>
+            </li>
+            <li>
+              <span>Docker deploys and CI</span>
+              <span className="meta">devops</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </>
   )
 }

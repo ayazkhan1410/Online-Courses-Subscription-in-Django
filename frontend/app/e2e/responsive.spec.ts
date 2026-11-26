@@ -21,7 +21,8 @@ const pages = [
   '/forgot-password',
 ]
 
-const widths = [360, 768, 1280]
+const widths = [375, 768, 1440]
+const themes = ['light', 'dark'] as const
 
 test.beforeAll(() => {
   mkdirSync(join(process.cwd(), 'e2e', 'screenshots'), { recursive: true })
@@ -37,21 +38,34 @@ for (const width of widths) {
         await page.goto(path)
         await page.waitForLoadState('domcontentloaded')
         const box = await page.evaluate(() => ({
-          scrollWidth: document.scrollingElement?.scrollWidth ?? document.documentElement.scrollWidth,
+          scrollWidth:
+            document.scrollingElement?.scrollWidth ??
+            document.documentElement.scrollWidth,
           innerWidth: window.innerWidth,
         }))
         expect(box.scrollWidth).toBeLessThanOrEqual(box.innerWidth + 1)
-        await page.screenshot({
-          path: `e2e/screenshots/${name}-${width}.png`,
-          fullPage: true,
-        })
       })
+
+      for (const theme of themes) {
+        test(`${path} ${theme} screenshot`, async ({ page }) => {
+          await page.addInitScript((next) => {
+            localStorage.setItem('swa_theme', next)
+            document.documentElement.setAttribute('data-theme', next)
+          }, theme)
+          await page.goto(path)
+          await page.waitForLoadState('domcontentloaded')
+          await page.screenshot({
+            path: `e2e/screenshots/${name}-${width}-${theme}.png`,
+            fullPage: true,
+          })
+        })
+      }
     }
   })
 }
 
 test('mobile menu sheet opens and closes', async ({ page }) => {
-  await page.setViewportSize({ width: 360, height: 800 })
+  await page.setViewportSize({ width: 375, height: 800 })
   await page.goto('/')
   const toggle = page.getByRole('button', { name: /menu/i })
   await expect(toggle).toBeVisible()

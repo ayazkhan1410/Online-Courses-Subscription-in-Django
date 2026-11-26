@@ -84,15 +84,13 @@ describe('CourseDetailPage', () => {
     vi.mocked(getCourse).mockReset()
   })
 
-  it('shows owner attribution and enroll-only lock', async () => {
+  it('shows enroll action and playlist link for a locked lesson', async () => {
     renderPage(sample())
     expect(await screen.findByText('By Ayaz')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Watch on YouTube' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Watch on YouTube/i })).toHaveAttribute(
       'href',
       playlist,
     )
-    expect(screen.getByText('Enroll to open')).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'See Pro' })).not.toBeInTheDocument()
-    expect(screen.queryByText('Pro')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Enroll free/i })).toBeInTheDocument()
   })
 })

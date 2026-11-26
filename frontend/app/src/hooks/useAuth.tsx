@@ -13,7 +13,7 @@ import { clearSession, readToken, readUser, writeSession } from '@/lib/session'
 type AuthContextValue = {
   token: string | null
   user: User | null
-  setSession: (token: string, user: User) => void
+  setSession: (token: string, user: User, refresh?: string | null) => void
   logout: () => Promise<void>
 }
 
@@ -23,11 +23,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => readToken())
   const [user, setUser] = useState<User | null>(() => readUser())
 
-  const setSession = useCallback((nextToken: string, nextUser: User) => {
-    writeSession(nextToken, nextUser)
-    setToken(nextToken)
-    setUser(nextUser)
-  }, [])
+  const setSession = useCallback(
+    (nextToken: string, nextUser: User, refresh?: string | null) => {
+      writeSession(nextToken, nextUser, refresh)
+      setToken(nextToken)
+      setUser(nextUser)
+    },
+    [],
+  )
 
   const logout = useCallback(async () => {
     try {

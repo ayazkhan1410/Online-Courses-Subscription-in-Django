@@ -105,9 +105,9 @@
         root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
         try { localStorage.setItem("theme", root.dataset.theme); } catch (err) {}
       }
-      const chip = e.target.closest(".chip[aria-pressed]");
-      if (chip && chip.closest("[data-single]")) {
-        chip.parentElement.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", "false"));
+      const chip = e.target.closest("[data-single] [aria-pressed]");
+      if (chip) {
+        chip.parentElement.querySelectorAll("[aria-pressed]").forEach((c) => c.setAttribute("aria-pressed", "false"));
         chip.setAttribute("aria-pressed", "true");
       }
     });

@@ -5,6 +5,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from accounts.serializers import (
     ChangePasswordSerializer,
@@ -37,15 +38,18 @@ class RegisterAPIView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        token, _ = Token.objects.get_or_create(user=user)
         return Response(
             {
                 'message': 'Account created successfully',
-                'token': token.key,
-                'user': UserSerializer(user).data,
+                **login_payload(user),
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class JwtRefreshAPIView(TokenRefreshView):
+    permission_classes = [AllowAny]
+    throttle_scope = 'auth'
 
 
 class LoginAPIView(APIView):

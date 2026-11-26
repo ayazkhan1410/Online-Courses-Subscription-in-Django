@@ -76,6 +76,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body {
+  overflow-x: clip;
   background: var(--bg);
   color: var(--text);
   font: 400 15px/1.55 var(--font-sans);

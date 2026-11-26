@@ -4,15 +4,15 @@ import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { googleLogin, isMfaChallenge, register } from '@/api/auth'
 import { formatApiError } from '@/api/client'
-import { Button } from '@/components/Button'
 import { GoogleButton } from '@/components/GoogleButton'
-import { Input } from '@/components/Input'
-import { AuthSplit } from '@/components/PageHeader'
-import { useToast } from '@/components/Toast'
+import { Logo } from '@/components/Logo'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { TurnstileWidget, type TurnstileHandle } from '@/components/TurnstileWidget'
+import { useToast } from '@/components/Toast'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { registerSchema, type RegisterValues } from '@/lib/schemas'
+import { accessFromAuth } from '@/lib/session'
 
 export default function RegisterPage() {
   usePageTitle('Register')
@@ -31,7 +31,7 @@ export default function RegisterPage() {
         ...values,
         turnstile_token: token,
       })
-      setSession(data.token, data.user)
+      setSession(accessFromAuth(data), data.user, data.refresh)
       navigate('/dashboard')
     } catch (error) {
       turnstile.current?.reset()
@@ -47,7 +47,7 @@ export default function RegisterPage() {
         toast.push('Finish the sign-in code on the log in page')
         return
       }
-      setSession(data.token, data.user)
+      setSession(accessFromAuth(data), data.user, data.refresh)
       navigate('/dashboard')
     } catch (error) {
       toast.push(formatApiError(error), 'err')
@@ -55,43 +55,69 @@ export default function RegisterPage() {
   }
 
   return (
-    <AuthSplit title="Create account" lead="A username, email, and password.">
-      <form
-        className="flex flex-col gap-4"
-        onSubmit={(event) => {
-          const token = turnstile.current?.getToken() ?? ''
-          void form.handleSubmit((values) => onSubmit(values, token))(event)
-        }}
-      >
-        <Input
-          label="Username"
-          autoComplete="username"
-          error={form.formState.errors.username?.message}
-          {...form.register('username')}
-        />
-        <Input
-          label="Email"
-          type="email"
-          autoComplete="email"
-          error={form.formState.errors.email?.message}
-          {...form.register('email')}
-        />
-        <Input
-          label="Password"
-          type="password"
-          autoComplete="new-password"
-          error={form.formState.errors.password?.message}
-          {...form.register('password')}
-        />
-        <TurnstileWidget ref={turnstile} />
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          Create account
-        </Button>
-        <GoogleButton onCredential={(credential) => void onGoogle(credential)} />
-        <p className="text-sm text-ink-2">
-          <Link to="/login">Log in</Link>
-        </p>
-      </form>
-    </AuthSplit>
+    <div className="auth-page">
+      <header className="wrap top">
+        <Logo />
+        <ThemeToggle />
+      </header>
+      <main className="center">
+        <form
+          className="panel box"
+          onSubmit={(event) => {
+            const token = turnstile.current?.getToken() ?? ''
+            void form.handleSubmit((values) => onSubmit(values, token))(event)
+          }}
+        >
+          <div>
+            <h1 className="h2">Create account</h1>
+            <p className="dim small" style={{ marginTop: 6 }}>
+              A username, email, and password.
+            </p>
+          </div>
+          <GoogleButton onCredential={(credential) => void onGoogle(credential)} />
+          <div className="or">or</div>
+          <label className="field">
+            <span className="label">Username</span>
+            <input
+              className="input"
+              autoComplete="username"
+              {...form.register('username')}
+            />
+          </label>
+          <label className="field">
+            <span className="label">Email</span>
+            <input
+              className="input"
+              type="email"
+              autoComplete="email"
+              {...form.register('email')}
+            />
+          </label>
+          <label className="field">
+            <span className="label">Password</span>
+            <input
+              className="input"
+              type="password"
+              autoComplete="new-password"
+              {...form.register('password')}
+            />
+          </label>
+          <TurnstileWidget ref={turnstile} />
+          <button
+            className="btn btn-primary btn-lg"
+            type="submit"
+            disabled={form.formState.isSubmitting}
+          >
+            Create account
+          </button>
+          <p className="foot">
+            Already learning?{' '}
+            <Link className="link" to="/login">
+              Log in
+            </Link>
+          </p>
+        </form>
+      </main>
+    </div>
   )
 }
