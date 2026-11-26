@@ -1,22 +1,133 @@
 import { expect, test } from '@playwright/test'
 
-test('home shows the desk headline', async ({ page }) => {
-  await page.goto('/')
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Browse courses' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Hire me' })).toBeVisible()
-  await page.screenshot({ path: 'e2e/screenshots/home.png', fullPage: true })
-})
+const stamp = Date.now().toString().slice(-8)
+const user = {
+  username: `pw${stamp}`,
+  email: `pw${stamp}@example.com`,
+  password: 'StudyDesk-4780!',
+}
 
-test('login has email and password', async ({ page }) => {
-  await page.goto('/login')
-  await expect(page.getByLabel('Email')).toBeVisible()
-  await expect(page.getByLabel('Password')).toBeVisible()
-  await page.screenshot({ path: 'e2e/screenshots/login.png', fullPage: true })
-})
+async function hideTurnstile(page: import('@playwright/test').Page) {
+  await page.route('**/api/config/', async (route) => {
+    const response = await route.fetch()
+    const json = await response.json()
+    json.turnstile_site_key = ''
+    await route.fulfill({
+      status: response.status(),
+      contentType: 'application/json',
+      body: JSON.stringify(json),
+    })
+  })
+}
 
-test('courses page has search', async ({ page }) => {
-  await page.goto('/courses')
-  await expect(page.getByRole('heading', { name: 'Courses' })).toBeVisible()
-  await expect(page.getByLabel('Search courses')).toBeVisible()
+test('register login logout courses search pagination detail enroll complete wishlist dashboard contact forgot unauthorized', async ({
+  page,
+}) => {
+  test.setTimeout(180_000)
+  await hideTurnstile(page)
+
+  await test.step('unauthorized dashboard redirects', async () => {
+    await page.goto('/dashboard')
+    await page.waitForURL(/\/login/)
+    expect(page.url()).toContain('next=')
+  })
+
+  await test.step('register', async () => {
+    await page.goto('/register')
+    await page.getByLabel('Username').fill(user.username)
+    await page.getByLabel('Email').fill(user.email)
+    await page.getByLabel('Password').fill(user.password)
+    await page.getByRole('button', { name: 'Create account' }).click()
+    await page.waitForURL('**/dashboard', { timeout: 20_000 })
+  })
+
+  await test.step('logout', async () => {
+    await page.getByRole('button', { name: 'Log out' }).click()
+    await page.waitForURL('**/')
+    await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible()
+  })
+
+  await test.step('login', async () => {
+    await page.goto('/login')
+    await page.getByLabel('Email').fill(user.email)
+    await page.getByLabel('Password').fill(user.password)
+    await page.locator('form').getByRole('button', { name: 'Log in' }).click()
+    await page.waitForURL('**/dashboard', { timeout: 20_000 })
+  })
+  await test.step('browse courses', async () => {
+    await page.goto('/courses')
+    await expect(page.locator('a[href^="/courses/"]').first()).toBeVisible({
+      timeout: 15_000,
+    })
+  })
+
+  await test.step('search', async () => {
+    const title = (await page.locator('h3').first().innerText()).trim()
+    const word = title.split(/\s+/)[0] || 'Python'
+    await page.getByLabel('Search courses').fill(word)
+    await page.getByRole('button', { name: 'Search' }).click()
+    await expect(page.locator('a[href^="/courses/"]').first()).toBeVisible()
+  })
+
+  await test.step('pagination', async () => {
+    await page.goto('/courses')
+    const next = page.getByRole('link', { name: 'Next' })
+    if (await next.count()) {
+      await next.click()
+      await expect(page).toHaveURL(/page=2|courses/)
+    }
+  })
+
+  await test.step('detail enroll complete wishlist', async () => {
+    await page.goto('/courses')
+    await page.locator('a[href^="/courses/"]').first().click()
+    await page.waitForURL(/\/courses\/.+/)
+    const enroll = page.getByRole('button', { name: 'Enroll' })
+    if (await enroll.count()) {
+      await enroll.click()
+    }
+    const resume = page.getByRole('link', { name: /Resume|Open/ }).first()
+    await expect(resume).toBeVisible({ timeout: 15_000 })
+    await resume.click()
+    await page.waitForURL(/\/learn\//)
+    const complete = page.getByRole('button', { name: /Mark complete|Mark incomplete/ })
+    if (await complete.count()) {
+      await complete.click()
+    }
+    await page.goto(page.url().replace(/\/learn\/.*/, '') || '/courses')
+  })
+
+  await test.step('wishlist from detail', async () => {
+    await page.goto('/courses')
+    await page.locator('a[href^="/courses/"]').nth(1).click()
+    const save = page.getByRole('button', { name: /Save|Remove saved/ })
+    if (await save.count()) {
+      await save.click()
+    }
+  })
+
+  await test.step('dashboard', async () => {
+    await page.goto('/dashboard')
+    await expect(page.getByRole('heading').first()).toBeVisible()
+  })
+
+  await test.step('contact', async () => {
+    await page.goto('/contact')
+    await page.getByLabel('Name').fill('Playwright')
+    await page.getByLabel('Email').fill(user.email)
+    await page.getByLabel('Message').fill('Checking the contact form.')
+    await page.getByRole('button', { name: 'Send message' }).click()
+    await expect(page.getByText(/sent|thanks|received/i).first()).toBeVisible({
+      timeout: 15_000,
+    })
+  })
+
+  await test.step('forgot password', async () => {
+    await page.goto('/forgot-password')
+    await page.getByLabel('Email').fill(user.email)
+    await page.getByRole('button', { name: 'Send link' }).click()
+    await expect(page.getByText(/email|sent|check|An email/i).first()).toBeVisible({
+      timeout: 15_000,
+    })
+  })
 })

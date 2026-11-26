@@ -1,4 +1,9 @@
-import { useId, type InputHTMLAttributes, type ReactNode } from 'react'
+import {
+  forwardRef,
+  useId,
+  type InputHTMLAttributes,
+  type ReactNode,
+} from 'react'
 import { cn } from '@/lib/cn'
 
 export const controlClass =
@@ -32,12 +37,16 @@ type Props = InputHTMLAttributes<HTMLInputElement> & {
   error?: string
 }
 
-export function Input({ label, error, id, className, ...props }: Props) {
+export const Input = forwardRef<HTMLInputElement, Props>(function Input(
+  { label, error, id, className, ...props },
+  ref,
+) {
   const autoId = useId()
   const fieldId = id ?? autoId
   return (
     <Field label={label} error={error} id={fieldId}>
       <input
+        ref={ref}
         id={fieldId}
         className={cn(controlClass, className)}
         aria-invalid={error ? true : undefined}
@@ -46,4 +55,4 @@ export function Input({ label, error, id, className, ...props }: Props) {
       />
     </Field>
   )
-}
+})

@@ -1,4 +1,9 @@
-import { useId, type SelectHTMLAttributes, type ReactNode } from 'react'
+import {
+  forwardRef,
+  useId,
+  type ReactNode,
+  type SelectHTMLAttributes,
+} from 'react'
 import { Field, controlClass } from '@/components/Input'
 import { cn } from '@/lib/cn'
 
@@ -8,12 +13,16 @@ type Props = SelectHTMLAttributes<HTMLSelectElement> & {
   children: ReactNode
 }
 
-export function Select({ label, error, id, className, children, ...props }: Props) {
+export const Select = forwardRef<HTMLSelectElement, Props>(function Select(
+  { label, error, id, className, children, ...props },
+  ref,
+) {
   const autoId = useId()
   const fieldId = id ?? autoId
   return (
     <Field label={label} error={error} id={fieldId}>
       <select
+        ref={ref}
         id={fieldId}
         className={cn(controlClass, className)}
         aria-invalid={error ? true : undefined}
@@ -24,4 +33,4 @@ export function Select({ label, error, id, className, children, ...props }: Prop
       </select>
     </Field>
   )
-}
+})
