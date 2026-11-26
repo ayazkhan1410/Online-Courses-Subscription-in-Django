@@ -4,6 +4,10 @@ from courses.serializers import CourseSerializer
 from learning.models import Enrollment, LessonProgress, WishlistItem
 
 
+class LessonProgressInputSerializer(serializers.Serializer):
+    completed = serializers.BooleanField(required=False, default=True)
+
+
 class EnrollmentSerializer(serializers.ModelSerializer):
     course = CourseSerializer(read_only=True)
 

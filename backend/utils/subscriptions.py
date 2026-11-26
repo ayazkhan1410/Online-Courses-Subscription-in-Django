@@ -42,7 +42,11 @@ def upgrade_to_pro(user, membership_id: int, stripe_token: str) -> None:
     if not charge.get('paid'):
         raise RuntimeError('Payment failed')
 
-    sub, _ = Subscription.objects.get_or_create(user=user)
-    sub.subscription_list = plan
-    sub.is_pro = True
-    sub.save(update_fields=['subscription_list', 'is_pro'])
+    sub, created = Subscription.objects.get_or_create(
+        user=user,
+        defaults={'subscription_list': plan, 'is_pro': True},
+    )
+    if not created:
+        sub.subscription_list = plan
+        sub.is_pro = True
+        sub.save(update_fields=['subscription_list', 'is_pro'])

@@ -1,0 +1,10 @@
+from django.apps import AppConfig
+
+
+class MfaConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'mfa'
+    verbose_name = 'MFA'
+
+    def ready(self) -> None:
+        import mfa.checks  # noqa: F401

@@ -22,10 +22,12 @@ def serializer_learning_context(user, course: Courses | None = None) -> dict:
     wishlist_ids = set(
         WishlistItem.objects.filter(user=user).values_list('course_id', flat=True)
     )
+    is_pro = Subscription.objects.filter(user=user, is_pro=True).exists()
     context = {
         'enrolled_ids': enrolled_ids,
         'wishlist_ids': wishlist_ids,
         'progress_map': progress_for_courses(user, enrolled_ids),
+        'is_pro': is_pro or user.is_staff,
     }
     if course is not None:
         completed = set(

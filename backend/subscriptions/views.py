@@ -44,4 +44,10 @@ class ConfigAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        return Response({'stripe_publishable_key': settings.STRIPE_PUBLISHABLE_KEY})
+        return Response(
+            {
+                'stripe_publishable_key': settings.STRIPE_PUBLISHABLE_KEY,
+                'google_client_id': settings.GOOGLE_OAUTH_CLIENT_ID,
+                'turnstile_site_key': settings.TURNSTILE_SITE_KEY,
+            }
+        )

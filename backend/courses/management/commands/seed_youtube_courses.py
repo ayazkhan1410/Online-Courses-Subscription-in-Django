@@ -14,6 +14,7 @@ from django.utils.html import escape
 from django.utils.text import slugify
 
 from courses.models import CourseModule, Courses
+from learning.models import Enrollment
 
 logger = logging.getLogger(__name__)
 
@@ -75,10 +76,12 @@ class Command(BaseCommand):
         created_modules = 0
         updated_modules = 0
 
-        # Drop legacy placeholder courses that are not tied to YouTube.
+        # Drop legacy placeholder courses that are not tied to YouTube,
+        # but never remove courses that already have enrollments.
+        enrolled_course_ids = Enrollment.objects.values_list('course_id', flat=True)
         Courses.objects.filter(
             Q(youtube_playlist_id__isnull=True) | Q(youtube_playlist_id='')
-        ).delete()
+        ).exclude(id__in=enrolled_course_ids).delete()
 
         for item in courses_data:
             playlist_id = item.get('youtube_playlist_id') or ''

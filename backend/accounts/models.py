@@ -8,7 +8,12 @@ class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
     # Django password hashes need more than 40 chars (Postgres enforces length).
     password = models.CharField(max_length=128)
-    confirm_password = models.CharField(max_length=128, blank=True, default='')
+    google_sub = models.CharField(
+        max_length=255,
+        unique=True,
+        null=True,
+        blank=True,
+    )
     user_choices = models.CharField(
         max_length=30,
         choices=[
@@ -23,11 +28,3 @@ class CustomUser(AbstractUser):
 
     def __str__(self) -> str:
         return f'{self.email}'
-
-
-class Profile(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-    forget_token = models.CharField(max_length=100)
-
-    def __str__(self) -> str:
-        return self.user.email

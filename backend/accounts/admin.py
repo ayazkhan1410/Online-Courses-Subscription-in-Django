@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from accounts.models import CustomUser, Profile
+from accounts.models import CustomUser
 
 
 @admin.register(CustomUser)
@@ -10,9 +10,6 @@ class CustomUserAdmin(admin.ModelAdmin):
         'email',
         'user_choices',
         'is_staff',
+        'google_sub',
     ]
-
-
-@admin.register(Profile)
-class ProfileAdmin(admin.ModelAdmin):
-    list_display = ['user', 'forget_token']
+    search_fields = ['email', 'full_name', 'username']

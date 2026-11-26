@@ -31,3 +31,14 @@ dist/
 
 frontend/hero/node_modules/
 frontend/hero/dist/
+frontend/public/js/hero-desk.js
+frontend/node_modules/
+frontend/playwright-report/
+frontend/test-results/
+frontend/tests/screenshots/
+frontend/app/node_modules/
+frontend/app/dist/
+frontend/app/e2e/screenshots/
+frontend/app/playwright-report/
+frontend/app/test-results/
+frontend/legacy/node_modules/

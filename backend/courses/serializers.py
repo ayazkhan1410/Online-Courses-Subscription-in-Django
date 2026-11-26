@@ -2,11 +2,13 @@ from rest_framework import serializers
 
 from courses.models import CourseModule, Courses
 from learning.models import Enrollment, LessonProgress, WishlistItem
+from subscriptions.models import Subscription
 
 
 class CourseModuleSerializer(serializers.ModelSerializer):
     embed_url = serializers.SerializerMethodField()
     is_completed = serializers.SerializerMethodField()
+    is_locked = serializers.SerializerMethodField()
 
     class Meta:
         model = CourseModule
@@ -21,6 +23,7 @@ class CourseModuleSerializer(serializers.ModelSerializer):
             'sort_order',
             'can_view',
             'is_completed',
+            'is_locked',
         ]
 
     def get_embed_url(self, obj: CourseModule) -> str | None:
@@ -52,6 +55,34 @@ class CourseModuleSerializer(serializers.ModelSerializer):
             module=obj,
             completed=True,
         ).exists()
+
+    def _can_access(self, obj: CourseModule) -> bool:
+        request = self.context.get('request')
+        user = getattr(request, 'user', None) if request else None
+        if user is None or not user.is_authenticated:
+            return False
+        if obj.course.is_premium:
+            is_pro = self.context.get('is_pro')
+            if is_pro is None:
+                is_pro = Subscription.objects.filter(user=user, is_pro=True).exists()
+            if not is_pro and not user.is_staff:
+                return False
+        enrolled_ids = self.context.get('enrolled_ids')
+        if enrolled_ids is not None:
+            return obj.course_id in enrolled_ids
+        return Enrollment.objects.filter(user=user, course=obj.course).exists()
+
+    def get_is_locked(self, obj: CourseModule) -> bool:
+        return not self._can_access(obj)
+
+    def to_representation(self, instance: CourseModule) -> dict:
+        data = super().to_representation(instance)
+        if data.get('is_locked'):
+            data['module_video'] = None
+            data['embed_url'] = None
+            data['youtube_video_id'] = None
+            data['thumbnail_url'] = None
+        return data
 
 
 class CourseSerializer(serializers.ModelSerializer):

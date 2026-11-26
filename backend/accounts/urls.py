@@ -5,6 +5,7 @@ from accounts import views
 urlpatterns = [
     path('auth/register/', views.RegisterAPIView.as_view(), name='register'),
     path('auth/login/', views.LoginAPIView.as_view(), name='login'),
+    path('auth/google/', views.GoogleAuthAPIView.as_view(), name='auth-google'),
     path('auth/logout/', views.LogoutAPIView.as_view(), name='logout'),
     path('auth/me/', views.MeAPIView.as_view(), name='me'),
     path(
