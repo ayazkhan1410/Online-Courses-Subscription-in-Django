@@ -19,11 +19,12 @@ import { accessFromAuth } from '@/lib/session'
 
 function QrCode({ svg }: { svg: string }) {
   const clean = svg.trim()
-  if (!clean.startsWith('<svg') || clean.toLowerCase().includes('<script')) return null
+  const svgMarkup = clean.includes('<svg') ? clean.slice(clean.indexOf('<svg')) : ''
+  if (!svgMarkup || svgMarkup.toLowerCase().includes('<script')) return null
   return (
     <div
       className="sec-qr"
-      dangerouslySetInnerHTML={{ __html: clean }}
+      dangerouslySetInnerHTML={{ __html: svgMarkup }}
     />
   )
 }

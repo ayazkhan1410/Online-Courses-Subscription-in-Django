@@ -9,7 +9,7 @@ from django.utils.crypto import constant_time_compare, salted_hmac
 from mfa.models import RecoveryCode
 
 OTP_LENGTH = 6
-RECOVERY_COUNT = 8
+RECOVERY_COUNT = 10
 _ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 

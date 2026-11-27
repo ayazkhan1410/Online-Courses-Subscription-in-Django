@@ -7,6 +7,8 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.core.mail import send_mail
+
+from utils.inbox import record_outbound_mail
 from django.db import transaction
 from django.utils import timezone
 
@@ -15,7 +17,6 @@ from accounts.utils.email_verification import (
     MAX_ATTEMPTS,
     RESEND_SECONDS,
     _invalidate_codes,
-    _resend_key,
 )
 from mfa.exceptions import MfaError
 from mfa.models import Authenticator, LoginChallenge, RecoveryCode
@@ -43,7 +44,12 @@ def _send_enable_code(user, code: str) -> bool:
             type(exc).__name__,
         )
         return False
+    record_outbound_mail([user.email], subject, body)
     return True
+
+
+def _enable_resend_key(email: str) -> str:
+    return f'mfa_email_enable_resend:{email.lower()}'
 
 
 def start_email_mfa(user) -> None:
@@ -52,7 +58,8 @@ def start_email_mfa(user) -> None:
     if user.mfa_method:
         raise MfaError('Two-factor authentication is already enabled.')
     email = user.email.lower()
-    if not cache.add(_resend_key(email), 1, RESEND_SECONDS):
+    key = _enable_resend_key(email)
+    if not cache.add(key, 1, RESEND_SECONDS):
         raise MfaError('Please wait before requesting a new code.')
     code = generate_login_code()
     _invalidate_codes(user)
@@ -63,7 +70,7 @@ def start_email_mfa(user) -> None:
         expires_at=timezone.now() + timedelta(minutes=CODE_MINUTES),
     )
     if not _send_enable_code(user, code):
-        cache.delete(_resend_key(email))
+        cache.delete(key)
         raise MfaError('Could not send the email. Try again.')
 
 

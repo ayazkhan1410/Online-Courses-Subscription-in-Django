@@ -123,15 +123,15 @@ class MfaApiTests(TestCase):
         self.assertEqual(confirm.status_code, status.HTTP_200_OK)
         self.recovery = confirm.data['recovery_codes']
         self._auth(confirm.data['token'])
-        self.assertEqual(len(self.recovery), 8)
-        self.assertEqual(len(set(self.recovery)), 8)
+        self.assertEqual(len(self.recovery), 10)
+        self.assertEqual(len(set(self.recovery)), 10)
         row = Authenticator.objects.get(user=self.user)
         self.assertIsNotNone(row.confirmed_at)
         self.assertNotEqual(row.secret_encrypted, self.secret)
         status_response = self.client.get('/api/auth/mfa/status/')
         self.assertEqual(status_response.status_code, status.HTTP_200_OK)
         self.assertTrue(status_response.data['enabled'])
-        self.assertEqual(status_response.data['recovery_codes_remaining'], 8)
+        self.assertEqual(status_response.data['recovery_codes_remaining'], 10)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
             mail.outbox[0].subject, 'Two-factor authentication is on'
