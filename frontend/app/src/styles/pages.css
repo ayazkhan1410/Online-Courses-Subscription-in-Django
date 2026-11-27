@@ -802,7 +802,7 @@
 }
 .home-player-list li.now { color: var(--accent-ink); }
 .home-player-list li.now .d { color: var(--accent-ink); }
-.home-player-list .box {
+.home-player-list .lesson-box {
   width: 16px;
   height: 16px;
   border-radius: 4px;
@@ -810,19 +810,19 @@
   display: grid;
   place-items: center;
 }
-.home-player-list .done .box {
+.home-player-list .done .lesson-box {
   background: var(--text);
   border-color: var(--text);
   color: var(--bg);
 }
-.home-player-list .done .box svg {
+.home-player-list .done .lesson-box svg {
   width: 11px;
   height: 11px;
   stroke: currentColor;
   stroke-width: 3;
   fill: none;
 }
-.home-player-list .now .box { border-color: var(--accent); }
+.home-player-list .now .lesson-box { border-color: var(--accent); }
 .tick-now { animation: home-blink 1.6s ease-in-out infinite; }
 @keyframes home-blink { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) {
