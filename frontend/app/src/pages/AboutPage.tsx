@@ -4,6 +4,7 @@ import { listCategories } from '@/api/categories'
 import { getConfig } from '@/api/config'
 import { getCourses } from '@/api/courses'
 import { listProjects } from '@/api/projects'
+import { PlaylistSuggestPanel } from '@/features/catalog/PlaylistSuggestPanel'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
 export default function AboutPage() {
@@ -135,6 +136,9 @@ export default function AboutPage() {
           </Link>{' '}
           and I&apos;ll do it within a week.
         </p>
+        <div style={{ marginTop: 24 }}>
+          <PlaylistSuggestPanel />
+        </div>
       </section>
     </main>
   )

@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom'
 import { listCategories } from '@/api/categories'
 import { getCourses } from '@/api/courses'
 import { CourseBrowser } from '@/features/catalog/CourseBrowser'
+import { PlaylistSuggestPanel } from '@/features/catalog/PlaylistSuggestPanel'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
 export default function CoursesPage() {
@@ -60,6 +61,7 @@ export default function CoursesPage() {
         </form>
       </div>
       <CourseBrowser />
+      <PlaylistSuggestPanel />
     </main>
   )
 }

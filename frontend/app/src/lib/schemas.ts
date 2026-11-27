@@ -39,3 +39,18 @@ export type RegisterValues = z.infer<typeof registerSchema>
 export type ForgotValues = z.infer<typeof forgotSchema>
 export type ResetValues = z.infer<typeof resetSchema>
 export type ContactValues = z.infer<typeof contactSchema>
+
+export const playlistSuggestSchema = z.object({
+  url: z.string().min(1, 'Paste a YouTube playlist link'),
+  note: z
+    .string()
+    .min(1, 'Tell us why it fits here')
+    .max(500, 'Use 500 characters or fewer'),
+  email: z
+    .string()
+    .email('Enter a valid email')
+    .optional()
+    .or(z.literal('')),
+})
+
+export type PlaylistSuggestValues = z.infer<typeof playlistSuggestSchema>

@@ -1,6 +1,7 @@
-from django.urls import path
+from django.urls import path, re_path
 
 from courses import views
+from courses.views_suggest import PlaylistSuggestionCreateAPIView
 
 urlpatterns = [
     path('config/', views.ConfigAPIView.as_view(), name='config'),
@@ -27,4 +28,9 @@ urlpatterns = [
         name='path-detail',
     ),
     path('projects/', views.ProjectListAPIView.as_view(), name='project-list'),
+    path(
+        'playlist-suggestions/',
+        PlaylistSuggestionCreateAPIView.as_view(),
+        name='playlist-suggestion-create',
+    ),
 ]

@@ -1,4 +1,5 @@
 from ckeditor.fields import RichTextField
+from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
 from embed_video.fields import EmbedVideoField
@@ -237,3 +238,37 @@ class Project(models.Model):
 
     def __str__(self) -> str:
         return self.title
+
+
+class PlaylistSuggestion(models.Model):
+    STATUS_NEW = 'new'
+    STATUS_ADDED = 'added'
+    STATUS_DECLINED = 'declined'
+    STATUS_CHOICES = [
+        (STATUS_NEW, 'New'),
+        (STATUS_ADDED, 'Added'),
+        (STATUS_DECLINED, 'Declined'),
+    ]
+
+    url = models.URLField(max_length=500)
+    note = models.TextField(max_length=500)
+    email = models.EmailField(max_length=254, blank=True, default='')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='playlist_suggestions',
+    )
+    status = models.CharField(
+        max_length=16,
+        choices=STATUS_CHOICES,
+        default=STATUS_NEW,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self) -> str:
+        return self.url[:80]

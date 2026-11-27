@@ -129,6 +129,7 @@ Base URL: `http://localhost:4781/api`
 | GET/POST | `/wishlist/`            | Yes  | `learning`     |
 | DELETE | `/wishlist/<slug>/`       | Yes  | `learning`     |
 | POST   | `/contact/`               | No   | `contact`      |
+| POST   | `/playlist-suggestions/`  | No   | `courses`      |
 | POST   | `/auth/register/`         | No   | `accounts`     |
 | POST   | `/auth/login/`            | No   | `accounts`     |
 | POST   | `/auth/logout/`           | Yes  | `accounts`     |

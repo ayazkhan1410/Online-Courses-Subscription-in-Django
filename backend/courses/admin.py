@@ -11,6 +11,7 @@ from courses.models import (
     Creator,
     LearningPath,
     PathStep,
+    PlaylistSuggestion,
     Project,
 )
 from courses.services.playlist_import import (
@@ -163,6 +164,42 @@ class ProjectAdmin(admin.ModelAdmin):
     search_fields = ['title', 'slug', 'summary', 'tech']
     prepopulated_fields = {'slug': ('title',)}
     ordering = ['sort_order', 'title']
+
+
+@admin.register(PlaylistSuggestion)
+class PlaylistSuggestionAdmin(admin.ModelAdmin):
+    list_display = ['url', 'email', 'user', 'status', 'created_at']
+    list_filter = ['status', 'created_at']
+    search_fields = ['url', 'email', 'note', 'user__email']
+    readonly_fields = ['created_at']
+    actions = ['import_suggestions']
+
+    @admin.action(description='Import')
+    def import_suggestions(self, request, queryset):
+        done = 0
+        errors = 0
+        for row in queryset:
+            try:
+                import_playlist(row.url)
+            except PlaylistImportError as exc:
+                errors += 1
+                self.message_user(
+                    request,
+                    f'Could not import {row.url}: {exc}',
+                    level=messages.ERROR,
+                )
+                continue
+            row.status = PlaylistSuggestion.STATUS_ADDED
+            row.save(update_fields=['status'])
+            done += 1
+        if done:
+            self.message_user(request, f'Imported {done} playlist(s).')
+        if errors and not done:
+            self.message_user(
+                request,
+                'No playlists were imported.',
+                level=messages.WARNING,
+            )
 
 
 @admin.register(CourseModule)
