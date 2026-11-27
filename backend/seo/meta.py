@@ -294,8 +294,18 @@ def meta_head_tags(meta: PageMeta) -> str:
         '<meta name="twitter:card" content="summary_large_image" />',
     ]
     for block in meta.json_ld:
-        payload = json.dumps(block, ensure_ascii=False)
+        payload = _safe_json_ld(block)
         chunks.append(
             f'<script type="application/ld+json">{payload}</script>'
         )
     return '\n    '.join(chunks)
+
+
+def _safe_json_ld(block: dict[str, Any]) -> str:
+    """Escape JSON for embedding inside a <script> tag."""
+    payload = json.dumps(block, ensure_ascii=False)
+    return (
+        payload.replace('<', '\\u003c')
+        .replace('>', '\\u003e')
+        .replace('&', '\\u0026')
+    )

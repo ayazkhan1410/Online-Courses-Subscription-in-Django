@@ -49,6 +49,18 @@ class SeoMetaTests(TestCase):
         self.assertIn('Ayaz Ahmed', body)
         self.assertIn('Study with Ayaz', body)
 
+    def test_json_ld_escapes_script_breaking_title(self):
+        self.course.courses_name = (
+            '</script><script>alert(1)</script> XSS Course'
+        )
+        self.course.save(update_fields=['courses_name'])
+        response = self.client.get('/courses/seo-python/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        body = response.content.decode()
+        self.assertNotIn('</script><script>alert(1)</script>', body)
+        self.assertIn('\\u003c/script\\u003e', body)
+        self.assertIn('application/ld+json', body)
+
     def test_robots_txt(self):
         response = self.client.get('/robots.txt')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
