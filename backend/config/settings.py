@@ -32,6 +32,11 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
+# SEO-proxied HTML goes through Django SecurityMiddleware. Google Identity
+# Services popup needs opener access; same-origin blocks the blank GSI window.
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
 AUTH_USER_MODEL = 'accounts.CustomUser'
 PASSWORD_RESET_TIMEOUT = 3600
 
