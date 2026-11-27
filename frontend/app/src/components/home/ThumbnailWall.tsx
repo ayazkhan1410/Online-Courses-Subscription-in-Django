@@ -68,7 +68,7 @@ export function ThumbnailWall({ urls }: ThumbnailWallProps) {
                   alt=""
                   width={280}
                   height={158}
-                  loading={index === 0 ? 'eager' : 'lazy'}
+                  loading="eager"
                   decoding="async"
                 />
               ))}

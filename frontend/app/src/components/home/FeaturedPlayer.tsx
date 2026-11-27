@@ -93,7 +93,7 @@ export function FeaturedPlayer({
             const len = formatDuration(row.module.duration_seconds)
             return (
               <li key={row.module.id} className={row.state === 'todo' ? undefined : row.state}>
-                <span className={`box${row.state === 'now' ? ' tick-now' : ''}`}>
+                <span className={`lesson-box${row.state === 'now' ? ' tick-now' : ''}`}>
                   {row.state === 'done' ? CHECK : null}
                 </span>
                 <span className="d">{cleaned.counter ?? 'Lesson'}</span>
