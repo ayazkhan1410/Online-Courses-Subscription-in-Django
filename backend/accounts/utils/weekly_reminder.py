@@ -32,6 +32,12 @@ def _frontend_base() -> str:
 
 
 def unsubscribe_url(token: str) -> str:
+    """Human-facing React page."""
+    return f'{_frontend_base()}/unsubscribe/{token}'
+
+
+def unsubscribe_api_url(token: str) -> str:
+    """One-click List-Unsubscribe endpoint (GET/POST)."""
     return f'{_api_base()}/email/unsubscribe/{token}/'
 
 
@@ -123,7 +129,8 @@ def send_weekly_reminder(user: CustomUser) -> bool:
     course, module = target
     _ensure_unsubscribe_token(user)
     fresh = CustomUser.objects.get(pk=user.pk)
-    unsub = unsubscribe_url(fresh.unsubscribe_token)
+    unsub_page = unsubscribe_url(fresh.unsubscribe_token)
+    unsub_api = unsubscribe_api_url(fresh.unsubscribe_token)
     _, lesson_title = clean_lesson_title(module.module_name)
     total = course.course_modules.count()
     day_label = _lesson_day_label(module, total)
@@ -135,7 +142,7 @@ def send_weekly_reminder(user: CustomUser) -> bool:
         f'Course: {course.courses_name}\n'
         f'{day_label}\n\n'
         f'Continue here:\n{lesson_link}\n\n'
-        f'Unsubscribe from weekly reminders:\n{unsub}\n'
+        f'Unsubscribe from weekly reminders:\n{unsub_page}\n'
     )
     from_email = settings.DEFAULT_FROM_EMAIL
     try:
@@ -145,7 +152,8 @@ def send_weekly_reminder(user: CustomUser) -> bool:
             from_email=from_email,
             to=[user.email],
             headers={
-                'List-Unsubscribe': f'<{unsub}>',
+                'List-Unsubscribe': f'<{unsub_api}>',
+                'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
             },
         )
         message.send(fail_silently=False)

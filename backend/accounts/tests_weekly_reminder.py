@@ -84,7 +84,16 @@ class WeeklyReminderTests(TestCase):
         self.assertIn('Python Desk', message.body)
         self.assertIn('Day 08 of 50', message.body)
         self.assertIn('/learn/python-weekly/', message.body)
+        self.assertIn('/unsubscribe/', message.body)
         self.assertIn('List-Unsubscribe', message.extra_headers)
+        self.assertIn(
+            'List-Unsubscribe=One-Click',
+            message.extra_headers.get('List-Unsubscribe-Post', ''),
+        )
+        self.assertIn(
+            '/api/email/unsubscribe/',
+            message.extra_headers.get('List-Unsubscribe', ''),
+        )
         self.user.refresh_from_db()
         self.assertIsNotNone(self.user.last_reminder_at)
 
@@ -138,3 +147,21 @@ class WeeklyReminderTests(TestCase):
         mail.outbox.clear()
         call_command('send_weekly_reminders')
         self.assertEqual(len(mail.outbox), 0)
+
+    def test_unsubscribe_post_one_click(self):
+        self.user.weekly_email = True
+        self.user.save()
+        token = self.user.unsubscribe_token
+        anon = APIClient()
+        response = anon.post(
+            f'/api/email/unsubscribe/{token}/',
+            {'List-Unsubscribe': 'One-Click'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data['message'],
+            'Weekly reminder emails are turned off.',
+        )
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.weekly_email)

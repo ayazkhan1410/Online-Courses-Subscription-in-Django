@@ -261,7 +261,7 @@ class LastTestEmailAPIView(APIView):
 class WeeklyEmailUnsubscribeAPIView(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request, token: str):
+    def _unsubscribe(self, token: str):
         user = CustomUser.objects.filter(unsubscribe_token=token).first()
         if user is None:
             return Response(
@@ -272,3 +272,9 @@ class WeeklyEmailUnsubscribeAPIView(APIView):
             user.weekly_email = False
             user.save(update_fields=['weekly_email'])
         return Response({'message': 'Weekly reminder emails are turned off.'})
+
+    def get(self, request, token: str):
+        return self._unsubscribe(token)
+
+    def post(self, request, token: str):
+        return self._unsubscribe(token)
