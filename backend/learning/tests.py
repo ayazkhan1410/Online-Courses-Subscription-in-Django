@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 
 from accounts.models import CustomUser
 from courses.models import CourseModule, Courses
-from learning.models import Enrollment, LessonProgress
+from learning.models import Completion, Enrollment, LessonProgress
 from subscriptions.models import Subscription, SubscriptionList
 from utils.subscriptions import upgrade_to_pro
 
@@ -174,3 +174,94 @@ class LearningAPITests(TestCase):
         sub = Subscription.objects.get(user=self.user)
         self.assertTrue(sub.is_pro)
         self.assertEqual(sub.subscription_list_id, plan.id)
+
+
+@override_settings(
+    REST_FRAMEWORK={
+        'DEFAULT_AUTHENTICATION_CLASSES': [
+            'rest_framework.authentication.TokenAuthentication',
+        ],
+        'DEFAULT_THROTTLE_CLASSES': [],
+        'PAGE_SIZE': 8,
+    },
+)
+class CompletionTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.client = APIClient()
+        self.user = CustomUser.objects.create_user(
+            email='done@example.com',
+            username='done',
+            password='StrongPass123',
+            full_name='Done User',
+            user_choices='expert',
+        )
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
+        self.course = Courses.objects.create(
+            courses_name='Two Step Python',
+            courses_description='desc',
+            is_premium=False,
+            youtube_playlist_id='two-step',
+            slug='two-step',
+        )
+        self.mod_a = CourseModule.objects.create(
+            course=self.course,
+            module_name='Step 1',
+            youtube_video_id='v1',
+            module_video='https://www.youtube.com/watch?v=v1',
+            sort_order=1,
+        )
+        self.mod_b = CourseModule.objects.create(
+            course=self.course,
+            module_name='Step 2',
+            youtube_video_id='v2',
+            module_video='https://www.youtube.com/watch?v=v2',
+            sort_order=2,
+        )
+        Enrollment.objects.create(user=self.user, course=self.course)
+
+    def _mark(self, module_id: int, completed: bool = True):
+        return self.client.post(
+            f'/api/modules/{module_id}/progress/',
+            {'completed': completed},
+            format='json',
+        )
+
+    def test_creates_completion_on_last_lesson(self):
+        first = self._mark(self.mod_a.id)
+        self.assertEqual(first.status_code, status.HTTP_200_OK)
+        self.assertIsNone(first.data.get('completion'))
+        second = self._mark(self.mod_b.id)
+        self.assertEqual(second.status_code, status.HTTP_200_OK)
+        self.assertIn('completion', second.data)
+        share_id = second.data['completion']['share_id']
+        self.assertEqual(len(share_id), 10)
+        self.assertEqual(Completion.objects.count(), 1)
+
+    def test_keeps_completion_after_unmark(self):
+        self._mark(self.mod_a.id)
+        self._mark(self.mod_b.id)
+        share_id = Completion.objects.get().share_id
+        unmark = self._mark(self.mod_b.id, completed=False)
+        self.assertEqual(unmark.status_code, status.HTTP_200_OK)
+        self.assertTrue(Completion.objects.filter(share_id=share_id).exists())
+
+    def test_hides_name_when_privacy_off(self):
+        self._mark(self.mod_a.id)
+        self._mark(self.mod_b.id)
+        share_id = Completion.objects.get().share_id
+        self.user.show_name_on_completion = False
+        self.user.save(update_fields=['show_name_on_completion'])
+        public = APIClient().get(f'/api/completions/{share_id}/')
+        self.assertEqual(public.status_code, status.HTTP_200_OK)
+        self.assertEqual(public.data['learner_name'], 'A learner')
+
+    def test_og_png_endpoint(self):
+        self._mark(self.mod_a.id)
+        self._mark(self.mod_b.id)
+        share_id = Completion.objects.get().share_id
+        response = APIClient().get(f'/api/og/done/{share_id}.png')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response['Content-Type'], 'image/png')
+        self.assertTrue(response.content.startswith(b'\x89PNG'))

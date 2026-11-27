@@ -1,8 +1,17 @@
+import secrets
+import string
+
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
 from courses.models import CourseModule, Courses
+
+_SHARE_ALPHABET = string.ascii_lowercase + string.digits
+
+
+def new_completion_share_id() -> str:
+    return ''.join(secrets.choice(_SHARE_ALPHABET) for _ in range(10))
 
 
 class Enrollment(models.Model):
@@ -107,3 +116,43 @@ class WishlistItem(models.Model):
 
     def __str__(self) -> str:
         return f'{self.user_id}:{self.course_id}'
+
+
+class Completion(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='completions',
+    )
+    course = models.ForeignKey(
+        Courses,
+        on_delete=models.CASCADE,
+        related_name='completions',
+    )
+    completed_at = models.DateTimeField(default=timezone.now)
+    share_id = models.CharField(max_length=10, unique=True, db_index=True)
+
+    class Meta:
+        ordering = ['-completed_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'course'],
+                name='uniq_user_course_completion',
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self.share_id:
+            for _ in range(24):
+                candidate = new_completion_share_id()
+                if not Completion.objects.filter(
+                    share_id=candidate
+                ).exists():
+                    self.share_id = candidate
+                    break
+            if not self.share_id:
+                raise RuntimeError('Could not allocate completion share_id')
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return f'{self.share_id}:{self.user_id}:{self.course_id}'

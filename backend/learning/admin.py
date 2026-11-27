@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from learning.models import Enrollment, LessonNote, LessonProgress, WishlistItem
+from learning.models import (
+    Completion,
+    Enrollment,
+    LessonNote,
+    LessonProgress,
+    WishlistItem,
+)
 
 
 @admin.register(Enrollment)
@@ -30,3 +36,9 @@ class LessonNoteAdmin(admin.ModelAdmin):
 @admin.register(WishlistItem)
 class WishlistItemAdmin(admin.ModelAdmin):
     list_display = ['user', 'course', 'created_at']
+
+
+@admin.register(Completion)
+class CompletionAdmin(admin.ModelAdmin):
+    list_display = ['share_id', 'user', 'course', 'completed_at']
+    search_fields = ['share_id', 'user__email', 'course__courses_name']

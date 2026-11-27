@@ -38,6 +38,7 @@ class CustomUser(AbstractUser):
             ('admin', 'Admin'),
         ],
     )
+    show_name_on_completion = models.BooleanField(default=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']

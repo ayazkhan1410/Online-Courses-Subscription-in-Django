@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 
 from learning import views
 
@@ -42,5 +42,20 @@ urlpatterns = [
         'wishlist/<slug:slug>/',
         views.WishlistDeleteAPIView.as_view(),
         name='wishlist-delete',
+    ),
+    path(
+        'completions/',
+        views.CompletionListAPIView.as_view(),
+        name='completions',
+    ),
+    path(
+        'completions/<str:share_id>/',
+        views.CompletionDetailAPIView.as_view(),
+        name='completion-detail',
+    ),
+    re_path(
+        r'^og/done/(?P<share_id>[a-z0-9]{10})\.png$',
+        views.CompletionOGImageAPIView.as_view(),
+        name='completion-og',
     ),
 ]

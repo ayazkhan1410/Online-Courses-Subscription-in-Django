@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from courses.serializers import CourseSerializer
-from learning.models import Enrollment, LessonNote, LessonProgress, WishlistItem
+from learning.models import Completion, Enrollment, LessonNote, LessonProgress, WishlistItem
+from utils.completion import finished_month_label, learner_display_name
 
 
 class LessonProgressInputSerializer(serializers.Serializer):
@@ -72,3 +73,53 @@ class LessonNoteSerializer(serializers.ModelSerializer):
 class LessonNoteWriteSerializer(serializers.Serializer):
     seconds = serializers.IntegerField(min_value=0, required=False)
     body = serializers.CharField(max_length=2000)
+
+
+class CompletionBriefSerializer(serializers.ModelSerializer):
+    share_id = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Completion
+        fields = ['share_id', 'completed_at']
+
+
+class CompletionSerializer(serializers.ModelSerializer):
+    course = CourseSerializer(read_only=True)
+    lesson_count = serializers.SerializerMethodField()
+    learner_name = serializers.SerializerMethodField()
+    finished_label = serializers.SerializerMethodField()
+    teacher_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Completion
+        fields = [
+            'share_id',
+            'completed_at',
+            'course',
+            'lesson_count',
+            'learner_name',
+            'finished_label',
+            'teacher_name',
+        ]
+
+    def get_lesson_count(self, obj: Completion) -> int:
+        annotated = getattr(obj, 'lesson_count', None)
+        if annotated is not None:
+            return int(annotated)
+        return obj.course.course_modules.count()
+
+    def get_learner_name(self, obj: Completion) -> str:
+        return learner_display_name(obj.user)
+
+    def get_finished_label(self, obj: Completion) -> str:
+        return finished_month_label(obj.completed_at)
+
+    def get_teacher_name(self, obj: Completion) -> str:
+        creator = obj.course.creator
+        if creator is not None:
+            return creator.name
+        return 'Study with Ayaz'
+
+
+class CompletionPublicSerializer(CompletionSerializer):
+    """Public card payload; same fields, no auth required."""

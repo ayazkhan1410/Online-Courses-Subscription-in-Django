@@ -62,6 +62,7 @@ export const router = createBrowserRouter([
       { path: '/privacy', element: lazyPage(() => import('@/pages/PrivacyPage')) },
       { path: '/terms', element: lazyPage(() => import('@/pages/TermsPage')) },
       { path: '/search', element: lazyPage(() => import('@/pages/SearchPage')) },
+      { path: '/done/:shareId', element: lazyPage(() => import('@/pages/DonePage')) },
       { path: '*', element: lazyPage(() => import('@/pages/NotFoundPage')) },
     ],
   },

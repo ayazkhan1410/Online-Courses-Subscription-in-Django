@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { apiBase, formatApiError } from '@/api/client'
 import { getCourse } from '@/api/courses'
 import { enrollCourse, markLessonProgress, saveLessonPosition } from '@/api/learning'
+import type { CompletionBrief } from '@/api/types'
 import {
   createModuleNote,
   deleteNote,
@@ -13,6 +14,7 @@ import {
 } from '@/api/notes'
 import type { Module } from '@/api/types'
 import { Counter, Ticks } from '@/components/Counter'
+import { Panel } from '@/components/Panel'
 import { ErrorState } from '@/components/ErrorState'
 import { LessonList } from '@/components/LessonList'
 import { Skeleton } from '@/components/Skeleton'
@@ -67,6 +69,7 @@ export default function LearnPage() {
   const [noteDraft, setNoteDraft] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editDraft, setEditDraft] = useState('')
+  const [finishedCard, setFinishedCard] = useState<CompletionBrief | null>(null)
   const noteInputRef = useRef<HTMLInputElement>(null)
 
   const query = useQuery({
@@ -120,11 +123,33 @@ export default function LearnPage() {
 
   const complete = useMutation({
     mutationFn: (mod: Module) => markLessonProgress(mod.id, !mod.is_completed),
-    onSuccess: async () => {
+    onSuccess: async (data) => {
       await queryClient.invalidateQueries({ queryKey: ['course', slug] })
+      if (data.completion) {
+        setFinishedCard(data.completion)
+      }
     },
     onError: (error) => toast.push(formatApiError(error), 'err'),
   })
+
+  async function shareCompletion(shareId: string, courseName: string) {
+    const url = `${window.location.origin}/done/${shareId}`
+    const title = `Finished ${stripEmoji(courseName)}`
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, url })
+        return
+      }
+    } catch {
+      /* user cancelled share sheet */
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      toast.push('Link copied')
+    } catch {
+      toast.push(url)
+    }
+  }
 
   const savePos = useCallback(
     async (modId: number, seconds: number, force = false) => {
@@ -134,6 +159,7 @@ export default function LearnPage() {
       try {
         const result = await saveLessonPosition(modId, seconds)
         if (result.completed) {
+          if (result.completion) setFinishedCard(result.completion)
           await queryClient.invalidateQueries({ queryKey: ['course', slug] })
         }
       } catch {
@@ -157,9 +183,10 @@ export default function LearnPage() {
       if (!current) return
       void savePos(current.id, seconds)
       if (duration > 0 && seconds >= duration * 0.9 && !current.is_completed) {
-        void markLessonProgress(current.id, true).then(() =>
-          queryClient.invalidateQueries({ queryKey: ['course', slug] }),
-        )
+        void markLessonProgress(current.id, true).then((data) => {
+          if (data.completion) setFinishedCard(data.completion)
+          return queryClient.invalidateQueries({ queryKey: ['course', slug] })
+        })
       }
     },
     onPause: (seconds) => {
@@ -282,6 +309,32 @@ export default function LearnPage() {
                 Enroll
               </button>
             </div>
+          ) : null}
+
+          {finishedCard ? (
+            <Panel className="finish-panel" data-testid="finish-panel">
+              <p className="h3">
+                You finished {stripEmoji(course.courses_name)}
+              </p>
+              <div className="finish-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() =>
+                    void shareCompletion(finishedCard.share_id, course.courses_name)
+                  }
+                >
+                  Share
+                </button>
+                <Link
+                  className="btn"
+                  to={`/done/${finishedCard.share_id}`}
+                  onClick={() => setFinishedCard(null)}
+                >
+                  View card
+                </Link>
+              </div>
+            </Panel>
           ) : null}
 
           <div className="l-head">

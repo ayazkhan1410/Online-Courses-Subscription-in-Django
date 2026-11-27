@@ -7,6 +7,7 @@ import {
   LogOut,
   Menu,
   StickyNote,
+  Settings,
   Shield,
   UserRound,
 } from 'lucide-react'
@@ -84,6 +85,9 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <div className="side-label">Account</div>
         <SideItem to="/dashboard/profile" icon={UserRound} onNavigate={onNavigate}>
           Profile
+        </SideItem>
+        <SideItem to="/dashboard/settings" icon={Settings} onNavigate={onNavigate}>
+          Settings
         </SideItem>
         <SideItem to="/dashboard/security" icon={Shield} onNavigate={onNavigate}>
           Security

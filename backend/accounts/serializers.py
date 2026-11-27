@@ -134,8 +134,15 @@ class UserSerializer(serializers.ModelSerializer):
             'full_name',
             'user_choices',
             'is_pro',
+            'show_name_on_completion',
         ]
 
     def get_is_pro(self, obj: CustomUser) -> bool:
         sub = Subscription.objects.filter(user=obj).first()
         return bool(sub and sub.is_pro)
+
+
+class UserSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['show_name_on_completion']

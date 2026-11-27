@@ -101,6 +101,24 @@ export default function DashboardHomePage() {
         </Panel>
       </section>
 
+      {(data.finished?.length ?? 0) > 0 ? (
+        <section style={{ marginTop: 32 }}>
+          <div className="p-head">
+            <h2 className="h3">Finished</h2>
+          </div>
+          <ul className="finished-list">
+            {(data.finished ?? []).map((item) => (
+              <li key={item.share_id}>
+                <Link to={`/done/${item.share_id}`}>
+                  {stripEmoji(item.course.courses_name)}
+                </Link>
+                <span className="meta">{item.finished_label}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <section className="split">
         <Panel>
           <div className="p-head">

@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from courses.models import CourseModule, Courses
 from learning.models import Enrollment, LessonNote, LessonProgress, WishlistItem
+from utils.completion import list_user_completions, maybe_record_completion
 from subscriptions.models import Subscription
 
 
@@ -108,6 +109,8 @@ def mark_lesson_progress(
     )
     enrollment.last_accessed_at = timezone.now()
     enrollment.save(update_fields=['last_accessed_at'])
+    if completed:
+        maybe_record_completion(user, module.course)
     return progress
 
 
@@ -135,6 +138,8 @@ def save_lesson_position(
     )
     enrollment.last_accessed_at = timezone.now()
     enrollment.save(update_fields=['last_accessed_at'])
+    if defaults.get('completed'):
+        maybe_record_completion(user, module.course)
     return progress
 
 
@@ -330,4 +335,14 @@ def build_dashboard(user) -> dict:
             wishlist, many=True, context=ser_ctx
         ).data,
         'recommended': [ser_course(c) for c in recommended],
+        'finished': _serialize_finished(user, ser_ctx),
     }
+
+
+def _serialize_finished(user, ser_ctx: dict) -> list[dict]:
+    from learning.serializers import CompletionSerializer
+
+    rows = list_user_completions(user)
+    return CompletionSerializer(
+        rows, many=True, context=ser_ctx
+    ).data

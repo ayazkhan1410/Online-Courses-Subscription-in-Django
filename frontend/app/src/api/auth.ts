@@ -71,6 +71,12 @@ export function getMe(): Promise<User> {
   return api<User>('/auth/me/')
 }
 
+export function updateSettings(payload: {
+  show_name_on_completion?: boolean
+}): Promise<User> {
+  return api<User>('/auth/me/', { method: 'PATCH', body: payload })
+}
+
 export function forgetPassword(payload: {
   email: string
   turnstile_token?: string

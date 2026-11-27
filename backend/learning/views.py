@@ -1,11 +1,15 @@
+from django.http import HttpResponse
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from courses.models import Courses
-from learning.models import LessonNote
+from courses.models import CourseModule, Courses
+from learning.models import Completion, LessonNote
 from learning.serializers import (
+    CompletionBriefSerializer,
+    CompletionPublicSerializer,
+    CompletionSerializer,
     EnrollmentSerializer,
     LessonNoteSerializer,
     LessonNoteWriteSerializer,
@@ -14,6 +18,8 @@ from learning.serializers import (
     LessonProgressSerializer,
     WishlistSerializer,
 )
+from utils.completion import learner_display_name
+from utils.og_completion import render_completion_og
 from utils.learning import (
     add_wishlist,
     build_dashboard,
@@ -91,7 +97,25 @@ class LessonProgressAPIView(APIView):
             return Response(
                 {'detail': str(exc)}, status=status.HTTP_403_FORBIDDEN
             )
-        return Response(LessonProgressSerializer(progress).data)
+        data = LessonProgressSerializer(progress).data
+        if payload.validated_data.get('completed', True):
+            course_id = CourseModule.objects.filter(pk=module_id).values_list(
+                'course_id',
+                flat=True,
+            ).first()
+            completion = (
+                Completion.objects.filter(
+                    user=request.user,
+                    course_id=course_id,
+                ).first()
+                if course_id
+                else None
+            )
+            if completion is not None:
+                data['completion'] = CompletionBriefSerializer(
+                    completion
+                ).data
+        return Response(data)
 
 
 class LessonPositionAPIView(APIView):
@@ -111,7 +135,24 @@ class LessonPositionAPIView(APIView):
             return Response(
                 {'detail': str(exc)}, status=status.HTTP_403_FORBIDDEN
             )
-        return Response(LessonProgressSerializer(progress).data)
+        data = LessonProgressSerializer(progress).data
+        if progress.completed:
+            course_id = CourseModule.objects.filter(
+                pk=progress.module_id,
+            ).values_list('course_id', flat=True).first()
+            completion = (
+                Completion.objects.filter(
+                    user=request.user,
+                    course_id=course_id,
+                ).first()
+                if course_id
+                else None
+            )
+            if completion is not None:
+                data['completion'] = CompletionBriefSerializer(
+                    completion
+                ).data
+        return Response(data)
 
 
 class ModuleNotesAPIView(APIView):
@@ -218,3 +259,61 @@ class WishlistDeleteAPIView(APIView):
     def delete(self, request, slug: str):
         remove_wishlist(request.user, slug)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CompletionListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from utils.completion import list_user_completions
+
+        qs = list_user_completions(request.user)
+        return Response(
+            CompletionSerializer(
+                qs,
+                many=True,
+                context={'request': request},
+            ).data
+        )
+
+
+class CompletionDetailAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, share_id: str):
+        completion = (
+            Completion.objects.filter(share_id=share_id)
+            .select_related('course', 'course__category', 'course__creator')
+            .first()
+        )
+        if completion is None:
+            return Response(
+                {'detail': 'Not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(
+            CompletionPublicSerializer(
+                completion,
+                context={'request': request},
+            ).data
+        )
+
+
+class CompletionOGImageAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, share_id: str):
+        completion = (
+            Completion.objects.filter(share_id=share_id)
+            .select_related('course', 'course__creator', 'user')
+            .first()
+        )
+        if completion is None:
+            return HttpResponse(status=404)
+        png = render_completion_og(
+            completion,
+            learner_display_name(completion.user),
+        )
+        response = HttpResponse(png, content_type='image/png')
+        response['Cache-Control'] = 'public, max-age=86400'
+        return response

@@ -14,6 +14,7 @@ from accounts.serializers import (
     LoginSerializer,
     RegisterSerializer,
     UserSerializer,
+    UserSettingsSerializer,
 )
 from accounts.utils.email_verification import (
     issue_verification_code,
@@ -180,6 +181,16 @@ class MeAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        return Response(UserSerializer(request.user).data)
+
+    def patch(self, request):
+        payload = UserSettingsSerializer(
+            request.user,
+            data=request.data,
+            partial=True,
+        )
+        payload.is_valid(raise_exception=True)
+        payload.save()
         return Response(UserSerializer(request.user).data)
 
 

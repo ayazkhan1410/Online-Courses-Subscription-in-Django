@@ -5,6 +5,7 @@ export type User = {
   full_name: string
   user_choices: string
   is_pro: boolean
+  show_name_on_completion: boolean
 }
 
 export type Module = {
@@ -110,6 +111,19 @@ export type DashboardStats = {
   avg_progress: number
 }
 
+export type CompletionBrief = {
+  share_id: string
+  completed_at: string
+}
+
+export type CompletionCard = CompletionBrief & {
+  course: Course
+  lesson_count: number
+  learner_name: string
+  finished_label: string
+  teacher_name: string
+}
+
 export type Dashboard = {
   user: DashboardUser
   stats: DashboardStats
@@ -118,6 +132,7 @@ export type Dashboard = {
   recent: Course[]
   wishlist: WishlistItem[]
   recommended: Course[]
+  finished: CompletionCard[]
 }
 
 export type AppConfig = {
@@ -217,6 +232,7 @@ export type LessonProgress = {
   completed: boolean
   position_seconds?: number
   updated_at: string
+  completion?: CompletionBrief
 }
 
 export type MessageResponse = {
