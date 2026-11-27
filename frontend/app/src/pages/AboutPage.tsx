@@ -20,6 +20,7 @@ export default function AboutPage() {
   const courseCount = config.data?.published_course_count ?? courses.data?.count
   const categoryCount = config.data?.category_count ?? categories.data?.length
   const publishedProjects = projects.isSuccess ? (projects.data ?? []) : []
+  const fiverr = config.data?.fiverr_profile_url?.trim()
 
   return (
     <main className="wrap">
@@ -80,9 +81,15 @@ export default function AboutPage() {
           <div>
             <dt className="meta">Work</dt>
             <dd>
-              <Link className="link" to="/services">
-                Hire me
-              </Link>
+              {fiverr ? (
+                <a className="link" href={fiverr} target="_blank" rel="noopener noreferrer">
+                  Hire me
+                </a>
+              ) : (
+                <Link className="link" to="/services">
+                  Hire me
+                </Link>
+              )}
             </dd>
           </div>
         </dl>

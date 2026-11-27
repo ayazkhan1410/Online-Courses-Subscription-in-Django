@@ -15,8 +15,14 @@ const links = [
 ]
 
 export function Nav() {
-  const { token } = useAuth()
+  const { token, logout } = useAuth()
   const [open, setOpen] = useState(false)
+
+  async function handleLogout() {
+    setOpen(false)
+    await logout()
+  }
+
   return (
     <header className="nav">
       <div className="wrap nav-in">
@@ -38,9 +44,14 @@ export function Nav() {
         <div className="nav-end">
           <ThemeToggle />
           {token ? (
-            <Link to="/dashboard" className="btn btn-primary btn-sm">
-              Dashboard
-            </Link>
+            <>
+              <button type="button" className="nav-login" onClick={() => void handleLogout()}>
+                Log out
+              </button>
+              <Link to="/dashboard" className="btn btn-primary btn-sm">
+                Dashboard
+              </Link>
+            </>
           ) : (
             <>
               <Link to="/login" className="nav-login">
@@ -73,7 +84,16 @@ export function Nav() {
               {link.label}
             </Link>
           ))}
-          {token ? null : (
+          {token ? (
+            <>
+              <Link to="/dashboard" className="btn btn-ghost" onClick={() => setOpen(false)}>
+                Dashboard
+              </Link>
+              <button type="button" className="btn btn-ghost" onClick={() => void handleLogout()}>
+                Log out
+              </button>
+            </>
+          ) : (
             <Link to="/login" className="btn btn-ghost" onClick={() => setOpen(false)}>
               Log in
             </Link>

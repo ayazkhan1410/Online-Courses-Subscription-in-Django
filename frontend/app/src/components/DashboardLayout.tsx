@@ -84,6 +84,17 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <SideItem to="/dashboard/security" icon={Shield} onNavigate={onNavigate}>
           Security
         </SideItem>
+        <button
+          type="button"
+          className="item"
+          onClick={() => {
+            onNavigate?.()
+            void logout().then(() => navigate('/'))
+          }}
+        >
+          <LogOut size={18} strokeWidth={1.5} aria-hidden />
+          Log out
+        </button>
       </nav>
       <div className="side-foot">
         <span className="avatar avatar-lg">{userInitials(name, email)}</span>
@@ -94,16 +105,6 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <div style={{ marginLeft: 'auto' }}>
           <ThemeToggle />
         </div>
-        <button
-          type="button"
-          className="btn btn-ghost btn-icon"
-          aria-label="Log out"
-          onClick={() => {
-            void logout().then(() => navigate('/'))
-          }}
-        >
-          <LogOut size={18} strokeWidth={1.5} />
-        </button>
       </div>
     </aside>
   )
