@@ -1,4 +1,4 @@
-"""Cloudflare Turnstile. Verification is skipped when TURNSTILE_TEST_MODE is on."""
+"""Cloudflare Turnstile. Skipped when TURNSTILE_TEST_MODE is on."""
 
 import json
 import logging
@@ -10,7 +10,9 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_SITEVERIFY = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+_DEFAULT_SITEVERIFY = (
+    'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+)
 
 
 def get_client_ip(request) -> str | None:
@@ -39,7 +41,10 @@ def verify_turnstile(token: str, remote_ip: str | None = None) -> bool:
             'remoteip': remote_ip or '',
         }
     ).encode()
-    url = getattr(settings, 'TURNSTILE_SITEVERIFY_URL', '') or _DEFAULT_SITEVERIFY
+    url = (
+        getattr(settings, 'TURNSTILE_SITEVERIFY_URL', '')
+        or _DEFAULT_SITEVERIFY
+    )
     request = urllib.request.Request(
         url,
         data=payload,
@@ -62,9 +67,9 @@ def verify_turnstile(token: str, remote_ip: str | None = None) -> bool:
         return False
     allowed = [
         host.strip().lower()
-        for host in (getattr(settings, 'TURNSTILE_ALLOWED_HOSTNAMES', '') or '').split(
-            ','
-        )
+        for host in (
+            getattr(settings, 'TURNSTILE_ALLOWED_HOSTNAMES', '') or ''
+        ).split(',')
         if host.strip()
     ]
     if allowed:

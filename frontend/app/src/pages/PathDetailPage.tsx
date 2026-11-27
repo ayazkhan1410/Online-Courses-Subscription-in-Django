@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { Skeleton } from '@/components/Skeleton'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { shortenCourseTitle } from '@/lib/courseTitle'
 
 export default function PathDetailPage() {
   const { slug = '' } = useParams()
@@ -77,7 +78,12 @@ export default function PathDetailPage() {
                   {step.note}
                 </p>
               ) : null}
-              <CourseCard course={step.course} />
+              <CourseCard
+                course={{
+                  ...step.course,
+                  courses_name: shortenCourseTitle(step.course.courses_name),
+                }}
+              />
             </div>
           ))}
       </div>

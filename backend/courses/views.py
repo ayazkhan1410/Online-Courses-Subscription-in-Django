@@ -56,7 +56,10 @@ class CourseListAPIView(APIView):
         )
         paginator = PageNumberPagination()
         page = paginator.paginate_queryset(qs, request, view=self)
-        context = {'request': request, **serializer_learning_context(request.user)}
+        context = {
+            'request': request,
+            **serializer_learning_context(request.user),
+        }
         data = CourseSerializer(page, many=True, context=context).data
         return paginator.get_paginated_response(data)
 
@@ -107,7 +110,10 @@ class CategoryDetailAPIView(APIView):
         courses = list_courses(category=slug)
         paginator = PageNumberPagination()
         page = paginator.paginate_queryset(courses, request, view=self)
-        context = {'request': request, **serializer_learning_context(request.user)}
+        context = {
+            'request': request,
+            **serializer_learning_context(request.user),
+        }
         payload = paginator.get_paginated_response(
             CourseSerializer(page, many=True, context=context).data
         ).data
@@ -149,12 +155,16 @@ class LearningPathDetailAPIView(APIView):
             'request': request,
             **serializer_learning_context(request.user),
         }
-        return Response(LearningPathDetailSerializer(path, context=context).data)
+        return Response(
+            LearningPathDetailSerializer(path, context=context).data
+        )
 
 
 class ProjectListAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        rows = Project.objects.filter(is_published=True).order_by('sort_order', 'title')
+        rows = Project.objects.filter(is_published=True).order_by(
+            'sort_order', 'title'
+        )
         return Response(ProjectSerializer(rows, many=True).data)

@@ -58,7 +58,9 @@ class Command(BaseCommand):
         only = (options['only'] or '').strip()
         files = sorted(CATALOG_DIR.glob('*.json'))
         if not files:
-            self.stderr.write(self.style.ERROR(f'No catalog JSON in {CATALOG_DIR}'))
+            self.stderr.write(
+                self.style.ERROR(f'No catalog JSON in {CATALOG_DIR}')
+            )
             return
 
         for path in files:
@@ -96,10 +98,14 @@ class Command(BaseCommand):
         except PlaylistImportError as exc:
             self.stderr.write(self.style.ERROR(str(exc)))
             return
+        created_c = stats['created_courses']
+        updated_c = stats['updated_courses']
+        created_m = stats['created_modules']
+        updated_m = stats['updated_modules']
         self.stdout.write(
             'Owner catalog: '
-            f'courses +{stats["created_courses"]}/~{stats["updated_courses"]}, '
-            f'modules +{stats["created_modules"]}/~{stats["updated_modules"]}'
+            f'courses +{created_c}/~{updated_c}, '
+            f'modules +{created_m}/~{updated_m}'
         )
 
     def _seed_third_party(
@@ -120,7 +126,9 @@ class Command(BaseCommand):
                 logger.error('Skip %s: %s', url, exc)
                 self.stderr.write(self.style.WARNING(str(exc)))
                 continue
-            existing = Courses.objects.filter(youtube_playlist_id=playlist_id).first()
+            existing = Courses.objects.filter(
+                youtube_playlist_id=playlist_id
+            ).first()
             if existing is not None and not refresh:
                 existing.category = category
                 existing.level = level

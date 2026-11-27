@@ -117,10 +117,14 @@ def upsert_category(payload: dict) -> Category:
 
 
 def _creator_from_info(info: dict) -> Creator:
-    channel_id = (info.get('channel_id') or info.get('uploader_id') or '').strip()
+    channel_id = (
+        info.get('channel_id') or info.get('uploader_id') or ''
+    ).strip()
     name = strip_emoji(info.get('channel') or info.get('uploader') or '')[:255]
     name = name or 'Unknown channel'
-    channel_url = (info.get('channel_url') or info.get('uploader_url') or '')[:500]
+    channel_url = (info.get('channel_url') or info.get('uploader_url') or '')[
+        :500
+    ]
     creator = None
     if channel_id:
         creator = Creator.objects.filter(youtube_channel_id=channel_id).first()
@@ -160,7 +164,9 @@ def _entry_video(entry: dict, index: int) -> dict | None:
     if not raw_url.startswith('http'):
         raw_url = f'https://www.youtube.com/watch?v={video_id}'
     duration = entry.get('duration')
-    duration_seconds = int(duration) if isinstance(duration, (int, float)) else None
+    duration_seconds = (
+        int(duration) if isinstance(duration, (int, float)) else None
+    )
     return {
         'youtube_video_id': video_id[:32],
         'title': title,
@@ -221,9 +227,15 @@ def upsert_youtube_course(
     clean_title = strip_emoji(title)[:255]
     if not playlist_id or not clean_title:
         raise PlaylistImportError('Playlist id and title are required')
-    level = level if level in dict(Courses.LEVEL_CHOICES) else Courses.LEVEL_BEGINNER
+    level = (
+        level
+        if level in dict(Courses.LEVEL_CHOICES)
+        else Courses.LEVEL_BEGINNER
+    )
     language = (
-        language if language in dict(Courses.LANGUAGE_CHOICES) else Courses.LANGUAGE_EN
+        language
+        if language in dict(Courses.LANGUAGE_CHOICES)
+        else Courses.LANGUAGE_EN
     )
     with transaction.atomic():
         course, created = Courses.objects.update_or_create(
@@ -288,7 +300,9 @@ def import_playlist(
 ) -> Courses:
     info = fetch_playlist(playlist_url)
     entries = [entry for entry in (info.get('entries') or []) if entry]
-    playlist_id = (info.get('id') or '').strip() or playlist_id_from_url(playlist_url)
+    playlist_id = (info.get('id') or '').strip() or playlist_id_from_url(
+        playlist_url
+    )
     if info.get('_type') not in (None, 'playlist') and not entries:
         raise PlaylistImportError('URL is not a YouTube playlist')
     if category and category.slug == OWNER_SLUG:
@@ -369,7 +383,8 @@ def seed_owner_from_catalog(
                     'thumbnail_url': mod.get('thumbnail_url'),
                     'video_url': mod.get('video_url')
                     or (
-                        f'https://www.youtube.com/watch?v={mod.get("youtube_video_id")}'
+                        'https://www.youtube.com/watch?v='
+                        f'{mod.get("youtube_video_id")}'
                     ),
                     'sort_order': mod.get('sort_order') or 0,
                     'duration_seconds': mod.get('duration_seconds'),

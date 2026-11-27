@@ -37,13 +37,16 @@ def list_courses(
     if _param(search):
         term = _param(search)
         qs = qs.filter(
-            Q(courses_name__icontains=term) | Q(courses_description__icontains=term)
+            Q(courses_name__icontains=term)
+            | Q(courses_description__icontains=term)
         )
     return qs
 
 
 def get_course_by_slug(slug: str, user=None) -> Courses:
-    qs = Courses.objects.select_related('category', 'creator').prefetch_related(
+    qs = Courses.objects.select_related(
+        'category', 'creator'
+    ).prefetch_related(
         Prefetch(
             'course_modules',
             queryset=CourseModule.objects.order_by('sort_order', 'id'),

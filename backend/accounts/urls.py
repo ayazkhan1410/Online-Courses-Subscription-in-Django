@@ -15,9 +15,13 @@ urlpatterns = [
         name='verify-email-resend',
     ),
     path('auth/login/', views.LoginAPIView.as_view(), name='login'),
-    path('auth/google/', views.GoogleAuthAPIView.as_view(), name='auth-google'),
     path(
-        'auth/token/refresh/', views.JwtRefreshAPIView.as_view(), name='token-refresh'
+        'auth/google/', views.GoogleAuthAPIView.as_view(), name='auth-google'
+    ),
+    path(
+        'auth/token/refresh/',
+        views.JwtRefreshAPIView.as_view(),
+        name='token-refresh',
     ),
     path('auth/logout/', views.LogoutAPIView.as_view(), name='logout'),
     path('auth/me/', views.MeAPIView.as_view(), name='me'),

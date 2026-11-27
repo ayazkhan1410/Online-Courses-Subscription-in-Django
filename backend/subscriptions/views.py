@@ -14,7 +14,9 @@ class SubscriptionListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response(SubscriptionListSerializer(list_plans(), many=True).data)
+        return Response(
+            SubscriptionListSerializer(list_plans(), many=True).data
+        )
 
 
 class BecomeProAPIView(APIView):
@@ -30,7 +32,9 @@ class BecomeProAPIView(APIView):
                 serializer.validated_data['stripe_token'],
             )
         except ValueError as exc:
-            return Response({'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST
+            )
         except RuntimeError as exc:
             return Response(
                 {'detail': str(exc)},

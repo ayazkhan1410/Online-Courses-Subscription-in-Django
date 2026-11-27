@@ -83,7 +83,9 @@ def issue_verification_code(user: CustomUser) -> None:
 
 def resend_verification(email: str) -> None:
     """Always succeeds from the caller's perspective for unknown emails."""
-    user = CustomUser.objects.filter(email__iexact=email, email_verified=False).first()
+    user = CustomUser.objects.filter(
+        email__iexact=email, email_verified=False
+    ).first()
     if user is None:
         return
     try:

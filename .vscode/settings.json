@@ -2,5 +2,19 @@
   "python.defaultInterpreterPath": "${workspaceFolder}/backend/ocs_backend_venv/bin/python",
   "python.analysis.extraPaths": ["${workspaceFolder}/backend"],
   "python.analysis.autoSearchPaths": true,
-  "python.terminal.activateEnvironment": true
+  "python.analysis.venvPath": "${workspaceFolder}/backend",
+  "python.analysis.venv": "ocs_backend_venv",
+  "python.terminal.activateEnvironment": true,
+  "ruff.configuration": "${workspaceFolder}/pyproject.toml",
+  "ruff.enable": true,
+  "ruff.nativeServer": "on",
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true
+  },
+  "flake8.args": [
+    "--max-line-length=79",
+    "--extend-ignore=E203,W503"
+  ],
+  "editor.rulers": [79]
 }

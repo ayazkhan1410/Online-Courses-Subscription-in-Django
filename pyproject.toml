@@ -1,6 +1,6 @@
 [tool.ruff]
 target-version = "py312"
-line-length = 88
+line-length = 79
 src = ["backend"]
 extend-exclude = [
   "**/migrations/**",
@@ -17,9 +17,7 @@ select = [
   "UP",     # pyupgrade
   "TID",    # tidy imports
 ]
-ignore = [
-  "E501",   # line length handled by formatter
-]
+ignore = []
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"

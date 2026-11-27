@@ -58,7 +58,9 @@ class LearningAPITests(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(response.data['completed'])
-        progress = LessonProgress.objects.get(user=self.user, module=self.module)
+        progress = LessonProgress.objects.get(
+            user=self.user, module=self.module
+        )
         self.assertFalse(progress.completed)
 
     def test_progress_requires_enrollment(self):

@@ -47,8 +47,12 @@ class ContactThrottleTests(TestCase):
         # Production rate is contact=5/min.
         for _ in range(5):
             self.assertEqual(
-                client.post('/api/contact/', payload, format='json').status_code,
+                client.post(
+                    '/api/contact/', payload, format='json'
+                ).status_code,
                 status.HTTP_201_CREATED,
             )
         limited = client.post('/api/contact/', payload, format='json')
-        self.assertEqual(limited.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertEqual(
+            limited.status_code, status.HTTP_429_TOO_MANY_REQUESTS
+        )

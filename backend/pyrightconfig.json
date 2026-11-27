@@ -8,7 +8,15 @@
   ],
   "venvPath": ".",
   "venv": "ocs_backend_venv",
-  "pythonVersion": "3.12",
+  "pythonVersion": "3.14",
+  "pythonPlatform": "Linux",
   "typeCheckingMode": "basic",
-  "reportMissingImports": "warning"
+  "reportMissingImports": "warning",
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "pythonVersion": "3.14",
+      "extraPaths": ["."]
+    }
+  ]
 }

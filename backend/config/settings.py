@@ -20,11 +20,15 @@ if not SECRET_KEY:
     if DEBUG:
         SECRET_KEY = 'django-insecure-dev-key-change-in-production'
     else:
-        raise ImproperlyConfigured('DJANGO_SECRET_KEY is required when DEBUG is False')
+        raise ImproperlyConfigured(
+            'DJANGO_SECRET_KEY is required when DEBUG is False'
+        )
 
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+    for host in os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(
+        ','
+    )
     if host.strip()
 ]
 
@@ -96,17 +100,24 @@ DATABASES = {
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': (
-            'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'
+            'django.contrib.auth.password_validation.'
+            'UserAttributeSimilarityValidator'
         ),
     },
     {
-        'NAME': ('django.contrib.auth.password_validation.MinimumLengthValidator'),
+        'NAME': (
+            'django.contrib.auth.password_validation.MinimumLengthValidator'
+        ),
     },
     {
-        'NAME': ('django.contrib.auth.password_validation.CommonPasswordValidator'),
+        'NAME': (
+            'django.contrib.auth.password_validation.CommonPasswordValidator'
+        ),
     },
     {
-        'NAME': ('django.contrib.auth.password_validation.NumericPasswordValidator'),
+        'NAME': (
+            'django.contrib.auth.password_validation.NumericPasswordValidator'
+        ),
     },
 ]
 
@@ -140,7 +151,9 @@ REST_FRAMEWORK = {
         'mfa': '10/min',
         'contact': '5/min',
     },
-    'DEFAULT_PAGINATION_CLASS': ('rest_framework.pagination.PageNumberPagination'),
+    'DEFAULT_PAGINATION_CLASS': (
+        'rest_framework.pagination.PageNumberPagination'
+    ),
     'PAGE_SIZE': 8,
 }
 

@@ -9,12 +9,15 @@ import { ErrorState } from '@/components/ErrorState'
 import { Skeleton } from '@/components/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { shortenCourseTitle } from '@/lib/courseTitle'
 
 function courseNames(path: LearningPath): string[] {
-  if (path.course_names?.length) return path.course_names
-  return (path.steps ?? [])
-    .map((step: PathStepBrief) => step.course?.title)
-    .filter((title): title is string => Boolean(title))
+  const raw = path.course_names?.length
+    ? path.course_names
+    : (path.steps ?? [])
+        .map((step: PathStepBrief) => step.course?.title)
+        .filter((title): title is string => Boolean(title))
+  return raw.map((title) => shortenCourseTitle(title)).filter(Boolean)
 }
 
 function courseCount(path: LearningPath): number {

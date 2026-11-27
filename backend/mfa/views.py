@@ -25,7 +25,9 @@ from utils.auth import login_payload
 
 
 def _mfa_error(exc: MfaError) -> Response:
-    return Response({'detail': exc.message}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(
+        {'detail': exc.message}, status=status.HTTP_400_BAD_REQUEST
+    )
 
 
 class MfaVerifyAPIView(APIView):
@@ -80,7 +82,9 @@ class MfaConfirmAPIView(APIView):
         serializer = MfaConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            codes = confirm_setup(request.user, serializer.validated_data['code'])
+            codes = confirm_setup(
+                request.user, serializer.validated_data['code']
+            )
         except MfaError as exc:
             return _mfa_error(exc)
         # Rotate API tokens after MFA is first enabled.

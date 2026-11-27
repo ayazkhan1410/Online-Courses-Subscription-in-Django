@@ -1,5 +1,5 @@
 class MfaError(Exception):
-    """Safe to show to the client. Never put a code or secret in the message."""
+    """Safe client message. Never put a code or secret in it."""
 
     def __init__(self, message: str) -> None:
         super().__init__(message)

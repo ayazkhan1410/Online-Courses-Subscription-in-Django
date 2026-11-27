@@ -19,7 +19,9 @@ urlpatterns = [
         views.LessonProgressAPIView.as_view(),
         name='module-progress',
     ),
-    path('wishlist/', views.WishlistListCreateAPIView.as_view(), name='wishlist'),
+    path(
+        'wishlist/', views.WishlistListCreateAPIView.as_view(), name='wishlist'
+    ),
     path(
         'wishlist/<slug:slug>/',
         views.WishlistDeleteAPIView.as_view(),

@@ -111,7 +111,9 @@ class CourseModuleSerializer(serializers.ModelSerializer):
         if completed_ids is not None:
             return obj.id in completed_ids
         request = self.context.get('request')
-        if request is None or not getattr(request.user, 'is_authenticated', False):
+        if request is None or not getattr(
+            request.user, 'is_authenticated', False
+        ):
             return False
         return LessonProgress.objects.filter(
             user=request.user,

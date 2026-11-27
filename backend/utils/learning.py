@@ -17,10 +17,14 @@ def serializer_learning_context(user, course: Courses | None = None) -> dict:
         return {}
 
     enrolled_ids = set(
-        Enrollment.objects.filter(user=user).values_list('course_id', flat=True)
+        Enrollment.objects.filter(user=user).values_list(
+            'course_id', flat=True
+        )
     )
     wishlist_ids = set(
-        WishlistItem.objects.filter(user=user).values_list('course_id', flat=True)
+        WishlistItem.objects.filter(user=user).values_list(
+            'course_id', flat=True
+        )
     )
     is_pro = Subscription.objects.filter(user=user, is_pro=True).exists()
     context = {
@@ -89,7 +93,9 @@ def mark_lesson_progress(
     user, module_id: int, completed: bool = True
 ) -> LessonProgress:
     module = get_object_or_404(CourseModule, pk=module_id)
-    enrollment = Enrollment.objects.filter(user=user, course=module.course).first()
+    enrollment = Enrollment.objects.filter(
+        user=user, course=module.course
+    ).first()
     if enrollment is None:
         raise PermissionError('Enroll in this course before tracking progress')
 
@@ -139,7 +145,9 @@ def build_dashboard(user) -> dict:
     enrolled_ids = {e.course_id for e in enrollments}
     progress_map = progress_for_courses(user, enrolled_ids)
     wishlist_ids = set(
-        WishlistItem.objects.filter(user=user).values_list('course_id', flat=True)
+        WishlistItem.objects.filter(user=user).values_list(
+            'course_id', flat=True
+        )
     )
     completed_lessons = LessonProgress.objects.filter(
         user=user,
@@ -149,9 +157,9 @@ def build_dashboard(user) -> dict:
 
     wishlist = list_wishlist(user)[:12]
     recent = enrollments[:6]
-    continue_learning = [e for e in recent if progress_map.get(e.course_id, 0) < 100][
-        :4
-    ]
+    continue_learning = [
+        e for e in recent if progress_map.get(e.course_id, 0) < 100
+    ][:4]
     recommended = (
         Courses.objects.filter(status=Courses.STATUS_PUBLISHED)
         .annotate(module_count=Count('course_modules'))
@@ -197,7 +205,9 @@ def build_dashboard(user) -> dict:
                 else 0
             ),
         },
-        'enrolled': EnrollmentSerializer(enrollments, many=True, context=ser_ctx).data,
+        'enrolled': EnrollmentSerializer(
+            enrollments, many=True, context=ser_ctx
+        ).data,
         'continue_learning': [
             {
                 **ser_course(e.course),
@@ -214,6 +224,8 @@ def build_dashboard(user) -> dict:
             }
             for e in recent
         ],
-        'wishlist': WishlistSerializer(wishlist, many=True, context=ser_ctx).data,
+        'wishlist': WishlistSerializer(
+            wishlist, many=True, context=ser_ctx
+        ).data,
         'recommended': [ser_course(c) for c in recommended],
     }

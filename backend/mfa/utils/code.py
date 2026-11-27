@@ -19,7 +19,7 @@ def generate_login_code() -> str:
 
 
 def hash_value(value: str, purpose: str) -> str:
-    """SECRET_KEY-keyed hash so a leaked table cannot be brute-forced offline."""
+    """SECRET_KEY-keyed hash; a leaked table cannot be brute-forced."""
     return salted_hmac(f'mfa.{purpose}', value, algorithm='sha256').hexdigest()
 
 
@@ -39,7 +39,7 @@ def _new_recovery_code() -> str:
 
 
 def issue_recovery_codes(user) -> list[str]:
-    """Replace any previous codes. Plaintext is returned once and not stored."""
+    """Replace previous codes. Plaintext returned once, not stored."""
     plaintext = [_new_recovery_code() for _ in range(RECOVERY_COUNT)]
     RecoveryCode.objects.filter(user=user).delete()
     RecoveryCode.objects.bulk_create(

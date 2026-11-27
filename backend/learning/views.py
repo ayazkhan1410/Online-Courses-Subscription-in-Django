@@ -41,7 +41,9 @@ class EnrollCourseAPIView(APIView):
         try:
             enrollment = enroll_user(request.user, course)
         except PermissionError as exc:
-            return Response({'detail': str(exc)}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {'detail': str(exc)}, status=status.HTTP_403_FORBIDDEN
+            )
         return Response(
             EnrollmentSerializer(
                 enrollment,
@@ -57,7 +59,9 @@ class EnrollmentListAPIView(APIView):
     def get(self, request):
         qs = list_enrollments(request.user)
         return Response(
-            EnrollmentSerializer(qs, many=True, context={'request': request}).data
+            EnrollmentSerializer(
+                qs, many=True, context={'request': request}
+            ).data
         )
 
 
@@ -74,7 +78,9 @@ class LessonProgressAPIView(APIView):
                 completed=payload.validated_data.get('completed', True),
             )
         except PermissionError as exc:
-            return Response({'detail': str(exc)}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {'detail': str(exc)}, status=status.HTTP_403_FORBIDDEN
+            )
         return Response(LessonProgressSerializer(progress).data)
 
 
@@ -100,7 +106,9 @@ class WishlistListCreateAPIView(APIView):
         item, created = add_wishlist(request.user, slug)
         return Response(
             WishlistSerializer(item, context={'request': request}).data,
-            status=(status.HTTP_201_CREATED if created else status.HTTP_200_OK),
+            status=(
+                status.HTTP_201_CREATED if created else status.HTTP_200_OK
+            ),
         )
 
 

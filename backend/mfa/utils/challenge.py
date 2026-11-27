@@ -40,7 +40,11 @@ def available_methods(user) -> list[str]:
         if not confirmed:
             return []
         methods = ['totp']
-        if RecoveryCode.objects.filter(user=user, used_at__isnull=True).exists():
+        has_recovery = RecoveryCode.objects.filter(
+            user=user,
+            used_at__isnull=True,
+        ).exists()
+        if has_recovery:
             methods.append('recovery')
         return methods
     if method == 'email':
@@ -49,13 +53,16 @@ def available_methods(user) -> list[str]:
 
 
 def _issue_email_code(challenge: LoginChallenge) -> None:
-    # shortcut: cooldown key is in the default cache (per process until shared).
+    # shortcut: cooldown key is in the default cache
+    # (per process until shared).
     if not cache.add(_resend_key(challenge.pk), 1, RESEND_SECONDS):
         raise MfaError('Please wait before requesting a new code.')
     code = generate_login_code()
     challenge.code_hash = hash_value(code, 'login')
     challenge.method = LoginChallenge.Method.EMAIL
-    challenge.expires_at = timezone.now() + timedelta(minutes=CHALLENGE_MINUTES)
+    challenge.expires_at = timezone.now() + timedelta(
+        minutes=CHALLENGE_MINUTES,
+    )
     challenge.save(update_fields=['code_hash', 'method', 'expires_at'])
     if not send_login_code(challenge.user, code):
         cache.delete(_resend_key(challenge.pk))
@@ -74,7 +81,10 @@ def create_challenge(user, methods: list[str]) -> LoginChallenge:
             else LoginChallenge.Method.EMAIL
         )
     now = timezone.now()
-    LoginChallenge.objects.filter(user=user, used_at__isnull=True).update(used_at=now)
+    LoginChallenge.objects.filter(
+        user=user,
+        used_at__isnull=True,
+    ).update(used_at=now)
     challenge = LoginChallenge.objects.create(
         user=user,
         method=method,
@@ -132,7 +142,9 @@ def verify_challenge(token: str, code: str, method: str):
         ):
             error = 'Invalid or expired challenge.'
             user = None
-        elif is_locked(challenge.user_id) or challenge.attempts >= MAX_ATTEMPTS:
+        elif (
+            is_locked(challenge.user_id) or challenge.attempts >= MAX_ATTEMPTS
+        ):
             error = 'Too many attempts. Try again later.'
             user = None
         elif _accept(challenge, code, method):
@@ -162,7 +174,9 @@ def verify_challenge(token: str, code: str, method: str):
 
 def resend_challenge(token: str) -> None:
     challenge = (
-        LoginChallenge.objects.select_related('user').filter(token=token).first()
+        LoginChallenge.objects.select_related('user')
+        .filter(token=token)
+        .first()
     )
     if (
         challenge is None
@@ -181,7 +195,10 @@ def status_for(user) -> dict:
     method = getattr(user, 'mfa_method', '') or ''
     enabled = bool(method)
     methods = available_methods(user) if enabled else []
-    remaining = RecoveryCode.objects.filter(user=user, used_at__isnull=True).count()
+    remaining = RecoveryCode.objects.filter(
+        user=user,
+        used_at__isnull=True,
+    ).count()
     available_to_enable = [] if enabled else ['totp', 'email']
     return {
         'enabled': enabled,

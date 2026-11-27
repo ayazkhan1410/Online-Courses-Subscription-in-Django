@@ -22,7 +22,7 @@ class CustomUser(AbstractUser):
         blank=True,
         default=MFA_NONE,
     )
-    # Django password hashes need more than 40 chars (Postgres enforces length).
+    # Password hashes need >40 chars (Postgres length).
     password = models.CharField(max_length=128)
     google_sub = models.CharField(
         max_length=255,

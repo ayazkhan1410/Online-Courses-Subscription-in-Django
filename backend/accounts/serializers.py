@@ -9,7 +9,9 @@ from subscriptions.models import Subscription
 from utils.turnstile import get_client_ip, verify_turnstile
 
 
-def _require_turnstile(serializer: serializers.Serializer, attrs: dict) -> dict:
+def _require_turnstile(
+    serializer: serializers.Serializer, attrs: dict
+) -> dict:
     token = (attrs.get('turnstile_token') or '').strip()
     if settings.TURNSTILE_TEST_MODE and not token:
         attrs['turnstile_token'] = 'test-mode'
@@ -110,7 +112,9 @@ class ChangePasswordSerializer(serializers.Serializer):
         try:
             validate_password(attrs['password'])
         except DjangoValidationError as exc:
-            raise serializers.ValidationError({'password': list(exc.messages)}) from exc
+            raise serializers.ValidationError(
+                {'password': list(exc.messages)}
+            ) from exc
         return attrs
 
 

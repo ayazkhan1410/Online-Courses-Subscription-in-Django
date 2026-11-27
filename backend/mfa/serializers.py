@@ -23,7 +23,9 @@ class MfaDisableSerializer(serializers.Serializer):
         allow_blank=True,
         write_only=True,
     )
-    code = serializers.CharField(required=False, allow_blank=True, max_length=64)
+    code = serializers.CharField(
+        required=False, allow_blank=True, max_length=64
+    )
 
     def validate(self, attrs: dict) -> dict:
         if not attrs.get('password') and not attrs.get('code'):

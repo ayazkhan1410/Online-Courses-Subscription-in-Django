@@ -14,7 +14,10 @@ from courses.models import (
     PathStep,
     Project,
 )
-from courses.services.playlist_import import playlist_id_from_url, resolve_import_status
+from courses.services.playlist_import import (
+    playlist_id_from_url,
+    resolve_import_status,
+)
 from learning.models import Enrollment
 
 
@@ -91,14 +94,18 @@ class CourseLockAndSeedTests(TestCase):
         module = response.data['course_modules'][0]
         self.assertFalse(module['is_locked'])
         self.assertEqual(module['youtube_video_id'], 'free123')
-        self.assertIn('youtube-nocookie.com/embed/free123', module['embed_url'])
+        self.assertIn(
+            'youtube-nocookie.com/embed/free123', module['embed_url']
+        )
 
     def test_logged_in_user_can_enroll_any_course(self):
         self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
         response = self.client.post('/api/courses/premium-course/enroll/')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(
-            Enrollment.objects.filter(user=self.user, course=self.premium).exists()
+            Enrollment.objects.filter(
+                user=self.user, course=self.premium
+            ).exists()
         )
 
     def test_enrolled_modules_unlocked_without_pro(self):
@@ -146,7 +153,9 @@ class CourseLockAndSeedTests(TestCase):
         response = self.client.get('/api/categories/')
         row = next(item for item in response.data if item['slug'] == 'python')
         self.assertEqual(row['published_course_count'], 1)
-        self.assertEqual(row['cover_image_url'], 'https://img.example/python-cover.jpg')
+        self.assertEqual(
+            row['cover_image_url'], 'https://img.example/python-cover.jpg'
+        )
         detail = self.client.get('/api/categories/python/')
         self.assertEqual(detail.status_code, status.HTTP_200_OK)
         self.assertEqual(detail.data['category']['slug'], 'python')
@@ -161,7 +170,8 @@ class CourseLockAndSeedTests(TestCase):
 
     def test_playlist_id_and_publish_rules(self):
         playlist_url = (
-            'https://www.youtube.com/playlist?list=PL-osiE80TeTtoQCKZ03TU5fNfx2UY6U4p'
+            'https://www.youtube.com/playlist?'
+            'list=PL-osiE80TeTtoQCKZ03TU5fNfx2UY6U4p'
         )
         self.assertEqual(
             playlist_id_from_url(playlist_url),

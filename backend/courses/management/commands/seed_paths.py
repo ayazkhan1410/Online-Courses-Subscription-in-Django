@@ -76,7 +76,8 @@ PATH_SPECS = [
         'title': 'Crack coding interviews',
         'level': 'Intermediate',
         'summary': (
-            'Data structures and algorithms in the order most interviewers ask them.'
+            'Data structures and algorithms in the order '
+            'most interviewers ask them.'
         ),
         'sort_order': 4,
         'steps': [
@@ -94,7 +95,9 @@ PATH_SPECS = [
         'slug': 'start-freelancing',
         'title': 'Start freelancing',
         'level': 'Beginner',
-        'summary': 'Get your first clients once you can build something useful.',
+        'summary': (
+            'Get your first clients once you can build something useful.'
+        ),
         'sort_order': 5,
         'steps': [
             ('PLqG7o8rLExOoIVIWZCtmQI_YOlHuoXBpJ', ''),
@@ -156,7 +159,8 @@ class Command(BaseCommand):
                         if course is None:
                             self.stdout.write(
                                 self.style.WARNING(
-                                    f'Skip freelancing playlist {fid} (not published)'
+                                    f'Skip freelancing playlist {fid} '
+                                    f'(not published)'
                                 )
                             )
                             continue
@@ -172,7 +176,8 @@ class Command(BaseCommand):
                 if course is None:
                     self.stdout.write(
                         self.style.WARNING(
-                            f'Skip {playlist_id} in {path.slug} (not published)'
+                            f'Skip {playlist_id} in {path.slug} '
+                            f'(not published)'
                         )
                     )
                     continue

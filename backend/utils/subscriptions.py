@@ -17,7 +17,7 @@ def list_plans():
 
 
 def upgrade_to_pro(user, membership_id: int, stripe_token: str) -> None:
-    """Charge Stripe and mark the user as Pro. Raises ValueError/RuntimeError."""
+    """Charge Stripe and mark the user as Pro."""
     try:
         plan = SubscriptionList.objects.get(id=membership_id)
     except SubscriptionList.DoesNotExist as exc:

@@ -129,7 +129,11 @@ class Courses(models.Model):
             base = slugify(self.courses_name)[:200] or 'course'
             candidate = base
             n = 1
-            while Courses.objects.filter(slug=candidate).exclude(pk=self.pk).exists():
+            while (
+                Courses.objects.filter(slug=candidate)
+                .exclude(pk=self.pk)
+                .exists()
+            ):
                 n += 1
                 candidate = f'{base}-{n}'
             self.slug = candidate

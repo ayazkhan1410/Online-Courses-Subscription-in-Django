@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def issue_password_reset(email: str) -> None:
-    """Send reset mail when the account exists. Always silent on missing email."""
+    """Send reset mail if the account exists. Silent when missing."""
     user = CustomUser.objects.filter(email__iexact=email).first()
     if user is None:
         return
@@ -82,6 +82,15 @@ def verify_google_credential(credential: str) -> dict:
     return payload
 
 
+def _secure_unverified_google_link(user: CustomUser) -> None:
+    """Drop password and sessions for an unverified email Google link."""
+    from accounts.models import EmailVerificationCode
+
+    user.set_unusable_password()
+    EmailVerificationCode.objects.filter(user=user).delete()
+    Token.objects.filter(user=user).delete()
+
+
 def get_or_create_google_user(payload: dict) -> CustomUser:
     email = str(payload['email']).strip().lower()
     sub = str(payload['sub'])
@@ -91,21 +100,24 @@ def get_or_create_google_user(payload: dict) -> CustomUser:
     user = CustomUser.objects.filter(google_sub=sub).first()
     if user is not None:
         if not user.email_verified:
+            _secure_unverified_google_link(user)
             user.email_verified = True
-            user.save(update_fields=['email_verified'])
+            user.save(update_fields=['password', 'email_verified'])
         return user
 
     user = CustomUser.objects.filter(email__iexact=email).first()
     if user is not None:
-        updates = []
+        updates: list[str] = []
         if not user.google_sub:
             user.google_sub = sub
             updates.append('google_sub')
         if not user.email_verified:
+            _secure_unverified_google_link(user)
             user.email_verified = True
-            updates.append('email_verified')
+            updates.extend(['password', 'email_verified'])
         if updates:
-            user.save(update_fields=updates)
+            # Deduplicate while preserving order.
+            user.save(update_fields=list(dict.fromkeys(updates)))
         return user
 
     user = CustomUser(

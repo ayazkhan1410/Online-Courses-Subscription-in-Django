@@ -41,7 +41,9 @@ class MfaApiTests(TestCase):
         self.secret = ''
         self.recovery: list[str] = []
 
-    def _login(self, email: str | None = None, password: str = 'StrongPass123'):
+    def _login(
+        self, email: str | None = None, password: str = 'StrongPass123'
+    ):
         self.client.credentials()
         return self.client.post(
             '/api/auth/login/',
@@ -131,7 +133,9 @@ class MfaApiTests(TestCase):
         self.assertTrue(status_response.data['enabled'])
         self.assertEqual(status_response.data['recovery_codes_remaining'], 8)
         self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].subject, 'Two-factor authentication is on')
+        self.assertEqual(
+            mail.outbox[0].subject, 'Two-factor authentication is on'
+        )
         for code in self.recovery:
             self.assertNotIn(code, mail.outbox[0].body)
 
@@ -159,7 +163,9 @@ class MfaApiTests(TestCase):
     def test_verify_incorrect_code(self):
         self._enable()
         login = self._login()
-        response = self._verify(login.data['challenge_token'], '000000', 'totp')
+        response = self._verify(
+            login.data['challenge_token'], '000000', 'totp'
+        )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertNotIn('token', response.data)
 
@@ -177,7 +183,9 @@ class MfaApiTests(TestCase):
     def test_expired_challenge(self):
         self._enable()
         login = self._login()
-        challenge = LoginChallenge.objects.get(token=login.data['challenge_token'])
+        challenge = LoginChallenge.objects.get(
+            token=login.data['challenge_token']
+        )
         challenge.expires_at = timezone.now() - timedelta(seconds=5)
         challenge.save(update_fields=['expires_at'])
         response = self._verify(
@@ -215,7 +223,9 @@ class MfaApiTests(TestCase):
         self.assertEqual(again.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertNotIn('token', again.data)
         self.assertEqual(
-            RecoveryCode.objects.filter(user=self.user, used_at__isnull=False).count(),
+            RecoveryCode.objects.filter(
+                user=self.user, used_at__isnull=False
+            ).count(),
             1,
         )
 
@@ -240,7 +250,9 @@ class MfaApiTests(TestCase):
         )
         self.assertEqual(disabled.status_code, status.HTTP_200_OK)
         self.assertFalse(Authenticator.objects.filter(user=self.user).exists())
-        self.assertEqual(RecoveryCode.objects.filter(user=self.user).count(), 0)
+        self.assertEqual(
+            RecoveryCode.objects.filter(user=self.user).count(), 0
+        )
         login = self._login()
         self.assertIn('token', login.data)
         self.assertNotIn('mfa_required', login.data)
@@ -330,13 +342,17 @@ class MfaApiTests(TestCase):
 
     def test_mfa_off_by_default(self):
         status_response = self.client.get('/api/auth/mfa/status/')
-        self.assertEqual(status_response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            status_response.status_code, status.HTTP_401_UNAUTHORIZED
+        )
         login = self._login()
         self._auth(login.data['token'])
         status_response = self.client.get('/api/auth/mfa/status/')
         self.assertFalse(status_response.data['enabled'])
         self.assertEqual(status_response.data['method'], '')
-        self.assertEqual(status_response.data['available_to_enable'], ['totp', 'email'])
+        self.assertEqual(
+            status_response.data['available_to_enable'], ['totp', 'email']
+        )
 
     def test_enable_email_mfa_login_uses_email_only(self):
         self._enable_email()
@@ -344,5 +360,7 @@ class MfaApiTests(TestCase):
         self.assertTrue(login.data['mfa_required'])
         self.assertEqual(login.data['methods'], ['email'])
         match = re.search(r'\b(\d{6})\b', mail.outbox[-1].body)
-        verified = self._verify(login.data['challenge_token'], match.group(1), 'email')
+        verified = self._verify(
+            login.data['challenge_token'], match.group(1), 'email'
+        )
         self.assertEqual(verified.status_code, status.HTTP_200_OK)

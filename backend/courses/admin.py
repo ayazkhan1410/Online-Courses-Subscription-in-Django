@@ -13,7 +13,10 @@ from courses.models import (
     PathStep,
     Project,
 )
-from courses.services.playlist_import import PlaylistImportError, import_playlist
+from courses.services.playlist_import import (
+    PlaylistImportError,
+    import_playlist,
+)
 
 
 class ImportPlaylistForm(forms.Form):
@@ -121,7 +124,9 @@ class CoursesAdmin(admin.ModelAdmin):
                 except PlaylistImportError as exc:
                     messages.error(request, str(exc))
                 else:
-                    messages.success(request, f'Imported {course.courses_name}.')
+                    messages.success(
+                        request, f'Imported {course.courses_name}.'
+                    )
                     return redirect('admin:courses_courses_change', course.pk)
         else:
             form = ImportPlaylistForm()

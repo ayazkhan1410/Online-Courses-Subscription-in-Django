@@ -59,7 +59,7 @@ def send_security_alert(user, kind: str) -> None:
 
 
 def remember_device(user, request) -> None:
-    """Email when the browser changes. The first device seen is stored quietly."""
+    """Email when the browser changes. First device is stored quietly."""
     if request is None:
         return
     ua = (request.META.get('HTTP_USER_AGENT') or '')[:500]

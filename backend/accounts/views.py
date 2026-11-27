@@ -31,7 +31,9 @@ from utils.auth import (
     verify_google_credential,
 )
 
-RESEND_VERIFY_MESSAGE = 'If that email needs verification, a new code has been sent.'
+RESEND_VERIFY_MESSAGE = (
+    'If that email needs verification, a new code has been sent.'
+)
 
 
 class RegisterAPIView(APIView):
@@ -115,7 +117,9 @@ class GoogleAuthAPIView(APIView):
         serializer = GoogleAuthSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            payload = verify_google_credential(serializer.validated_data['credential'])
+            payload = verify_google_credential(
+                serializer.validated_data['credential']
+            )
             user = get_or_create_google_user(payload)
         except ValueError as exc:
             return Response(

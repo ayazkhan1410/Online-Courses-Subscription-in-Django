@@ -25,7 +25,9 @@ _TURNSTILE = {'turnstile_token': 'test-token'}
         ],
         'DEFAULT_THROTTLE_CLASSES': [],
         'DEFAULT_THROTTLE_RATES': {},
-        'DEFAULT_PAGINATION_CLASS': ('rest_framework.pagination.PageNumberPagination'),
+        'DEFAULT_PAGINATION_CLASS': (
+            'rest_framework.pagination.PageNumberPagination'
+        ),
         'PAGE_SIZE': 8,
     },
 )
@@ -87,7 +89,9 @@ class AuthAPITests(TestCase):
         self.assertEqual(refreshed.status_code, status.HTTP_200_OK)
         self.assertIn('access', refreshed.data)
 
-        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refreshed.data["access"]}')
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f'Bearer {refreshed.data["access"]}'
+        )
         me_again = self.client.get('/api/auth/me/')
         self.assertEqual(me_again.status_code, status.HTTP_200_OK)
 
@@ -152,7 +156,9 @@ class AuthAPITests(TestCase):
         self.assertTrue(response.data['verification_required'])
         self.assertEqual(response.data['email'], 'fresh@example.com')
         self.assertNotIn('token', response.data)
-        self.assertTrue(CustomUser.objects.filter(email='fresh@example.com').exists())
+        self.assertTrue(
+            CustomUser.objects.filter(email='fresh@example.com').exists()
+        )
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn('Study with Ayaz code', mail.outbox[0].subject)
 
@@ -259,7 +265,9 @@ class AuthAPITests(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
-            CustomUser.objects.filter(email__iexact='learner@example.com').count(),
+            CustomUser.objects.filter(
+                email__iexact='learner@example.com'
+            ).count(),
             1,
         )
         self.user.refresh_from_db()
@@ -327,7 +335,9 @@ class AuthThrottleTests(TestCase):
             {'email': 'x@example.com', 'password': 'nope', **_TURNSTILE},
             format='json',
         )
-        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertEqual(
+            response.status_code, status.HTTP_429_TOO_MANY_REQUESTS
+        )
 
 
 @override_settings(
@@ -469,3 +479,47 @@ class EmailVerificationTests(TestCase):
         user = CustomUser.objects.get(email='verify@example.com')
         self.assertTrue(user.email_verified)
         self.assertEqual(user.google_sub, 'google-sub-verify')
+
+    @patch('utils.auth.google_id_token.verify_oauth2_token')
+    def test_google_link_unverified_disables_password_login(self, mock_verify):
+        from rest_framework.authtoken.models import Token
+
+        from accounts.models import EmailVerificationCode
+
+        self._register()
+        user = CustomUser.objects.get(email='verify@example.com')
+        stale = Token.objects.create(user=user)
+        self.assertTrue(
+            EmailVerificationCode.objects.filter(user=user).exists()
+        )
+        mock_verify.return_value = {
+            'email': 'verify@example.com',
+            'email_verified': True,
+            'iss': 'https://accounts.google.com',
+            'sub': 'google-sub-steal',
+            'name': 'Verify',
+        }
+        google = self.client.post(
+            '/api/auth/google/',
+            {'credential': 'fake-token'},
+            format='json',
+        )
+        self.assertEqual(google.status_code, status.HTTP_200_OK)
+        user.refresh_from_db()
+        self.assertTrue(user.email_verified)
+        self.assertFalse(user.has_usable_password())
+        self.assertFalse(
+            EmailVerificationCode.objects.filter(user=user).exists()
+        )
+        self.assertFalse(Token.objects.filter(key=stale.key).exists())
+        login = self.client.post(
+            '/api/auth/login/',
+            {
+                'email': 'verify@example.com',
+                'password': 'StrongPass123',
+                **_TURNSTILE,
+            },
+            format='json',
+        )
+        self.assertEqual(login.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertNotIn('token', login.data)

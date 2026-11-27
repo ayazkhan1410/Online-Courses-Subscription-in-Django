@@ -22,7 +22,9 @@ logger = logging.getLogger(__name__)
 ISSUER = 'Online Courses'
 
 
-def matching_step(secret: str, code: str, last_used_step: int | None) -> int | None:
+def matching_step(
+    secret: str, code: str, last_used_step: int | None
+) -> int | None:
     """30-second step for this code, or None.
 
     The step before and after now are accepted (valid_window=1). A step at or
@@ -85,7 +87,9 @@ def confirm_setup(user, code: str) -> list[str]:
         try:
             secret = decrypt_text(authenticator.secret_encrypted)
         except EncryptionError:
-            logger.error('MFA setup secret cannot be decrypted | user_id=%s', user.pk)
+            logger.error(
+                'MFA setup secret cannot be decrypted | user_id=%s', user.pk
+            )
             raise MfaError('Setup expired. Start again.') from None
         step = matching_step(secret, code, None)
         if step is None:
@@ -113,7 +117,9 @@ def consume_totp(user, code: str) -> bool:
         try:
             secret = decrypt_text(authenticator.secret_encrypted)
         except EncryptionError:
-            logger.error('MFA secret cannot be decrypted | user_id=%s', user.pk)
+            logger.error(
+                'MFA secret cannot be decrypted | user_id=%s', user.pk
+            )
             return False
         step = matching_step(secret, code, authenticator.last_used_step)
         if step is None:
