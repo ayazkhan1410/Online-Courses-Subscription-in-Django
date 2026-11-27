@@ -1,7 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["sin1"],
+  "regions": [
+    "sin1"
+  ],
   "buildCommand": "bash build.sh",
+  "ignoreCommand": "[ \"$VERCEL_ENV\" != \"production\" ]",
   "functions": {
     "config/wsgi.py": {
       "maxDuration": 60
