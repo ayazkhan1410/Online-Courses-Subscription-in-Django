@@ -97,6 +97,17 @@ class SeoMetaTests(TestCase):
         self.assertIn('/courses/seo-python', body)
         self.assertIn('<urlset', body)
 
+    def test_og_fonts_load_without_fallback(self):
+        from utils.og_completion import OgFontError, assert_og_fonts_load, _font
+
+        assert_og_fonts_load()
+        font = _font(64, medium=True)
+        self.assertNotEqual(type(font).__name__, 'ImageFont')
+        self.assertFalse(isinstance(font, type(None)))
+        # FreeTypeFont exposes path; default bitmap font does not.
+        self.assertTrue(hasattr(font, 'path'))
+        self.assertIn('InstrumentSans', font.path)
+
     def test_course_og_png(self):
         response = self.api.get('/api/og/course/seo-python.png')
         self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -18,8 +18,11 @@ BRAND = 'Study with Ayaz'
 
 
 def render_course_og(course: Courses) -> bytes:
-    module_count = course.course_modules.filter(can_view=True).count()
-    cache_key = f'og_course:{course.slug}:{module_count}'
+    module_count = course.course_modules.filter(
+        can_view=True,
+        is_available=True,
+    ).count()
+    cache_key = f'og_course:v2:{course.slug}:{module_count}'
     cached = cache.get(cache_key)
     if cached is not None:
         return cached
@@ -36,20 +39,21 @@ def render_course_og(course: Courses) -> bytes:
     img = Image.new('RGB', (WIDTH, HEIGHT), (251, 247, 239))
     draw = ImageDraw.Draw(img)
     draw.rectangle((0, 0, 28, HEIGHT), fill=(59, 52, 42))
-    draw.line((44, 0, 44, HEIGHT), fill=(200, 190, 175), width=1)
+    draw.line((56, 0, 56, HEIGHT), fill=(200, 190, 175), width=1)
 
-    label_font = _font(22)
-    title_font = _font(52, bold=True)
-    meta_font = _font(20)
+    label_font = _font(22, mono=True)
+    title_font = _font(64, medium=True)
+    meta_font = _font(28, mono=True)
 
-    draw.text((72, 56), BRAND, fill=(120, 112, 98), font=label_font)
-    draw.text((72, 110), title, fill=(35, 32, 28), font=title_font)
+    pad = 72
+    draw.text((pad, 56), BRAND, fill=(120, 112, 98), font=label_font)
+    draw.text((pad, 120), title, fill=(35, 32, 28), font=title_font)
     counter = f'{total} lessons · {level}'
-    draw.text((72, 240), counter, fill=(120, 112, 98), font=label_font)
-    _tick_row(draw, min(total, 24) or 1, 72, 290)
-    draw.text((72, 380), teacher, fill=(35, 32, 28), font=meta_font)
+    draw.text((pad, 280), counter, fill=(120, 112, 98), font=meta_font)
+    _tick_row(draw, min(total, 50) or 1, pad, 340)
+    draw.text((pad, 400), teacher, fill=(35, 32, 28), font=meta_font)
     draw.text(
-        (72, HEIGHT - 64),
+        (pad, HEIGHT - 72),
         'Free course · Study with Ayaz',
         fill=(154, 144, 127),
         font=meta_font,
@@ -63,7 +67,7 @@ def render_course_og(course: Courses) -> bytes:
 
 
 def render_default_og() -> bytes:
-    cache_key = 'og_default:1'
+    cache_key = 'og_default:v2'
     cached = cache.get(cache_key)
     if cached is not None:
         return cached
@@ -71,14 +75,15 @@ def render_default_og() -> bytes:
     img = Image.new('RGB', (WIDTH, HEIGHT), (251, 247, 239))
     draw = ImageDraw.Draw(img)
     draw.rectangle((0, 0, 28, HEIGHT), fill=(59, 52, 42))
-    draw.line((44, 0, 44, HEIGHT), fill=(200, 190, 175), width=1)
+    draw.line((56, 0, 56, HEIGHT), fill=(200, 190, 175), width=1)
 
-    title_font = _font(56, bold=True)
-    meta_font = _font(24)
-    draw.text((72, 180), BRAND, fill=(35, 32, 28), font=title_font)
+    title_font = _font(64, medium=True)
+    meta_font = _font(28, mono=True)
+    pad = 72
+    draw.text((pad, 180), BRAND, fill=(35, 32, 28), font=title_font)
     draw.text(
-        (72, 280),
-        'Free programming courses from curated playlists',
+        (pad, 280),
+        'Free programming courses from curated YouTube playlists.',
         fill=(120, 112, 98),
         font=meta_font,
     )
