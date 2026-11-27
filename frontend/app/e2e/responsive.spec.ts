@@ -18,6 +18,7 @@ const pages = [
   '/register',
   '/verify-email?email=demo%40example.com',
   '/forgot-password',
+  '/this-page-does-not-exist-xyz',
 ]
 
 const widths = [375, 768, 1440]
