@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home · Direction B · Study with Ayaz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="shared.css">
+<script src="../app.js"></script>
+<script src="data.js"></script>
+<script src="shared.js"></script>
+<style>
+  /* hero: a slow-moving wall of real course thumbnails, text on a calm panel */
+  .hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--line); background: #0f0d0b; }
+  .wall { position: absolute; inset: -40px -10% -40px 30%; display: flex; flex-direction: column; gap: 14px; transform: rotate(-6deg); }
+  .wall .row { display: flex; gap: 14px; width: max-content; animation: drift 80s linear infinite; }
+  .wall .row:nth-child(2) { animation-direction: reverse; animation-duration: 95s; }
+  .wall .row:nth-child(3) { animation-duration: 110s; }
+  .wall img { width: 280px; aspect-ratio: 16/9; object-fit: cover; border-radius: 12px; opacity: .9; }
+  @keyframes drift { to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .wall .row { animation: none; } }
+  .scrim { position: absolute; inset: 0; background: linear-gradient(90deg, #0f0d0b 0%, #0f0d0b 34%, rgba(15,13,11,.82) 52%, rgba(15,13,11,.25) 100%); }
+  .hero-in { position: relative; padding: 112px 0 120px; max-width: 640px; color: #f5f2ec; }
+  .eyebrow { font: 500 13px/1 var(--font-mono); color: #ef8a52; }
+  .hero h1 { font: 500 clamp(44px, 6.4vw, 80px)/1.0 var(--font-sans); letter-spacing: -0.035em; margin: 18px 0 22px; }
+  .hero p { font-size: 19px; line-height: 1.55; color: rgba(245,242,236,.78); margin: 0 0 34px; max-width: 520px; }
+  .hero .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn-light { background: #f5f2ec; color: #1a1714; border-color: #f5f2ec; }
+  .btn-outline { background: transparent; color: #f5f2ec; border: 1px solid rgba(245,242,236,.3); }
+  .btn-outline:hover { border-color: rgba(245,242,236,.6); }
+
+  /* numbers band */
+  .band { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); border-bottom: 1px solid var(--line); }
+  .band div { padding: 32px 24px; border-left: 1px solid var(--line); }
+  .band div:first-child { border-left: 0; padding-left: 0; }
+  .band b { display: block; font: 500 44px/1 var(--font-mono); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .band span { display: block; margin-top: 10px; color: var(--text-2); font-size: 14px; }
+
+  /* featured challenge */
+  .feat { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 48px; align-items: center; padding: 96px 0; }
+  .feat .big { position: relative; aspect-ratio: 16/9; border-radius: 20px; overflow: hidden; border: 1px solid var(--line-strong); }
+  .feat .big img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .feat h2 { font: 500 clamp(30px, 3.4vw, 44px)/1.08 var(--font-sans); letter-spacing: -0.02em; margin: 14px 0 16px; }
+  .feat p { color: var(--text-2); margin: 0 0 24px; font-size: 17px; }
+  .days { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; margin: 0 0 28px; }
+  .days i { aspect-ratio: 1; border-radius: 4px; background: var(--sunken); border: 1px solid var(--line-strong); }
+  .days i.on { background: var(--text); border-color: var(--text); }
+  .days i.now { background: var(--accent); border-color: var(--accent); }
+
+  /* category rows */
+  .rows { padding: 24px 0 72px; }
+  .row-block { padding: 28px 0; }
+  .row-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+  .row-head h2 { font: 500 24px/1.2 var(--font-sans); margin: 0; letter-spacing: -0.01em; }
+  .rail { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(300px, 1fr); gap: 20px; overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x mandatory; }
+  .rail > * { scroll-snap-align: start; }
+
+  /* paths as big cards with a stack of thumbnails */
+  .paths-sec { padding: 88px 0; border-top: 1px solid var(--line); }
+  .paths-sec h2 { font: 500 clamp(30px, 3.4vw, 44px)/1.08 var(--font-sans); letter-spacing: -0.02em; margin: 0 0 36px; max-width: 640px; }
+  .paths { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 20px; }
+  .path { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 24px; text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 22px; }
+  .path:hover { border-color: var(--line-strong); }
+  .stack { position: relative; height: 150px; }
+  .stack img { position: absolute; width: 72%; aspect-ratio: 16/9; object-fit: cover; border-radius: 10px; border: 1px solid var(--line-strong); box-shadow: 0 8px 20px rgba(0,0,0,.18); }
+  .stack img:nth-child(1) { left: 0; top: 22px; transform: rotate(-4deg); }
+  .stack img:nth-child(2) { left: 14%; top: 8px; z-index: 1; }
+  .stack img:nth-child(3) { left: 28%; top: 22px; transform: rotate(4deg); z-index: 2; }
+  .path h3 { font: 500 21px/1.25 var(--font-sans); margin: 0; }
+  .path .lvl { font: 400 12px/1 var(--font-mono); color: var(--text-3); margin-top: 8px; }
+
+  /* closing */
+  .close { padding: 96px 0; border-top: 1px solid var(--line); text-align: left; }
+  .close h2 { font: 500 clamp(34px, 4.6vw, 60px)/1.02 var(--font-sans); letter-spacing: -0.03em; margin: 0 0 28px; max-width: 820px; }
+
+  @media (max-width: 960px) {
+    .wall { inset: auto -20% -60px -20%; height: 300px; bottom: 0; top: auto; }
+    .scrim { background: linear-gradient(180deg, #0f0d0b 0%, #0f0d0b 55%, rgba(15,13,11,.55) 100%); }
+    .hero-in { padding: 64px 0 300px; }
+    .band { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .band div:nth-child(3) { border-left: 0; padding-left: 0; }
+    .band div:nth-child(n+3) { border-top: 1px solid var(--line); }
+    .feat { grid-template-columns: minmax(0,1fr); padding: 64px 0; gap: 32px; }
+    .paths { grid-template-columns: minmax(0,1fr); }
+  }
+  @media (max-width: 560px) {
+    .wall img { width: 200px; }
+    .rail { grid-auto-columns: 82%; }
+    .band b { font-size: 34px; }
+    .band div { padding: 24px 12px; }
+  }
+</style>
+</head>
+<body>
+<div data-nav="Home"></div>
+
+<section class="hero">
+  <div class="wall" aria-hidden="true"><div class="row" id="r1"></div><div class="row" id="r2"></div><div class="row" id="r3"></div></div>
+  <div class="scrim" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="hero-in">
+      <div class="eyebrow">58 free courses · 23 teachers</div>
+      <h1>Learn to code from YouTube's best teachers. In order.</h1>
+      <p>I picked the clearest playlists on Python, Django, React, DSA and AI, sorted them into paths, and added progress tracking for every lesson. Free, forever.</p>
+      <div class="cta">
+        <a class="btn btn-lg btn-light" href="#">Browse courses</a>
+        <a class="btn btn-lg btn-outline" href="#">Start the Python challenge</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main class="wrap">
+  <div class="band reveal">
+    <div><b>58</b><span>free courses</span></div>
+    <div><b>2,700</b><span>lessons, all tracked</span></div>
+    <div><b>5</b><span>learning paths</span></div>
+    <div><b>3</b><span>languages: Urdu, Hindi, English</span></div>
+  </div>
+
+  <section class="feat reveal">
+    <div class="big"><img id="feat-img" alt=""></div>
+    <div>
+      <div class="eyebrow" style="color:var(--accent-ink)">Most people start here</div>
+      <h2>50 Days of Python. One lesson a day.</h2>
+      <p>My own course in Urdu and Hindi. Ten minutes a day, and in seven weeks you're writing real programs. Tick off each day and watch the grid fill up.</p>
+      <div class="days" id="days" aria-label="Day 8 of 50"></div>
+      <a class="btn btn-primary btn-lg" href="#">Start day 1</a>
+    </div>
+  </section>
+
+  <div class="rows">
+    <div class="row-block reveal">
+      <div class="row-head"><h2>My courses</h2><a class="link" href="#">See all 21</a></div>
+      <div class="rail" data-fill="OWN"></div>
+    </div>
+    <div class="row-block reveal">
+      <div class="row-head"><h2>Popular from other teachers</h2><a class="link" href="#">Browse all</a></div>
+      <div class="rail" data-fill="POP"></div>
+    </div>
+  </div>
+
+  <section class="paths-sec reveal">
+    <h2>Don't know what to watch next? Follow a path.</h2>
+    <div class="paths" id="paths"></div>
+  </section>
+
+  <section class="close reveal">
+    <h2>Pick a course. Press play. Come back tomorrow.</h2>
+    <a class="btn btn-primary btn-lg" href="#">Create a free account</a>
+  </section>
+</main>
+
+<div data-footer></div>
+
+<script>
+  const all = [...OWN, ...POP];
+  const row = (list) => [...list, ...list].map((c) => `<img src="${c.img}" alt="">`).join('');
+  document.getElementById('r1').innerHTML = row(all.slice(0, 7));
+  document.getElementById('r2').innerHTML = row(all.slice(7).concat(all.slice(0, 2)));
+  document.getElementById('r3').innerHTML = row(all.slice(3, 11));
+  document.getElementById('feat-img').src = OWN[0].img;
+  document.getElementById('days').innerHTML = Array.from({ length: 50 }, (_, i) => `<i class="${i < 7 ? 'on' : i === 7 ? 'now' : ''}"></i>`).join('');
+  const P = [
+    ['Python from zero', 'Beginner', [OWN[0], OWN[1], OWN[2]]],
+    ['Django backend developer', 'Beginner to intermediate', [POP[0], POP[5], POP[2]]],
+    ['Crack coding interviews', 'Intermediate', [POP[6], POP[3]]],
+  ];
+  document.getElementById('paths').innerHTML = P.map(([t, l, cs]) => `
+    <a class="path" href="#"><div class="stack">${cs.map((c) => `<img src="${c.img}" alt="">`).join('')}</div>
+      <div><h3>${t}</h3><div class="lvl">${l}</div></div></a>`).join('');
+</script>
+</body>
+</html>
