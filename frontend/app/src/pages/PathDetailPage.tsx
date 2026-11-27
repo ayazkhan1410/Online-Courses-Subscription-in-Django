@@ -3,13 +3,14 @@ import { Link, useParams } from 'react-router-dom'
 import { ApiError, formatApiError } from '@/api/client'
 import { getPath } from '@/api/paths'
 import type { Course } from '@/api/types'
-import { CourseCard } from '@/components/CourseCard'
+import { Cover } from '@/components/Cover'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { Skeleton } from '@/components/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { shortenCourseTitle } from '@/lib/courseTitle'
+import { stripEmoji } from '@/lib/text'
 
 type PathNodeState = 'done' | 'started' | 'todo' | 'outlined'
 
@@ -97,6 +98,19 @@ export default function PathDetailPage() {
   )
 }
 
+function languageLabel(code: string | null | undefined): string {
+  switch (code) {
+    case 'ur':
+      return 'Urdu'
+    case 'hi':
+      return 'Hindi'
+    case 'ur-hi':
+      return 'Urdu / Hindi'
+    default:
+      return 'English'
+  }
+}
+
 function PathRouteStep({
   note,
   course,
@@ -107,6 +121,10 @@ function PathRouteStep({
   loggedIn: boolean
 }) {
   const state = pathNodeState(course.progress_percent ?? 0, loggedIn)
+  const title = shortenCourseTitle(stripEmoji(course.courses_name))
+  const level = course.level
+    ? course.level.charAt(0).toUpperCase() + course.level.slice(1)
+    : 'Beginner'
 
   return (
     <li className="path-route-step">
@@ -116,12 +134,25 @@ function PathRouteStep({
       </div>
       <div className="path-route-body">
         {note ? <p className="dim small path-route-note">{note}</p> : null}
-        <CourseCard
-          course={{
-            ...course,
-            courses_name: shortenCourseTitle(course.courses_name),
-          }}
-        />
+        <Link to={`/courses/${course.slug}`} className="path-route-card">
+          <Cover
+            className="path-route-cover"
+            title={title}
+            categoryLabel={course.category?.name}
+            lessons={course.module_count}
+            categorySlug={
+              course.creator?.is_owner ? 'study-with-ayaz' : course.category?.slug
+            }
+            imageUrl={course.thumbnail_url || course.course_image}
+          />
+          <div className="path-route-card-meta">
+            <div className="card-title">{title}</div>
+            <div className="meta">
+              {languageLabel(course.language)} · {level}
+              {course.module_count ? ` · ${course.module_count} lessons` : ''}
+            </div>
+          </div>
+        </Link>
       </div>
     </li>
   )

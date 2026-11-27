@@ -508,6 +508,27 @@
 .path-route-body { flex: 1; min-width: 0; padding-bottom: 32px; display: flex; flex-direction: column; gap: 12px; }
 .path-route-note { margin: 0; max-width: 52ch; }
 .path-route-step:last-child .path-route-body { padding-bottom: 0; }
+.path-route-card {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  max-width: 560px;
+  text-decoration: none;
+  color: inherit;
+}
+.path-route-cover {
+  width: 120px;
+  aspect-ratio: 4 / 3;
+  padding: 10px 10px 10px 18px;
+}
+.path-route-cover .cover-title { font-size: 14px; line-height: 1.25; }
+.path-route-cover .cover-top { font-size: 10px; }
+.path-route-card-meta .card-title { font-size: 16px; margin: 0 0 6px; }
+@media (max-width: 560px) {
+  .path-route-card { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; }
+  .path-route-cover { width: 96px; }
+}
 
 .not-found-page {
   margin: -32px -16px 0;
