@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { formatApiError } from '@/api/client'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { apiBase, formatApiError } from '@/api/client'
 import { getCourse } from '@/api/courses'
-import { enrollCourse, markLessonProgress } from '@/api/learning'
+import { enrollCourse, markLessonProgress, saveLessonPosition } from '@/api/learning'
 import type { Module } from '@/api/types'
 import { Counter, Ticks } from '@/components/Counter'
 import { ErrorState } from '@/components/ErrorState'
@@ -14,23 +14,49 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { useToast } from '@/components/Toast'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useYouTubePlayer } from '@/hooks/useYouTubePlayer'
 import { cleanLessonTitle } from '@/lib/lessonTitle'
+import { computeResumeSeconds, formatClock } from '@/lib/resume'
 import { stripEmoji } from '@/lib/text'
 
-function nocookieEmbed(url: string | null | undefined): string | null {
-  if (!url) return null
-  return url
-    .replace('www.youtube.com', 'www.youtube-nocookie.com')
-    .replace('://youtube.com', '://www.youtube-nocookie.com')
+function videoIdFromModule(mod: Module | undefined): string | null {
+  if (!mod || mod.is_locked) return null
+  const direct = (mod.youtube_video_id || '').trim()
+  if (direct) return direct
+  const embed = mod.embed_url || ''
+  const match = embed.match(/\/embed\/([^?/]+)/)
+  return match?.[1] ?? null
+}
+
+function persistPosition(moduleId: number, seconds: number, token: string | null) {
+  if (!token) return
+  const body = JSON.stringify({
+    module_id: moduleId,
+    seconds: Math.max(0, Math.floor(seconds)),
+  })
+  void fetch(`${apiBase()}/learning/progress/position/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body,
+    keepalive: true,
+  })
 }
 
 export default function LearnPage() {
   const { slug = '', lessonId } = useParams()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { token } = useAuth()
   const toast = useToast()
   const queryClient = useQueryClient()
   const [tab, setTab] = useState<'notes' | 'about'>('notes')
+  const playerHostRef = useRef<HTMLDivElement>(null)
+  const lastSavedRef = useRef(0)
+  const [resumeBanner, setResumeBanner] = useState<{ at: number } | null>(null)
+  const [startOverNonce, setStartOverNonce] = useState(0)
 
   const query = useQuery({
     queryKey: ['course', slug],
@@ -47,6 +73,24 @@ export default function LearnPage() {
 
   const { counter, title: lessonTitle } = cleanLessonTitle(current?.module_name)
   usePageTitle(current ? lessonTitle : 'Lesson')
+
+  const tParam = Number(searchParams.get('t') || '')
+  const savedPosition = current?.position_seconds ?? 0
+  const startSeconds = useMemo(() => {
+    if (startOverNonce > 0) return 0
+    if (Number.isFinite(tParam) && tParam > 0) return Math.floor(tParam)
+    return computeResumeSeconds(savedPosition, current?.duration_seconds)
+  }, [current?.duration_seconds, savedPosition, startOverNonce, tParam])
+
+  useEffect(() => {
+    setStartOverNonce(0)
+    if (Number.isFinite(tParam) && tParam > 0) {
+      setResumeBanner(null)
+      return
+    }
+    const resumeAt = computeResumeSeconds(savedPosition, current?.duration_seconds)
+    setResumeBanner(resumeAt > 0 ? { at: resumeAt } : null)
+  }, [current?.id, current?.duration_seconds, savedPosition, tParam])
 
   const enroll = useMutation({
     mutationFn: () => enrollCourse(slug),
@@ -65,9 +109,67 @@ export default function LearnPage() {
     onError: (error) => toast.push(formatApiError(error), 'err'),
   })
 
+  const savePos = useCallback(
+    async (modId: number, seconds: number, force = false) => {
+      const now = Date.now()
+      if (!force && now - lastSavedRef.current < 14_000) return
+      lastSavedRef.current = now
+      try {
+        const result = await saveLessonPosition(modId, seconds)
+        if (result.completed) {
+          await queryClient.invalidateQueries({ queryKey: ['course', slug] })
+        }
+      } catch {
+        /* ignore transient save errors while watching */
+      }
+    },
+    [queryClient, slug],
+  )
+
+  const canPlay = Boolean(
+    query.data?.is_enrolled && current && !current.is_locked && videoIdFromModule(current),
+  )
+  const videoId = canPlay ? videoIdFromModule(current) : null
+
+  const player = useYouTubePlayer(playerHostRef, {
+    videoId,
+    enabled: canPlay,
+    startSeconds,
+    onTime: (seconds, duration) => {
+      if (!current) return
+      void savePos(current.id, seconds)
+      if (duration > 0 && seconds >= duration * 0.9 && !current.is_completed) {
+        void markLessonProgress(current.id, true).then(() =>
+          queryClient.invalidateQueries({ queryKey: ['course', slug] }),
+        )
+      }
+    },
+    onPause: (seconds) => {
+      if (!current) return
+      void savePos(current.id, seconds, true)
+    },
+  })
+
   useEffect(() => {
     if (!token) navigate(`/login?next=${encodeURIComponent(window.location.pathname)}`)
   }, [token, navigate])
+
+  useEffect(() => {
+    if (!current || !token) return
+    const onHide = () => {
+      const seconds = player?.getCurrentTime() ?? 0
+      if (seconds > 0) persistPosition(current.id, seconds, token)
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') onHide()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('pagehide', onHide)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('pagehide', onHide)
+    }
+  }, [current, player, token])
 
   if (query.isLoading) {
     return <Skeleton className="m-6 h-80" />
@@ -85,8 +187,6 @@ export default function LearnPage() {
   const done = modules.filter((mod) => mod.is_completed).length
   const prev = index > 0 ? modules[index - 1] : null
   const next = index < modules.length - 1 ? modules[index + 1] : null
-  const canPlay = course.is_enrolled && current && !current.is_locked && current.embed_url
-  const embed = canPlay ? nocookieEmbed(current.embed_url) : null
   const dayLabel =
     counter?.replace(/^day\s+/i, 'Day ') ??
     `Lesson ${String(index + 1).padStart(2, '0')} of ${course.module_count}`
@@ -112,23 +212,32 @@ export default function LearnPage() {
       <div className="shell">
         <main className="main">
           <div className="player">
-            {embed ? (
-              <iframe
-                src={embed}
-                title={lessonTitle}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  width: '100%',
-                  height: '100%',
-                  border: 0,
-                }}
+            {canPlay ? (
+              <div
+                ref={playerHostRef}
+                data-testid="yt-player"
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
               />
             ) : null}
             <span className="player-note">Plays from YouTube</span>
           </div>
+
+          {resumeBanner ? (
+            <p className="dim small" style={{ marginTop: 12 }} data-testid="resume-banner">
+              Resumed at {formatClock(resumeBanner.at)}.{' '}
+              <button
+                type="button"
+                className="link"
+                onClick={() => {
+                  setResumeBanner(null)
+                  setStartOverNonce((n) => n + 1)
+                  player?.seekTo(0)
+                }}
+              >
+                Start over
+              </button>
+            </p>
+          ) : null}
 
           {!course.is_enrolled ? (
             <div className="l-head">

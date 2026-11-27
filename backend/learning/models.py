@@ -44,6 +44,7 @@ class LessonProgress(models.Model):
         related_name='progress_rows',
     )
     completed = models.BooleanField(default=False)
+    position_seconds = models.PositiveIntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

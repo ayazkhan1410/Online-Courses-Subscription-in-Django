@@ -79,6 +79,46 @@ class LearningAPITests(TestCase):
             (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN),
         )
 
+    def test_save_position_and_resume_rules(self):
+        from utils.learning import resume_seconds, save_lesson_position
+
+        Enrollment.objects.create(user=self.user, course=self.course)
+        self.module.duration_seconds = 600
+        self.module.save(update_fields=['duration_seconds'])
+
+        response = self.client.post(
+            '/api/learning/progress/position/',
+            {'module_id': self.module.id, 'seconds': 120},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['position_seconds'], 120)
+        progress = LessonProgress.objects.get(
+            user=self.user, module=self.module
+        )
+        self.assertEqual(progress.position_seconds, 120)
+        self.assertFalse(progress.completed)
+
+        # Last 15s of a 600s video → resume at 0
+        self.assertEqual(resume_seconds(590, 600), 0)
+        self.assertEqual(resume_seconds(580, 600), 577)
+        self.assertEqual(resume_seconds(10, 600), 7)
+        self.assertEqual(resume_seconds(2, 600), 0)
+
+        # 90% of 600 = 540 → auto-complete
+        save_lesson_position(self.user, self.module.id, 540)
+        progress.refresh_from_db()
+        self.assertTrue(progress.completed)
+        self.assertEqual(progress.position_seconds, 540)
+
+    def test_position_requires_enrollment(self):
+        response = self.client.post(
+            '/api/learning/progress/position/',
+            {'module_id': self.module.id, 'seconds': 12},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_upgrade_to_pro_get_or_create_defaults(self):
         plan = SubscriptionList.objects.create(
             subscription_list='Pro',

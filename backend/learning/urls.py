@@ -20,6 +20,11 @@ urlpatterns = [
         name='module-progress',
     ),
     path(
+        'learning/progress/position/',
+        views.LessonPositionAPIView.as_view(),
+        name='lesson-position',
+    ),
+    path(
         'wishlist/', views.WishlistListCreateAPIView.as_view(), name='wishlist'
     ),
     path(

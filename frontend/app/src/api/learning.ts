@@ -31,6 +31,16 @@ export function markLessonProgress(
   })
 }
 
+export function saveLessonPosition(
+  moduleId: number,
+  seconds: number,
+): Promise<LessonProgress> {
+  return api<LessonProgress>('/learning/progress/position/', {
+    method: 'POST',
+    body: { module_id: moduleId, seconds: Math.max(0, Math.floor(seconds)) },
+  })
+}
+
 export function getWishlist(): Promise<WishlistItem[]> {
   return api<WishlistItem[]>('/wishlist/')
 }

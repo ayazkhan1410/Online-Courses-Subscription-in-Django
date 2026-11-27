@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from courses.models import Courses
 from learning.serializers import (
     EnrollmentSerializer,
+    LessonPositionInputSerializer,
     LessonProgressInputSerializer,
     LessonProgressSerializer,
     WishlistSerializer,
@@ -18,6 +19,7 @@ from utils.learning import (
     list_wishlist,
     mark_lesson_progress,
     remove_wishlist,
+    save_lesson_position,
 )
 
 
@@ -76,6 +78,26 @@ class LessonProgressAPIView(APIView):
                 request.user,
                 module_id,
                 completed=payload.validated_data.get('completed', True),
+            )
+        except PermissionError as exc:
+            return Response(
+                {'detail': str(exc)}, status=status.HTTP_403_FORBIDDEN
+            )
+        return Response(LessonProgressSerializer(progress).data)
+
+
+class LessonPositionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_scope = 'progress_position'
+
+    def post(self, request):
+        payload = LessonPositionInputSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        try:
+            progress = save_lesson_position(
+                request.user,
+                payload.validated_data['module_id'],
+                payload.validated_data['seconds'],
             )
         except PermissionError as exc:
             return Response(

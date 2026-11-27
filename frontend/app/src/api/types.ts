@@ -16,9 +16,11 @@ export type Module = {
   youtube_video_id: string | null
   thumbnail_url: string | null
   sort_order: number
+  duration_seconds?: number | null
   can_view: boolean
   is_completed: boolean
   is_locked: boolean
+  position_seconds?: number
 }
 
 export type Category = {
@@ -213,6 +215,7 @@ export type LessonProgress = {
   id: number
   module: number
   completed: boolean
+  position_seconds?: number
   updated_at: string
 }
 

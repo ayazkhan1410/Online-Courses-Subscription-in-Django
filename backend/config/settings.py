@@ -150,6 +150,8 @@ REST_FRAMEWORK = {
         'auth': '10/min',
         'mfa': '10/min',
         'contact': '5/min',
+        'progress_position': '60/min',
+        'playlist_suggest': '5/min',
     },
     'DEFAULT_PAGINATION_CLASS': (
         'rest_framework.pagination.PageNumberPagination'

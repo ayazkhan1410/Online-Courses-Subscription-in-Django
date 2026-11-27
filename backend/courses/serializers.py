@@ -70,6 +70,7 @@ class CourseModuleSerializer(serializers.ModelSerializer):
     embed_url = serializers.SerializerMethodField()
     is_completed = serializers.SerializerMethodField()
     is_locked = serializers.SerializerMethodField()
+    position_seconds = serializers.SerializerMethodField()
 
     class Meta:
         model = CourseModule
@@ -86,6 +87,7 @@ class CourseModuleSerializer(serializers.ModelSerializer):
             'can_view',
             'is_completed',
             'is_locked',
+            'position_seconds',
         ]
 
     def get_embed_url(self, obj: CourseModule) -> str | None:
@@ -120,6 +122,21 @@ class CourseModuleSerializer(serializers.ModelSerializer):
             module=obj,
             completed=True,
         ).exists()
+
+    def get_position_seconds(self, obj: CourseModule) -> int:
+        position_map = self.context.get('position_map')
+        if position_map is not None:
+            return int(position_map.get(obj.id, 0))
+        request = self.context.get('request')
+        if request is None or not getattr(
+            request.user, 'is_authenticated', False
+        ):
+            return 0
+        row = LessonProgress.objects.filter(
+            user=request.user,
+            module=obj,
+        ).only('position_seconds').first()
+        return int(row.position_seconds) if row else 0
 
     def _can_access(self, obj: CourseModule) -> bool:
         request = self.context.get('request')

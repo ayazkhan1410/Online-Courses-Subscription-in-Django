@@ -34,15 +34,17 @@ def serializer_learning_context(user, course: Courses | None = None) -> dict:
         'is_pro': is_pro or user.is_staff,
     }
     if course is not None:
-        completed = set(
+        rows = list(
             LessonProgress.objects.filter(
                 user=user,
                 module__course=course,
-                completed=True,
-            ).values_list('module_id', flat=True)
+            ).values_list('module_id', 'completed', 'position_seconds')
         )
+        completed = {mid for mid, done, _ in rows if done}
+        position_map = {mid: pos for mid, _, pos in rows}
         total = course.course_modules.count()
         context['completed_module_ids'] = completed
+        context['position_map'] = position_map
         context['progress_map'][course.id] = (
             int(round(100 * len(completed) / total)) if total else 0
         )
@@ -107,6 +109,46 @@ def mark_lesson_progress(
     enrollment.last_accessed_at = timezone.now()
     enrollment.save(update_fields=['last_accessed_at'])
     return progress
+
+
+def save_lesson_position(
+    user, module_id: int, seconds: int
+) -> LessonProgress:
+    """Persist watch position; auto-complete at 90% when duration is known."""
+    module = get_object_or_404(CourseModule, pk=module_id)
+    enrollment = Enrollment.objects.filter(
+        user=user, course=module.course
+    ).first()
+    if enrollment is None:
+        raise PermissionError('Enroll in this course before tracking progress')
+
+    safe_seconds = max(0, int(seconds))
+    defaults: dict = {'position_seconds': safe_seconds}
+    duration = int(module.duration_seconds or 0)
+    if duration > 0 and safe_seconds >= int(duration * 0.9):
+        defaults['completed'] = True
+
+    progress, _ = LessonProgress.objects.update_or_create(
+        user=user,
+        module=module,
+        defaults=defaults,
+    )
+    enrollment.last_accessed_at = timezone.now()
+    enrollment.save(update_fields=['last_accessed_at'])
+    return progress
+
+
+def resume_seconds(
+    position: int, duration: int | None = None
+) -> int:
+    """Client resume rule: last 15s → 0, else max(0, position - 3)."""
+    pos = max(0, int(position or 0))
+    dur = int(duration or 0)
+    if dur > 0 and pos >= max(0, dur - 15):
+        return 0
+    if pos <= 3:
+        return 0
+    return pos - 3
 
 
 def list_wishlist(user):
