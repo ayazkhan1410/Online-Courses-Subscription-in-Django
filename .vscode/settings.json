@@ -2,8 +2,5 @@
   "python.defaultInterpreterPath": "${workspaceFolder}/backend/ocs_backend_venv/bin/python",
   "python.analysis.extraPaths": ["${workspaceFolder}/backend"],
   "python.analysis.autoSearchPaths": true,
-  "python.analysis.venvPath": "${workspaceFolder}/backend",
-  "python.analysis.venv": "ocs_backend_venv",
-  "python.terminal.activateEnvironment": true,
-  "basedpyright.analysis.extraPaths": ["${workspaceFolder}/backend"]
+  "python.terminal.activateEnvironment": true
 }
