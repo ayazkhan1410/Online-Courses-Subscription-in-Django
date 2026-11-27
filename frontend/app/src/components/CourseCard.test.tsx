@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import type { Course } from '@/api/types'
@@ -68,15 +68,22 @@ describe('CourseCard', () => {
     expect(screen.getByText('Corey Schafer')).toBeInTheDocument()
   })
 
-  it('always uses the generated cover, never a YouTube thumbnail', () => {
+  it('shows the YouTube thumbnail when the course has one', () => {
     const { container } = renderCard(
-      course({
-        thumbnail_url: 'https://i.ytimg.com/vi/abc/hqdefault.jpg',
-        course_image: 'https://img.example/cover.jpg',
-      }),
+      course({ thumbnail_url: 'https://i.ytimg.com/vi/abc/hqdefault.jpg' }),
     )
+    const img = container.querySelector('img.cover-thumb')
+    expect(img?.getAttribute('src')).toBe(
+      'https://i.ytimg.com/vi/abc/hqdefault.jpg',
+    )
+  })
+
+  it('falls back to the generated cover when the thumbnail fails', () => {
+    const { container } = renderCard(
+      course({ thumbnail_url: 'https://i.ytimg.com/vi/broken/hq.jpg' }),
+    )
+    fireEvent.error(container.querySelector('img.cover-thumb')!)
     expect(container.querySelector('img')).toBeNull()
-    expect(container.querySelector('.cover')).not.toBeNull()
-    expect(container.querySelector('.cover-media')).toBeNull()
+    expect(container.querySelector('.cover-title')).not.toBeNull()
   })
 })

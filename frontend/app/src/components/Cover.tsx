@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { cn } from '@/lib/cn'
 import { coverShortTitle, inkClass } from '@/lib/ink'
 
@@ -27,6 +28,7 @@ export function Cover({
         ? '1 lesson'
         : `${lessons} lessons`
   const shortTitle = coverShortTitle(title)
+  const [thumbFailed, setThumbFailed] = useState(false)
 
   if (compact) {
     return (
@@ -43,17 +45,18 @@ export function Cover({
   }
 
   const thumb = (imageUrl || '').trim()
-  if (thumb) {
+  if (thumb && !thumbFailed) {
     return (
       <div className={cn('cover cover-media', inkClass(categorySlug), className)}>
-        <img src={thumb} alt="" className="cover-thumb" loading="lazy" />
-        <div className="cover-scrim" aria-hidden="true" />
-        <div className="cover-top">
-          <span>{categoryLabel || 'Course'}</span>
-          {lessonText ? <span>{lessonText}</span> : <span />}
-        </div>
-        <div className="cover-title">{shortTitle}</div>
-        {byline ? <div className="cover-by">{byline}</div> : null}
+        <img
+          src={thumb}
+          alt=""
+          className="cover-thumb"
+          loading="lazy"
+          onError={() => setThumbFailed(true)}
+        />
+        {/* The thumbnail already shows the title; keep only the lesson count. */}
+        {lessonText ? <span className="cover-count">{lessonText}</span> : null}
       </div>
     )
   }
