@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home · Direction A · Study with Ayaz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="shared.css">
+<script src="../app.js"></script>
+<script src="data.js"></script>
+<script src="shared.js"></script>
+<style>
+  /* hero: text left, the real product on the right */
+  .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 56px; align-items: center; padding: 72px 0 88px; }
+  .hero h1 { font: 500 clamp(40px, 5vw, 60px)/1.04 var(--font-sans); letter-spacing: -0.025em; margin: 0 0 20px; }
+  .hero h1 em { font-style: normal; color: var(--accent-ink); }
+  .hero .lead { max-width: 480px; margin: 0 0 32px; }
+  .hero .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+  .facts { display: flex; gap: 28px; margin-top: 40px; flex-wrap: wrap; }
+  .facts b { display: block; font: 500 28px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); }
+  .facts span { font-size: 13px; color: var(--text-3); }
+
+  .player { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 20px; padding: 14px; box-shadow: var(--shadow); }
+  .player .screen { position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: #000; }
+  .player .screen img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .player .screen .play { position: absolute; inset: 0; margin: auto; width: 64px; height: 64px; border-radius: 50%;
+    background: rgba(19,17,15,.72); display: grid; place-items: center; color: #f5f2ec; }
+  .player .screen .play svg { width: 26px; height: 26px; fill: currentColor; margin-left: 4px; }
+  .player .info { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 16px; align-items: center; padding: 16px 6px 10px; }
+  .player .counter { font-size: 34px; }
+  .player .ttl { font: 500 16px/1.3 var(--font-sans); }
+  .player .sub { font: 400 12px/1.4 var(--font-mono); color: var(--text-3); margin-top: 4px; }
+  .player .ticks { margin: 4px 6px 14px; }
+  .player ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .player li { display: grid; grid-template-columns: 22px 64px minmax(0,1fr) auto; gap: 10px; align-items: center; padding: 11px 6px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .player li:last-child { border-bottom: 0; }
+  .player li .d { font: 400 12px/1 var(--font-mono); color: var(--text-3); }
+  .player li .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .player li.done .t { color: var(--text-3); text-decoration: line-through; text-decoration-color: var(--line-strong); }
+  .player li.now { color: var(--accent-ink); }
+  .player li.now .d { color: var(--accent-ink); }
+  .box { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--line-strong); display: grid; place-items: center; }
+  .done .box { background: var(--text); border-color: var(--text); color: var(--bg); }
+  .done .box svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 3; fill: none; }
+  .now .box { border-color: var(--accent); }
+  .tick-now { animation: blink 1.6s ease-in-out infinite; }
+  @keyframes blink { 50% { opacity: .35; } }
+  @media (prefers-reduced-motion: reduce) { .tick-now { animation: none; } }
+
+  /* sections */
+  .sec { padding: 72px 0; border-top: 1px solid var(--line); }
+  .sec-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 28px; }
+  .sec-head h2 { font: 500 30px/1.15 var(--font-sans); letter-spacing: -0.015em; margin: 0; }
+  .sec-head p { margin: 8px 0 0; color: var(--text-2); max-width: 520px; }
+  .rail { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(280px, 1fr); gap: 20px; overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x mandatory; }
+  .rail > * { scroll-snap-align: start; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px 20px; }
+
+  /* how it works */
+  .steps { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 20px; }
+  .step { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 24px; }
+  .step .n { font: 500 13px/1 var(--font-mono); color: var(--accent-ink); }
+  .step h3 { font: 500 19px/1.3 var(--font-sans); margin: 16px 0 8px; }
+  .step p { margin: 0; color: var(--text-2); font-size: 15px; }
+  .step .demo { margin-top: 20px; height: 72px; border-radius: 10px; background: var(--sunken); display: grid; place-items: center; padding: 0 16px; }
+  .chipset { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .chipset span { font: 400 12px/1 var(--font-mono); padding: 7px 9px; border-radius: 6px; border: 1px solid var(--line-strong); color: var(--text-2); }
+  .chipset span.on { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  /* paths */
+  .paths { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 20px; }
+  .path { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 24px; display: flex; flex-direction: column; gap: 18px; text-decoration: none; color: inherit; }
+  .path:hover { border-color: var(--line-strong); }
+  .path h3 { font: 500 19px/1.3 var(--font-sans); margin: 0; }
+  .path .lvl { font: 400 12px/1 var(--font-mono); color: var(--text-3); margin-top: 6px; }
+  .route { list-style: none; margin: 0; padding: 0; position: relative; }
+  .route::before { content: ""; position: absolute; left: 31px; top: 18px; bottom: 18px; width: 1px; background: var(--line-strong); }
+  .route li { position: relative; display: grid; grid-template-columns: 64px minmax(0,1fr); gap: 12px; align-items: center; padding: 6px 0; }
+  .route img { width: 64px; aspect-ratio: 16/9; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); position: relative; }
+  .route .s { font-size: 14px; line-height: 1.3; }
+  .route .s small { display: block; font: 400 11px/1.4 var(--font-mono); color: var(--text-3); }
+
+  /* me */
+  .me { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 28px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 32px; }
+  .me .face { width: 88px; height: 88px; border-radius: 50%; background: var(--sunken); border: 1px solid var(--line-strong); display: grid; place-items: center; font: 500 28px/1 var(--font-sans); color: var(--text-2); }
+  .me h2 { font: 500 24px/1.2 var(--font-sans); margin: 0 0 8px; }
+  .me p { margin: 0; color: var(--text-2); max-width: 620px; }
+
+  @media (max-width: 960px) {
+    .hero { grid-template-columns: minmax(0,1fr); padding: 40px 0 56px; gap: 40px; }
+    .grid4 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .steps, .paths { grid-template-columns: minmax(0,1fr); }
+    .me { grid-template-columns: minmax(0,1fr); text-align: left; }
+  }
+  @media (max-width: 560px) {
+    .grid4 { grid-template-columns: minmax(0,1fr); }
+    .rail { grid-auto-columns: 82%; }
+    .sec { padding: 56px 0; }
+    .sec-head { flex-direction: column; align-items: start; }
+    .player li { grid-template-columns: 22px 56px minmax(0,1fr); }
+    .player li .len { display: none; }
+  }
+</style>
+</head>
+<body>
+<div data-nav="Home"></div>
+
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <h1>Free coding courses from YouTube, in an order <em>you can finish</em></h1>
+      <p class="lead">I pick the clearest playlists on Python, Django, React and more, put them in order, and keep track of every lesson you watch. Nothing to pay.</p>
+      <div class="cta">
+        <a class="btn btn-primary btn-lg" href="#">Browse courses</a>
+        <a class="btn btn-lg" href="#">Start the Python challenge</a>
+      </div>
+      <div class="facts">
+        <div><b>58</b><span>free courses</span></div>
+        <div><b>5</b><span>learning paths</span></div>
+        <div><b>3</b><span>languages</span></div>
+      </div>
+    </div>
+
+    <!-- the product itself: the lesson you're on -->
+    <div class="player reveal" aria-label="Preview of a lesson in progress">
+      <div class="screen">
+        <img id="hero-img" alt="">
+        <span class="play"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg></span>
+      </div>
+      <div class="info">
+        <div class="counter"><span class="num">07</span><span class="of"> / 50</span></div>
+        <div><div class="ttl">50 Days of Python Programming challenge</div><div class="sub">Study with Ayaz · Urdu / Hindi</div></div>
+      </div>
+      <div class="ticks" data-ticks="7/50"></div>
+      <ol>
+        <li class="done"><span class="box"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span><span class="d">Day 06</span><span class="t">Typecasting in Python</span><span class="d len">11:02</span></li>
+        <li class="done"><span class="box"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span><span class="d">Day 07</span><span class="t">Types of casting</span><span class="d len">09:47</span></li>
+        <li class="now"><span class="box tick-now"></span><span class="d">Day 08</span><span class="t">How to create a list in Python</span><span class="d len">12:30</span></li>
+        <li><span class="box"></span><span class="d">Day 09</span><span class="t">List methods</span><span class="d len">14:05</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="sec reveal">
+    <div class="sec-head">
+      <div><h2>Start with my courses</h2><p>Taught by me in Urdu and Hindi, one small idea at a time.</p></div>
+      <a class="link" href="#">All 21 courses</a>
+    </div>
+    <div class="rail" data-fill="OWN" data-progress="1"></div>
+  </section>
+
+  <section class="sec reveal">
+    <div class="sec-head"><div><h2>How it works</h2></div></div>
+    <div class="steps">
+      <div class="step">
+        <div class="n">01</div><h3>Pick what to learn</h3>
+        <p>Choose a topic, a teacher or a language, or follow a ready-made path.</p>
+        <div class="demo"><div class="chipset"><span>Python</span><span class="on">Django</span><span>React</span><span>Urdu / Hindi</span></div></div>
+      </div>
+      <div class="step">
+        <div class="n">02</div><h3>Watch here, from YouTube</h3>
+        <p>Every video plays from the creator's channel. Take notes at any second.</p>
+        <div class="demo"><span class="mono small dim">04:12 &nbsp;list slicing starts at index 0</span></div>
+      </div>
+      <div class="step">
+        <div class="n">03</div><h3>Tick it off, come back</h3>
+        <p>Your progress is saved. Next time you start right where you stopped.</p>
+        <div class="demo" style="width:100%"><div class="ticks" data-ticks="12/30" style="width:100%"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec reveal">
+    <div class="sec-head">
+      <div><h2>Not sure where to start? Follow a path</h2><p>Each path uses free courses from the library, picked so the next one starts where the last one ended.</p></div>
+      <a class="link" href="#">All paths</a>
+    </div>
+    <div class="paths" id="paths"></div>
+  </section>
+
+  <section class="sec reveal">
+    <div class="sec-head">
+      <div><h2>The best from other teachers</h2><p>Playlists I'd recommend to a friend. Every course links to the creator's channel.</p></div>
+      <a class="link" href="#">Browse all</a>
+    </div>
+    <div class="grid4" data-fill="POP"></div>
+  </section>
+
+  <section class="sec reveal">
+    <div class="me">
+      <div class="face">A</div>
+      <div>
+        <h2>Hi, I'm Ayaz</h2>
+        <p>I teach programming on YouTube in Urdu and Hindi. This site grew out of one question I kept getting: which course should I watch next? So I put the answers in order. It's free and it will stay free.</p>
+      </div>
+      <a class="btn" href="#">My YouTube channel</a>
+    </div>
+  </section>
+</main>
+
+<div data-footer></div>
+
+<script>
+  document.getElementById('hero-img').src = OWN[0].img;
+  const P = [
+    ['Python from zero', 'Beginner', [OWN[0], OWN[1]]],
+    ['Django backend developer', 'Beginner to intermediate', [POP[0], POP[2]]],
+    ['Crack coding interviews', 'Intermediate', [POP[6], POP[3]]],
+  ];
+  document.getElementById('paths').innerHTML = P.map(([t, l, cs]) => `
+    <a class="path" href="#"><div><h3>${t}</h3><div class="lvl">${l}</div></div>
+      <ol class="route">${cs.map((c, i) => `<li><img src="${c.img}" alt=""><div class="s">${c.t}<small>${String(i + 1).padStart(2, '0')} · ${c.by}</small></div></li>`).join('')}</ol></a>`).join('');
+</script>
+</body>
+</html>
