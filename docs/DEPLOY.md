@@ -34,8 +34,10 @@ through a pull request.
    git push -u origin fix/short-description
    gh pr create --fill
    ```
-   Vercel builds a **preview** of the branch and comments the preview links on the PR.
-   Open them and check the change.
+   Vercel builds a **preview** of the website and comments the link on the PR. Open it and
+   check the change. The backend is not built for previews (`ignoreCommand` in
+   `backend/vercel.json`): a preview build would run migrations, and an unmerged branch must
+   never change the live database. Its Vercel check shows as skipped.
 4. Merge the PR on GitHub (only the repo owner can). Vercel deploys `main` to production in
    about a minute.
 5. Check https://study-with-ayaz-api.vercel.app/healthz returns `ok` and the site loads.
