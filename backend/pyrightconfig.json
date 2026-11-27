@@ -1,13 +1,12 @@
 {
   "include": ["."],
   "exclude": [
-    "**/ocs_backend_venv",
     "**/__pycache__",
     "staticfiles",
     "media"
   ],
-  "venvPath": ".",
-  "venv": "ocs_backend_venv",
+  "venvPath": "..",
+  "venv": "venv",
   "pythonVersion": "3.14",
   "pythonPlatform": "Linux",
   "typeCheckingMode": "basic",

@@ -12,8 +12,8 @@ Full-stack online courses platform with a **Django REST Framework** API, **Postg
 
 ```
 .
+├── venv/                        # Local Python virtualenv (gitignored)
 ├── backend/
-│   ├── ocs_backend_venv/        # Local Python virtualenv (gitignored)
 │   ├── config/                  # Django project settings & root URLs
 │   ├── accounts/                # Users, profiles, auth APIs
 │   ├── courses/                 # Course catalog, modules, YouTube seed
@@ -26,7 +26,7 @@ Full-stack online courses platform with a **Django REST Framework** API, **Postg
 │   ├── entrypoint.sh
 │   ├── requirements.txt         # Runtime dependencies
 │   ├── requirements-dev.txt     # + Ruff
-│   ├── requirements.freeze.txt  # Exact pip freeze from ocs_backend_venv
+│   ├── requirements.freeze.txt  # Exact pip freeze from venv
 │   ├── .env.example
 │   └── manage.py
 ├── frontend/                    # Static UI (nginx) on port 4780
@@ -82,18 +82,18 @@ Compose sets `POSTGRES_HOST=db` for the backend container. Host clients use `loc
 
 ## Local backend (virtualenv)
 
-Virtualenv name: **`ocs_backend_venv`** (Online Courses Subscription backend).
-Cursor / VS Code should use `backend/ocs_backend_venv/bin/python` (see `.vscode/settings.json`
+Virtualenv name: **`venv`** at the repo root.
+Cursor / VS Code should use `venv/bin/python` (see `.vscode/settings.json`
 and `backend/pyrightconfig.json`) so Django imports resolve in the editor.
 
 ```bash
-cd backend
-python3 -m venv ocs_backend_venv
-source ocs_backend_venv/bin/activate
-pip install -r requirements.txt -r requirements-dev.txt
+python3 -m venv venv
+source venv/bin/activate
+pip install -r backend/requirements.txt -r backend/requirements-dev.txt
 
 # Start Postgres only, then migrate
-cd .. && docker compose up -d db && cd backend
+docker compose up -d db
+cd backend
 # backend/.env should use POSTGRES_HOST=localhost and POSTGRES_PORT=5433
 python manage.py migrate
 python manage.py seed_youtube_courses
@@ -103,8 +103,8 @@ python manage.py runserver 0.0.0.0:4781
 Refresh the exact lock file from the active venv when deps change:
 
 ```bash
-source ocs_backend_venv/bin/activate
-pip freeze > requirements.freeze.txt
+source venv/bin/activate
+pip freeze > backend/requirements.freeze.txt
 ```
 
 ### Frontend (local)
@@ -154,10 +154,9 @@ Catalog source: `backend/courses/data/youtube_catalog.json` (from [@studywithaya
 ## Linting (Ruff)
 
 ```bash
-cd backend
-source ocs_backend_venv/bin/activate
-ruff check .
-ruff format .
+source venv/bin/activate
+ruff check backend
+ruff format backend
 ```
 
 CI runs the same checks on every PR (`.github/workflows/ruff.yml`). Relative imports are banned.
@@ -172,7 +171,7 @@ See `backend/.env.example`. Important keys:
 - `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`
 - `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`
 
-Never commit `backend/.env` or `ocs_backend_venv/`.
+Never commit `backend/.env` or `venv/`.
 
 ## Team roles
 

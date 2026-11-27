@@ -12,6 +12,7 @@ backend/ocs_backend_venv/
 # Django
 *.log
 backend/staticfiles/
+backend/media/.mail_inbox/
 *.sqlite3
 *.sqlite3-journal
 

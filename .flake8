@@ -4,6 +4,7 @@ extend-ignore = E203, W503
 exclude =
     .git,
     __pycache__,
+    venv,
     backend/ocs_backend_venv,
     **/migrations/*,
     backend/staticfiles,
