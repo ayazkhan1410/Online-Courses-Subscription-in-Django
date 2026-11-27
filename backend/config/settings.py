@@ -196,7 +196,6 @@ TURNSTILE_TEST_MODE = os.getenv('TURNSTILE_TEST_MODE', 'False').lower() in (
     'yes',
 )
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in (
     '1',
@@ -210,6 +209,23 @@ DEFAULT_FROM_EMAIL = os.getenv(
     'DEFAULT_FROM_EMAIL',
     EMAIL_HOST_USER or 'webmaster@localhost',
 )
+EMAIL_INBOX_ENABLED = (
+    os.getenv('EMAIL_INBOX_ENABLED', '').lower()
+    in (
+        '1',
+        'true',
+        'yes',
+    )
+    or DEBUG
+    or TURNSTILE_TEST_MODE
+)
+EMAIL_INBOX_DIR = os.getenv('EMAIL_INBOX_DIR', '')
+_default_mail_backend = (
+    'utils.mail_backend.InboxLocmemEmailBackend'
+    if EMAIL_INBOX_ENABLED
+    else 'django.core.mail.backends.smtp.EmailBackend'
+)
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', _default_mail_backend)
 
 LOGGING = {
     'version': 1,

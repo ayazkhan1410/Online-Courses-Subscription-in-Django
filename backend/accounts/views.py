@@ -30,6 +30,7 @@ from utils.auth import (
     reset_password,
     verify_google_credential,
 )
+from utils.inbox import extract_code, inbox_enabled, read_last_mail
 
 RESEND_VERIFY_MESSAGE = (
     'If that email needs verification, a new code has been sent.'
@@ -213,3 +214,33 @@ class ChangePasswordAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response({'message': 'Password changed successfully'})
+
+
+class LastTestEmailAPIView(APIView):
+    """Read the last outbound mail for e2e. Only when the inbox is enabled."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        if not inbox_enabled():
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        email = (request.query_params.get('email') or '').strip().lower()
+        if not email:
+            return Response(
+                {'detail': 'email is required'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        message = read_last_mail(email)
+        if message is None:
+            return Response(
+                {'detail': 'No mail'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        body = str(message.get('body') or '')
+        return Response(
+            {
+                'subject': message.get('subject') or '',
+                'body': body,
+                'code': extract_code(body),
+            }
+        )

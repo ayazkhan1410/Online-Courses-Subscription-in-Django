@@ -523,3 +523,12 @@ class EmailVerificationTests(TestCase):
         )
         self.assertEqual(login.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertNotIn('token', login.data)
+
+    def test_last_email_inbox_endpoint(self):
+        self._register()
+        response = self.client.get(
+            '/api/test/last-email/',
+            {'email': 'verify@example.com'},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertRegex(response.data.get('code') or '', r'^\d{6}$')

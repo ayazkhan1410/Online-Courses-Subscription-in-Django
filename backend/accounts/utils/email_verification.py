@@ -15,6 +15,7 @@ from accounts.models import CustomUser, EmailVerificationCode
 from mfa.exceptions import MfaError
 from mfa.utils.code import generate_login_code, hash_value, value_matches
 from mfa.utils.lockout import clear_failures, is_locked, record_failure
+from utils.inbox import record_outbound_mail
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,7 @@ def _send_code_email(email: str, code: str) -> bool:
             type(exc).__name__,
         )
         return False
+    record_outbound_mail([email], subject, body)
     logger.info('Verification email sent | email=%s', email)
     return True
 

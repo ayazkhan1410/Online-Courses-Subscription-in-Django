@@ -35,4 +35,9 @@ urlpatterns = [
         views.ChangePasswordAPIView.as_view(),
         name='change-password',
     ),
+    path(
+        'test/last-email/',
+        views.LastTestEmailAPIView.as_view(),
+        name='test-last-email',
+    ),
 ]

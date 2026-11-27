@@ -7,6 +7,8 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.mail import send_mail
 
+from utils.inbox import record_outbound_mail
+
 logger = logging.getLogger(__name__)
 
 _DEVICE_TTL = 60 * 60 * 24 * 180
@@ -40,6 +42,7 @@ def _send(user, subject: str, message: str) -> bool:
             type(exc).__name__,
         )
         return False
+    record_outbound_mail([user.email], subject, message)
     logger.info('MFA email sent | user_id=%s subject=%s', user.pk, subject)
     return True
 
