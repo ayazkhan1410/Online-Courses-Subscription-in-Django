@@ -32,8 +32,17 @@ def list_courses(
         qs = qs.filter(creator__slug=_param(creator))
     if _param(level):
         qs = qs.filter(level=_param(level))
-    if _param(language):
-        qs = qs.filter(language=_param(language))
+    lang = _param(language)
+    if lang == Courses.LANGUAGE_UR_HI:
+        qs = qs.filter(
+            language__in=[
+                Courses.LANGUAGE_UR_HI,
+                Courses.LANGUAGE_UR,
+                Courses.LANGUAGE_HI,
+            ]
+        )
+    elif lang:
+        qs = qs.filter(language=lang)
     if _param(search):
         term = _param(search)
         qs = qs.filter(

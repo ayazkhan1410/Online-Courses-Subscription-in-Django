@@ -23,7 +23,13 @@ const LANGUAGES = [
   { value: 'en', label: 'English' },
   { value: 'ur', label: 'Urdu' },
   { value: 'hi', label: 'Hindi' },
-  { value: 'ur-hi', label: 'Urdu/Hindi' },
+  { value: 'ur-hi', label: 'Urdu / Hindi' },
+]
+
+const LANGUAGE_CHIPS = [
+  { value: '', label: 'All' },
+  { value: 'ur-hi', label: 'Urdu / Hindi' },
+  { value: 'en', label: 'English' },
 ]
 
 function readPage(value: string | null): number {
@@ -119,6 +125,17 @@ export function CourseBrowser({ lockedCategory }: Props) {
               meta={item.published_course_count}
             >
               {item.name}
+            </Chip>
+          ))}
+        </div>
+        <div className="chips" role="group" aria-label="Language" style={{ marginTop: 10 }}>
+          {LANGUAGE_CHIPS.map((item) => (
+            <Chip
+              key={item.label}
+              pressed={language === item.value}
+              onClick={() => update({ language: item.value }, 1)}
+            >
+              {item.label}
             </Chip>
           ))}
         </div>

@@ -17,7 +17,7 @@ function languageLabel(code: string | null | undefined): string {
     case 'hi':
       return 'Hindi'
     case 'ur-hi':
-      return 'Urdu/Hindi'
+      return 'Urdu / Hindi'
     default:
       return 'English'
   }
