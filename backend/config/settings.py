@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
     'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
@@ -53,6 +54,7 @@ INSTALLED_APPS = [
     'subscriptions',
     'contact',
     'learning',
+    'seo',
 ]
 
 MIDDLEWARE = [
@@ -177,11 +179,20 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:4780')
+FRONTEND_INTERNAL_URL = os.getenv(
+    'FRONTEND_INTERNAL_URL',
+    FRONTEND_URL,
+)
+_api_default = FRONTEND_URL.replace(':4780', ':4781')
+if _api_default == FRONTEND_URL:
+    _api_default = 'http://localhost:4781'
+API_PUBLIC_URL = os.getenv('API_PUBLIC_URL', _api_default)
 
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', '')
 GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID', '')
 FIVERR_PROFILE_URL = os.getenv('FIVERR_PROFILE_URL', '')
+YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY', '')
 
 MFA_ENCRYPTION_KEY = os.getenv('MFA_ENCRYPTION_KEY', '')
 

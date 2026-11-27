@@ -198,6 +198,7 @@ def _sync_modules(course: Courses, modules: list[dict]) -> tuple[int, int]:
                 'sort_order': int(mod.get('sort_order') or 0),
                 'duration_seconds': mod.get('duration_seconds'),
                 'can_view': True,
+                'is_available': True,
             },
         )
         if was_created:

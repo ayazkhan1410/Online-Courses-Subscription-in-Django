@@ -218,7 +218,7 @@ class CourseSerializer(serializers.ModelSerializer):
         annotated = getattr(obj, 'module_count', None)
         if annotated is not None:
             return int(annotated)
-        return obj.course_modules.count()
+        return obj.course_modules.filter(is_available=True).count()
 
     def _user(self):
         request = self.context.get('request')
@@ -251,12 +251,13 @@ class CourseSerializer(serializers.ModelSerializer):
         progress_map = self.context.get('progress_map')
         if progress_map is not None:
             return int(progress_map.get(obj.id, 0))
-        total = obj.course_modules.count()
+        total = obj.course_modules.filter(is_available=True).count()
         if total == 0:
             return 0
         done = LessonProgress.objects.filter(
             user=user,
             module__course=obj,
+            module__is_available=True,
             completed=True,
         ).count()
         return int(round(100 * done / total))

@@ -163,6 +163,7 @@ class CourseModule(models.Model):
     sort_order = models.PositiveIntegerField(default=0)
     duration_seconds = models.PositiveIntegerField(null=True, blank=True)
     can_view = models.BooleanField(default=True)
+    is_available = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['sort_order', 'id']

@@ -1,4 +1,5 @@
 from django import forms
+from django.conf import settings
 from django.contrib import admin, messages
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
@@ -17,6 +18,10 @@ from courses.models import (
 from courses.services.playlist_import import (
     PlaylistImportError,
     import_playlist,
+)
+from courses.services.playlist_sync import (
+    PlaylistSyncError,
+    sync_course_playlist,
 )
 
 
@@ -75,7 +80,12 @@ class CoursesAdmin(admin.ModelAdmin):
         'creator__channel_url',
     ]
     ordering = ['sort_order', 'courses_name']
-    actions = ['publish_courses', 'hide_courses', 'import_playlist_by_url']
+    actions = [
+        'publish_courses',
+        'hide_courses',
+        'import_playlist_by_url',
+        'sync_playlists_now',
+    ]
 
     @admin.action(description='Publish selected courses')
     def publish_courses(self, request, queryset):
@@ -90,6 +100,44 @@ class CoursesAdmin(admin.ModelAdmin):
     @admin.action(description='Import playlist by URL')
     def import_playlist_by_url(self, request, queryset):
         return redirect('admin:courses_courses_import_playlist')
+
+    @admin.action(description='Sync now')
+    def sync_playlists_now(self, request, queryset):
+        api_key = getattr(settings, 'YOUTUBE_API_KEY', '')
+        if not (api_key or '').strip():
+            self.message_user(
+                request,
+                'YOUTUBE_API_KEY is not set; sync skipped.',
+                level=messages.WARNING,
+            )
+            return
+        synced = 0
+        for course in queryset:
+            if not (course.youtube_playlist_id or '').strip():
+                continue
+            try:
+                stats = sync_course_playlist(course, api_key.strip())
+            except PlaylistSyncError as exc:
+                self.message_user(
+                    request,
+                    f'{course.courses_name}: {exc}',
+                    level=messages.ERROR,
+                )
+                continue
+            synced += 1
+            self.message_user(
+                request,
+                (
+                    f'{course.courses_name}: added {stats.get("added", 0)}, '
+                    f'hidden {stats.get("hidden", 0)}.'
+                ),
+            )
+        if not synced:
+            self.message_user(
+                request,
+                'No playlists were synced.',
+                level=messages.WARNING,
+            )
 
     def changelist_view(self, request, extra_context=None):
         if (
@@ -210,7 +258,8 @@ class CourseModuleAdmin(admin.ModelAdmin):
         'sort_order',
         'duration_seconds',
         'can_view',
+        'is_available',
     ]
-    list_filter = ['can_view', 'course']
+    list_filter = ['can_view', 'is_available', 'course']
     search_fields = ['module_name', 'youtube_video_id']
     ordering = ['course', 'sort_order']

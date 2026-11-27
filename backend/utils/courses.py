@@ -7,6 +7,8 @@ from django.shortcuts import get_object_or_404
 
 from courses.models import CourseModule, Courses
 
+AVAILABLE_MODULES = Q(course_modules__is_available=True)
+
 
 def _param(value: str | None) -> str:
     return (value or '').strip()
@@ -23,7 +25,9 @@ def list_courses(
     qs = (
         Courses.objects.filter(status=Courses.STATUS_PUBLISHED)
         .select_related('category', 'creator')
-        .annotate(module_count=Count('course_modules'))
+        .annotate(
+            module_count=Count('course_modules', filter=AVAILABLE_MODULES)
+        )
         .order_by('sort_order', 'courses_name')
     )
     if _param(category):
@@ -58,7 +62,9 @@ def get_course_by_slug(slug: str, user=None) -> Courses:
     ).prefetch_related(
         Prefetch(
             'course_modules',
-            queryset=CourseModule.objects.order_by('sort_order', 'id'),
+            queryset=CourseModule.objects.filter(
+                is_available=True,
+            ).order_by('sort_order', 'id'),
         )
     )
     is_staff = bool(

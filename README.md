@@ -152,6 +152,16 @@ docker compose exec backend python manage.py seed_youtube_courses
 
 Catalog source: `backend/courses/data/youtube_catalog.json` (from [@studywithayaz](https://www.youtube.com/@studywithayaz/playlists) playlists).
 
+### Sync YouTube playlists
+
+Re-fetch published course playlists and append new lessons (set `YOUTUBE_API_KEY` in `backend/.env`):
+
+```bash
+python manage.py sync_playlists
+```
+
+Safe to run on a schedule in production. Without an API key the command logs a warning and exits.
+
 ## Linting (Ruff)
 
 ```bash
@@ -168,8 +178,10 @@ See `backend/.env.example`. Important keys:
 
 - `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`
 - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT`
-- `CORS_ALLOWED_ORIGINS`, `FRONTEND_URL`
+- `CORS_ALLOWED_ORIGINS`, `FRONTEND_URL`, `FRONTEND_INTERNAL_URL`,
+  `API_PUBLIC_URL`
 - `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`
+- `YOUTUBE_API_KEY` (optional; required for `sync_playlists`)
 - `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`
 
 Never commit `backend/.env` or `venv/`.
@@ -178,6 +190,28 @@ Never commit `backend/.env` or `venv/`.
 
 - **Frontend (Cursor):** UI, components, API integration
 - **Backend (Ayaz):** DRF apps, Postgres, auth, business logic, security
+
+## SEO and social previews (Docker)
+
+The React app is still a client-side SPA, but **public catalog URLs** need real
+HTML for crawlers:
+
+1. **nginx** (frontend container) proxies `/`, `/courses/*`, `/paths/*`,
+   `/categories/*`, `/done/*`, static marketing pages, `/robots.txt`, and
+   `/sitemap.xml` to the Django backend on the Docker network.
+2. Django **`seo`** app serves the built `index.html` shell (fetched from
+   `FRONTEND_INTERNAL_URL`, usually `http://frontend:4780`) with injected
+   `<title>`, description, canonical, Open Graph tags, and JSON-LD on course
+   pages.
+3. Logged-in areas (`/dashboard`, `/learn`) and JSON APIs stay on the normal
+   nginx SPA fallback; `robots.txt` disallows those paths.
+4. OG images: `/api/og/course/<slug>.png`, `/api/og/default.png`, and the
+   completion cards at `/api/og/done/<share_id>.png`.
+
+Set `FRONTEND_URL` to the public site origin and `API_PUBLIC_URL` to the
+origin where browsers reach the API (defaults swap port `4780` → `4781` on
+localhost). In Compose, `FRONTEND_INTERNAL_URL=http://frontend:4780` lets the
+backend pull the current Vite build’s `index.html` for asset hashes.
 
 ## Notes
 
