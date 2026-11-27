@@ -1,9 +1,13 @@
 import { Link } from 'react-router-dom'
 import { PageHeader, PageMain } from '@/components/PageHeader'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { PAGE_DESCRIPTIONS } from '@/lib/pageDescriptions'
 
 export default function TermsPage() {
-  usePageTitle('Terms')
+  usePageTitle('Terms', {
+    description: PAGE_DESCRIPTIONS.terms,
+    canonicalPath: '/terms',
+  })
   return (
     <PageMain>
       <PageHeader title="Terms" lead="Plain terms for using the desk." />

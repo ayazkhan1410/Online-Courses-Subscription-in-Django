@@ -7,10 +7,14 @@ import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { Skeleton } from '@/components/Skeleton'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { PAGE_DESCRIPTIONS } from '@/lib/pageDescriptions'
 import { inkClass } from '@/lib/ink'
 
 export default function CategoriesPage() {
-  usePageTitle('Categories')
+  usePageTitle('Categories', {
+    description: PAGE_DESCRIPTIONS.categories,
+    canonicalPath: '/categories',
+  })
   const query = useQuery({
     queryKey: ['categories'],
     queryFn: listCategories,

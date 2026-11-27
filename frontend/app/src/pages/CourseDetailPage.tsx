@@ -63,7 +63,46 @@ export default function CourseDetailPage() {
     queryFn: () => getCourse(slug),
     enabled: Boolean(slug),
   })
-  usePageTitle(query.data ? stripEmoji(query.data.courses_name) : 'Course')
+
+  const pageMeta = useMemo(() => {
+    const row = query.data
+    if (!row) return undefined
+    const name = stripEmoji(row.courses_name)
+    const description =
+      stripHtml(row.courses_description).replace(/\s+/g, ' ').trim() ||
+      `Learn ${name} on Study with Ayaz.`
+    const creator = row.creator?.name ?? 'Study with Ayaz'
+    const apiBase = (import.meta.env.VITE_API_BASE_URL ?? '').replace(
+      /\/api\/?$/,
+      '',
+    )
+    const ogBase = apiBase || 'http://localhost:4781'
+    return {
+      description: description.slice(0, 160),
+      canonicalPath: `/courses/${row.slug}`,
+      ogImage: `${ogBase}/api/og/course/${row.slug}.png`,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'Course',
+        name,
+        description: description.slice(0, 300),
+        url: `${window.location.origin}/courses/${row.slug}`,
+        provider: {
+          '@type': 'Organization',
+          name: 'Study with Ayaz',
+        },
+        creator: {
+          '@type': 'Person',
+          name: creator,
+        },
+      },
+    }
+  }, [query.data])
+
+  usePageTitle(
+    query.data ? stripEmoji(query.data.courses_name) : 'Course',
+    pageMeta,
+  )
 
   const enroll = useMutation({
     mutationFn: () => enrollCourse(slug),

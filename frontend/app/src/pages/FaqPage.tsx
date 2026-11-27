@@ -1,6 +1,7 @@
 import { Accordion } from '@/components/Accordion'
 import { PageHeader, PageMain } from '@/components/PageHeader'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { PAGE_DESCRIPTIONS } from '@/lib/pageDescriptions'
 
 const items = [
   {
@@ -26,7 +27,10 @@ const items = [
 ]
 
 export default function FaqPage() {
-  usePageTitle('FAQ')
+  usePageTitle('FAQ', {
+    description: PAGE_DESCRIPTIONS.faq,
+    canonicalPath: '/faq',
+  })
   return (
     <PageMain>
       <PageHeader title="FAQ" lead="How accounts and lessons work." />

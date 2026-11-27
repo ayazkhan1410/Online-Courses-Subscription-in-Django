@@ -1,8 +1,12 @@
 import { PageHeader, PageMain } from '@/components/PageHeader'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { PAGE_DESCRIPTIONS } from '@/lib/pageDescriptions'
 
 export default function PrivacyPage() {
-  usePageTitle('Privacy')
+  usePageTitle('Privacy', {
+    description: PAGE_DESCRIPTIONS.privacy,
+    canonicalPath: '/privacy',
+  })
   return (
     <PageMain>
       <PageHeader title="Privacy" lead="What this app stores." />

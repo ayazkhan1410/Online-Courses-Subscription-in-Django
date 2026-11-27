@@ -7,9 +7,13 @@ import { getCourses } from '@/api/courses'
 import { CourseBrowser } from '@/features/catalog/CourseBrowser'
 import { PlaylistSuggestPanel } from '@/features/catalog/PlaylistSuggestPanel'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { PAGE_DESCRIPTIONS } from '@/lib/pageDescriptions'
 
 export default function CoursesPage() {
-  usePageTitle('Courses')
+  usePageTitle('Courses', {
+    description: PAGE_DESCRIPTIONS.courses,
+    canonicalPath: '/courses',
+  })
   const [params, setParams] = useSearchParams()
   const search = params.get('search') ?? ''
   const [draft, setDraft] = useState(search)

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { getConfig } from '@/api/config'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { PAGE_DESCRIPTIONS } from '@/lib/pageDescriptions'
 
 const SERVICES = [
   {
@@ -33,7 +34,10 @@ const STEPS = [
 ] as const
 
 export default function ServicesPage() {
-  usePageTitle('Services')
+  usePageTitle('Services', {
+    description: PAGE_DESCRIPTIONS.services,
+    canonicalPath: '/services',
+  })
   const config = useQuery({ queryKey: ['config'], queryFn: getConfig })
   const fiverr = config.data?.fiverr_profile_url?.trim()
 

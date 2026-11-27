@@ -6,9 +6,13 @@ import { getCourses } from '@/api/courses'
 import { listProjects } from '@/api/projects'
 import { PlaylistSuggestPanel } from '@/features/catalog/PlaylistSuggestPanel'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { PAGE_DESCRIPTIONS } from '@/lib/pageDescriptions'
 
 export default function AboutPage() {
-  usePageTitle('About')
+  usePageTitle('About', {
+    description: PAGE_DESCRIPTIONS.about,
+    canonicalPath: '/about',
+  })
   const config = useQuery({ queryKey: ['config'], queryFn: getConfig })
   const categories = useQuery({ queryKey: ['categories'], queryFn: listCategories })
   const courses = useQuery({ queryKey: ['courses', 'count'], queryFn: () => getCourses({ page: 1 }) })

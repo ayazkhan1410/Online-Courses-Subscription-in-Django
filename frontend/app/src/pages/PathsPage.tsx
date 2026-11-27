@@ -9,6 +9,7 @@ import { ErrorState } from '@/components/ErrorState'
 import { Skeleton } from '@/components/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { PAGE_DESCRIPTIONS } from '@/lib/pageDescriptions'
 import { shortenCourseTitle } from '@/lib/courseTitle'
 
 function courseNames(path: LearningPath): string[] {
@@ -25,7 +26,10 @@ function courseCount(path: LearningPath): number {
 }
 
 export default function PathsPage() {
-  usePageTitle('Learning paths')
+  usePageTitle('Learning paths', {
+    description: PAGE_DESCRIPTIONS.paths,
+    canonicalPath: '/paths',
+  })
   const { token } = useAuth()
   const paths = useQuery({ queryKey: ['paths'], queryFn: listPaths })
 

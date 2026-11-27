@@ -11,10 +11,14 @@ import { Textarea } from '@/components/Textarea'
 import { useToast } from '@/components/Toast'
 import { TurnstileWidget, type TurnstileHandle } from '@/components/TurnstileWidget'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { PAGE_DESCRIPTIONS } from '@/lib/pageDescriptions'
 import { contactSchema, type ContactValues } from '@/lib/schemas'
 
 export default function ContactPage() {
-  usePageTitle('Contact')
+  usePageTitle('Contact', {
+    description: PAGE_DESCRIPTIONS.contact,
+    canonicalPath: '/contact',
+  })
   const [params] = useSearchParams()
   const topic = params.get('topic')
   const isProject = topic === 'project'

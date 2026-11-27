@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db.models import Count, OuterRef, Q, Subquery
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny
@@ -17,6 +18,7 @@ from courses.serializers import (
 )
 from utils.courses import get_course_by_slug, list_courses
 from utils.learning import serializer_learning_context
+from utils.og_course import render_course_og, render_default_og
 
 
 class ConfigAPIView(APIView):
@@ -168,3 +170,29 @@ class ProjectListAPIView(APIView):
             'sort_order', 'title'
         )
         return Response(ProjectSerializer(rows, many=True).data)
+
+
+class CourseOGImageAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, slug: str):
+        course = Courses.objects.filter(
+            slug=slug,
+            status=Courses.STATUS_PUBLISHED,
+        ).first()
+        if course is None:
+            return HttpResponse(status=404)
+        png = render_course_og(course)
+        response = HttpResponse(png, content_type='image/png')
+        response['Cache-Control'] = 'public, max-age=86400'
+        return response
+
+
+class DefaultOGImageAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        png = render_default_og()
+        response = HttpResponse(png, content_type='image/png')
+        response['Cache-Control'] = 'public, max-age=86400'
+        return response

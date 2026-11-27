@@ -10,12 +10,16 @@ import { ErrorState } from '@/components/ErrorState'
 import { Skeleton } from '@/components/Skeleton'
 import { DeskScene } from '@/features/hero/DeskScene'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { PAGE_DESCRIPTIONS } from '@/lib/pageDescriptions'
 import { inkClass } from '@/lib/ink'
 
 const AYAZ = 'study-with-ayaz'
 
 export default function HomePage() {
-  usePageTitle('Study with Ayaz')
+  usePageTitle('Study with Ayaz', {
+    description: PAGE_DESCRIPTIONS.home,
+    canonicalPath: '/',
+  })
   const ayaz = useQuery({
     queryKey: ['category', AYAZ],
     queryFn: () => getCategory(AYAZ),

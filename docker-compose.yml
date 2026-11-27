@@ -31,6 +31,7 @@ services:
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,backend
       CORS_ALLOWED_ORIGINS: http://localhost:4780,http://127.0.0.1:4780
       FRONTEND_URL: http://localhost:4780
+      FRONTEND_INTERNAL_URL: http://frontend:4780
       POSTGRES_DB: ${POSTGRES_DB:-courses}
       POSTGRES_USER: ${POSTGRES_USER:-courses}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-courses}

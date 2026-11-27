@@ -2,9 +2,13 @@ import { useSearchParams } from 'react-router-dom'
 import { PageHeader, PageMain } from '@/components/PageHeader'
 import { CourseBrowser } from '@/features/catalog/CourseBrowser'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { PAGE_DESCRIPTIONS } from '@/lib/pageDescriptions'
 
 export default function SearchPage() {
-  usePageTitle('Search')
+  usePageTitle('Search', {
+    description: PAGE_DESCRIPTIONS.search,
+    canonicalPath: '/search',
+  })
   const [params] = useSearchParams()
   const initial = params.get('search') ?? ''
   return (

@@ -33,4 +33,14 @@ urlpatterns = [
         PlaylistSuggestionCreateAPIView.as_view(),
         name='playlist-suggestion-create',
     ),
+    re_path(
+        r'^og/course/(?P<slug>[-\w]+)\.png$',
+        views.CourseOGImageAPIView.as_view(),
+        name='course-og',
+    ),
+    path(
+        'og/default.png',
+        views.DefaultOGImageAPIView.as_view(),
+        name='default-og',
+    ),
 ]
