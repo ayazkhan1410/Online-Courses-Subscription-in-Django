@@ -46,3 +46,4 @@ frontend/app/playwright-report/
 frontend/app/test-results/
 frontend/legacy/node_modules/
 deploy-secrets.sh
+seed-production.sh
