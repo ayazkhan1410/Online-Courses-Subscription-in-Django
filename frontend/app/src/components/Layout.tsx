@@ -1,4 +1,5 @@
 import { useLocation, Outlet } from 'react-router-dom'
+import { ApiWakeNotice } from '@/components/ApiWakeNotice'
 import { Footer } from '@/components/Footer'
 import { Nav } from '@/components/Nav'
 import { PageTransition } from '@/components/PageTransition'
@@ -15,6 +16,7 @@ export function Layout() {
       </a>
       <Nav />
       <main id="main" className="flex-1">
+        <ApiWakeNotice />
         <PageTransition key={location.pathname}>{<Outlet />}</PageTransition>
       </main>
       <Footer />

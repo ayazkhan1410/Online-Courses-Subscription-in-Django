@@ -8,15 +8,25 @@ from django.contrib import admin
 from django.urls import include, path, re_path
 from django.views.static import serve
 
+from config.cron import cron_job
+from config.health import healthz
+
 urlpatterns = [
+    path('healthz', healthz, name='healthz'),
     path('admin/', admin.site.urls),
     path('', include('seo.urls')),
+    path(
+        'api/internal/cron/<slug:job>/',
+        cron_job,
+        name='internal-cron',
+    ),
     path('api/', include('accounts.urls')),
     path('api/', include('mfa.urls')),
     path('api/', include('courses.urls')),
     path('api/', include('contact.urls')),
     path('api/', include('learning.urls')),
     # Serve uploads under gunicorn (static() helper is DEBUG-only).
+    # Note: Render free disk is wiped on deploy; uploads do not persist.
     re_path(
         r'^media/(?P<path>.*)$',
         serve,

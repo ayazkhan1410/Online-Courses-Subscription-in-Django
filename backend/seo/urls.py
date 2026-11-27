@@ -2,7 +2,7 @@ from django.contrib.sitemaps.views import sitemap
 from django.urls import path, re_path
 
 from seo import sitemaps
-from seo.views import SpaMetaView, robots_txt
+from seo.views import SpaMetaView, robots_txt, seo_head
 
 sitemap_config = {
     'static': sitemaps.StaticViewSitemap,
@@ -19,6 +19,7 @@ urlpatterns = [
         {'sitemaps': sitemap_config},
         name='sitemap',
     ),
+    path('api/seo/head/', seo_head, name='seo-head'),
     re_path(r'^$', SpaMetaView.as_view(), name='spa-home'),
     re_path(r'^about/?$', SpaMetaView.as_view(), name='spa-about'),
     re_path(r'^contact/?$', SpaMetaView.as_view(), name='spa-contact'),

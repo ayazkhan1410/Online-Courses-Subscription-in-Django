@@ -48,7 +48,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4781/api/config/')",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4781/healthz')",
         ]
       interval: 15s
       timeout: 5s

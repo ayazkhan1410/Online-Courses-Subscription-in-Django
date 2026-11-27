@@ -2,10 +2,12 @@
 Django settings for the Online Courses Subscription API.
 """
 
+import logging
 import os
 from datetime import timedelta
 from pathlib import Path
 
+import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
@@ -14,6 +16,14 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 DEBUG = os.getenv('DJANGO_DEBUG', 'False').lower() in ('1', 'true', 'yes')
+
+_EXAMPLE_SECRET_KEYS = frozenset(
+    {
+        '',
+        'change-me-in-production',
+        'django-insecure-dev-key-change-in-production',
+    }
+)
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', '')
 if not SECRET_KEY:
@@ -53,6 +63,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'ckeditor',
     'embed_video',
+    'anymail',
     'accounts',
     'mfa',
     'courses',
@@ -64,6 +75,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -93,16 +105,31 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB', 'courses'),
-        'USER': os.getenv('POSTGRES_USER', 'courses'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'courses'),
-        'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
-        'PORT': os.getenv('POSTGRES_PORT', '5432'),
+_database_url = os.getenv('DATABASE_URL', '').strip()
+if _database_url:
+    DATABASES = {
+        'default': dj_database_url.parse(
+            _database_url,
+            conn_max_age=0,
+            conn_health_checks=True,
+            ssl_require=True,
+        )
     }
-}
+    DATABASES['default']['CONN_MAX_AGE'] = 0
+    DATABASES['default']['CONN_HEALTH_CHECKS'] = True
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('POSTGRES_DB', 'courses'),
+            'USER': os.getenv('POSTGRES_USER', 'courses'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'courses'),
+            'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+            'CONN_MAX_AGE': 0,
+            'CONN_HEALTH_CHECKS': True,
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -135,6 +162,20 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+_static_backend = (
+    'django.contrib.staticfiles.storage.StaticFilesStorage'
+    if DEBUG
+    else 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+)
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': _static_backend,
+    },
+}
+WHITENOISE_MANIFEST_STRICT = False
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -198,6 +239,7 @@ STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', '')
 GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID', '')
 FIVERR_PROFILE_URL = os.getenv('FIVERR_PROFILE_URL', '')
 YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY', '')
+CRON_SECRET = os.getenv('CRON_SECRET', '')
 
 MFA_ENCRYPTION_KEY = os.getenv('MFA_ENCRYPTION_KEY', '')
 
@@ -227,6 +269,10 @@ DEFAULT_FROM_EMAIL = os.getenv(
     'DEFAULT_FROM_EMAIL',
     EMAIL_HOST_USER or 'webmaster@localhost',
 )
+BREVO_API_KEY = os.getenv('BREVO_API_KEY', '').strip()
+ANYMAIL = {
+    'BREVO_API_KEY': BREVO_API_KEY,
+}
 EMAIL_INBOX_ENABLED = (
     os.getenv('EMAIL_INBOX_ENABLED', '').lower()
     in (
@@ -238,12 +284,39 @@ EMAIL_INBOX_ENABLED = (
     or TURNSTILE_TEST_MODE
 )
 EMAIL_INBOX_DIR = os.getenv('EMAIL_INBOX_DIR', '')
-_default_mail_backend = (
-    'utils.mail_backend.InboxLocmemEmailBackend'
-    if EMAIL_INBOX_ENABLED
-    else 'django.core.mail.backends.smtp.EmailBackend'
-)
-EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', _default_mail_backend)
+if BREVO_API_KEY:
+    EMAIL_BACKEND = 'anymail.backends.brevo.EmailBackend'
+elif os.getenv('EMAIL_BACKEND'):
+    EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
+elif EMAIL_INBOX_ENABLED:
+    EMAIL_BACKEND = 'utils.mail_backend.InboxLocmemEmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
+    if origin.strip()
+]
+
+if not DEBUG:
+    if SECRET_KEY in _EXAMPLE_SECRET_KEYS:
+        raise ImproperlyConfigured(
+            'DJANGO_SECRET_KEY must not use the example/dev value '
+            'when DEBUG is False'
+        )
+    if not MFA_ENCRYPTION_KEY:
+        raise ImproperlyConfigured(
+            'MFA_ENCRYPTION_KEY is required when DEBUG is False'
+        )
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SECURE_REDIRECT_EXEMPT = [r'^healthz/?$']
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = False
 
 LOGGING = {
     'version': 1,
@@ -258,3 +331,9 @@ LOGGING = {
         'level': 'INFO',
     },
 }
+
+logger = logging.getLogger(__name__)
+if not BREVO_API_KEY and not DEBUG and not EMAIL_INBOX_ENABLED:
+    logger.warning(
+        'BREVO_API_KEY is unset; SMTP may fail on hosts that block mail ports.'
+    )

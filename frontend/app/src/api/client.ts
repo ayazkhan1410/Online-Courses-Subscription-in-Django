@@ -4,8 +4,10 @@ import {
   readToken,
   writeAccessToken,
 } from '@/lib/session'
+import { setApiWaking } from '@/lib/apiWake'
 
 const DEFAULT_BASE = 'http://localhost:4781/api'
+const SLOW_MS = 4000
 
 export function apiBase(): string {
   const raw = import.meta.env.VITE_API_BASE_URL || DEFAULT_BASE
@@ -32,6 +34,7 @@ type Options = {
   auth?: boolean
   redirectOn401?: boolean
   _retried?: boolean
+  _wakeRetried?: boolean
 }
 
 function flatten(value: unknown): string {
@@ -123,6 +126,21 @@ function redirectToLogin(): void {
   }
 }
 
+async function parseBody(response: Response): Promise<unknown> {
+  if (response.status === 204) return undefined
+  const text = await response.text()
+  if (!text) return null
+  try {
+    return JSON.parse(text) as unknown
+  } catch {
+    return { detail: text }
+  }
+}
+
+function shouldWakeRetry(status: number): boolean {
+  return status === 502 || status === 503 || status === 504
+}
+
 export async function api<T>(path: string, options: Options = {}): Promise<T> {
   const headers = new Headers({ Accept: 'application/json' })
   const token = readToken()
@@ -135,23 +153,37 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
     body = JSON.stringify(options.body)
   }
 
-  const response = await fetch(`${apiBase()}${path}`, {
-    method: options.method ?? 'GET',
-    headers,
-    body,
-  })
+  const slowTimer = setTimeout(() => setApiWaking(true), SLOW_MS)
+
+  let response: Response
+  try {
+    response = await fetch(`${apiBase()}${path}`, {
+      method: options.method ?? 'GET',
+      headers,
+      body,
+    })
+  } catch (error) {
+    clearTimeout(slowTimer)
+    if (!options._wakeRetried) {
+      setApiWaking(true)
+      return api<T>(path, { ...options, _wakeRetried: true })
+    }
+    setApiWaking(false)
+    throw error
+  }
+
+  clearTimeout(slowTimer)
+
+  if (shouldWakeRetry(response.status) && !options._wakeRetried) {
+    setApiWaking(true)
+    return api<T>(path, { ...options, _wakeRetried: true })
+  }
+
+  setApiWaking(false)
 
   if (response.status === 204) return undefined as T
 
-  const text = await response.text()
-  let data: unknown = null
-  if (text) {
-    try {
-      data = JSON.parse(text) as unknown
-    } catch {
-      data = { detail: text }
-    }
-  }
+  const data = await parseBody(response)
 
   if (
     response.status === 401 &&

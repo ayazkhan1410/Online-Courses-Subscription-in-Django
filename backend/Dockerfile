@@ -17,6 +17,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# collectstatic during image build (not at boot). Manifest needs a key.
+RUN DJANGO_DEBUG=True \
+    DJANGO_SECRET_KEY=build-only-collectstatic \
+    python manage.py collectstatic --noinput
+
 RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 4781

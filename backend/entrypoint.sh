@@ -1,30 +1,21 @@
 #!/bin/sh
 set -e
 
-echo "Waiting for PostgreSQL at ${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}..."
+echo "Waiting for PostgreSQL..."
 python <<'PY'
 import os
 import time
 
-import psycopg
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
-host = os.getenv('POSTGRES_HOST', 'db')
-port = os.getenv('POSTGRES_PORT', '5432')
-user = os.getenv('POSTGRES_USER', 'courses')
-password = os.getenv('POSTGRES_PASSWORD', 'courses')
-dbname = os.getenv('POSTGRES_DB', 'courses')
+import django
+
+django.setup()
+from django.db import connection
 
 for attempt in range(60):
     try:
-        with psycopg.connect(
-            host=host,
-            port=port,
-            user=user,
-            password=password,
-            dbname=dbname,
-            connect_timeout=3,
-        ) as conn:
-            conn.execute('SELECT 1')
+        connection.ensure_connection()
         print('PostgreSQL is ready.')
         break
     except Exception as exc:
@@ -37,9 +28,12 @@ PY
 python manage.py migrate --noinput
 python manage.py seed_catalog
 python manage.py seed_paths
-python manage.py collectstatic --noinput
+python manage.py ensure_superuser
 
+PORT="${PORT:-4781}"
 exec gunicorn config.wsgi:application \
-  --bind 0.0.0.0:4781 \
+  --bind "0.0.0.0:${PORT}" \
   --workers 2 \
-  --timeout 120
+  --threads 2 \
+  --timeout 60 \
+  --access-logfile -
