@@ -1,8 +1,10 @@
+from django.conf import settings
 from django.test import Client, TestCase, override_settings
 from rest_framework import status
 from rest_framework.test import APIClient
 
 from courses.models import Courses, Creator
+from utils.inbox import inbox_enabled
 
 
 @override_settings(CRON_SECRET='test-cron-secret')
@@ -69,3 +71,8 @@ class DeployPlumbingTests(TestCase):
         )
         self.assertEqual(missing.status_code, status.HTTP_200_OK)
         self.assertEqual(missing.json()['status'], 404)
+
+    def test_vercel_disables_mail_inbox(self):
+        self.assertFalse(getattr(settings, 'IS_VERCEL', False))
+        with override_settings(IS_VERCEL=True, EMAIL_INBOX_ENABLED=True):
+            self.assertFalse(inbox_enabled())

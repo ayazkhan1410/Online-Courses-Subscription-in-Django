@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 def inbox_enabled() -> bool:
+    # Vercel filesystem is read-only; never write the local mail inbox there.
+    if getattr(settings, 'IS_VERCEL', False):
+        return False
     if getattr(settings, 'EMAIL_INBOX_ENABLED', False):
         return True
     return bool(getattr(settings, 'DEBUG', False)) or bool(

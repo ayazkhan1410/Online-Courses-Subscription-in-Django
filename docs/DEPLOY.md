@@ -5,83 +5,117 @@
 | Part | Service | URL |
 | --- | --- | --- |
 | Frontend (React + Pages Function) | Cloudflare Pages | `https://study-with-ayaz.pages.dev` |
-| Backend (Django Docker) | Render free, Singapore | `https://study-with-ayaz-api.onrender.com` |
+| Backend (Django Python runtime) | **Vercel** Hobby, region `sin1` | `https://<project>.vercel.app` |
 | Database | Neon free Postgres, AWS Singapore | pooled `DATABASE_URL` (`-pooler`) |
 | Email | Brevo free HTTPS API (django-anymail) | sender = verified Gmail |
-| Keep-awake + jobs | cron-job.org | `/healthz` + cron POSTs |
+| Keep-awake + jobs | cron-job.org | `GET /healthz` + cron POSTs |
 
 Local docker-compose still uses Postgres + nginx SEO proxy on ports 4780/4781.
 
-**Uploads:** Render free disk is wiped on every deploy/restart. Admin `course_image` uploads do not persist. Covers and OG images are generated in code.
+**Why not Render / HF Spaces:** Render free workspace suspended; HF free Docker needs PRO and blocks Postgres port 5432.
 
-## Environment variables
+**Uploads:** Vercel is read-only except `/tmp`. Do not rely on admin `course_image` uploads in production. Covers and OG images are generated in memory/cache.
 
-### Backend (Render dashboard / `render.yaml`)
+**Static files:** `STATIC_ROOT` is set; Vercel runs `collectstatic` and serves `/static/` (admin CSS) from the CDN. WhiteNoise remains for local Docker.
 
-| Variable | Where | Notes |
-| --- | --- | --- |
-| `DJANGO_SECRET_KEY` | Render (`generateValue`) | Refuse example values when `DEBUG=False` |
-| `DJANGO_DEBUG` | Render | `False` in production |
-| `DJANGO_ALLOWED_HOSTS` | Render | `.onrender.com` |
-| `DATABASE_URL` | Render (`sync: false`) | Neon **pooled** string, `sslmode=require` |
-| `MFA_ENCRYPTION_KEY` | Render (`sync: false`) | Fernet key; required when not DEBUG |
-| `BREVO_API_KEY` | Render (`sync: false`) | Enables Anymail Brevo backend |
-| `DEFAULT_FROM_EMAIL` | Render (`sync: false`) | `Study with Ayaz <you@gmail.com>` |
-| `CORS_ALLOWED_ORIGINS` | Render | Pages origin |
-| `CSRF_TRUSTED_ORIGINS` | Render | Pages origin (`https://…`) |
-| `FRONTEND_URL` | Render | Pages URL (sitemap + email links) |
-| `API_PUBLIC_URL` | Render | Render URL (OG image absolute URLs) |
-| `GOOGLE_OAUTH_CLIENT_ID` | Render (`sync: false`) | Same client as local |
-| `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | Render (`sync: false`) | Cloudflare Turnstile |
-| `TURNSTILE_ALLOWED_HOSTNAMES` | Render | Pages hostname |
-| `TURNSTILE_TEST_MODE` | Render | `False` in production |
-| `CRON_SECRET` | Render (`sync: false`) | Header `X-Cron-Secret` |
-| `YOUTUBE_API_KEY` | Render (`sync: false`) | Optional playlist sync |
-| `FIVERR_PROFILE_URL` | Render (`sync: false`) | Optional |
-| `DJANGO_SUPERUSER_*` | Render (`sync: false`) | Created once by `ensure_superuser` |
+## Vercel project settings
 
-Local fallbacks: `POSTGRES_*` (see `backend/.env.example`).
+- Root Directory: `backend`
+- Framework: Django (auto from `manage.py`)
+- Branch: `deploy/free-hosting` until merged to `main`
+- Region: Singapore (`sin1` in `backend/vercel.json`)
+- Build: `bash build.sh` (migrate → seed → ensure_superuser → collectstatic). A failed migrate fails the deploy.
 
-### Frontend (Cloudflare Pages)
+### Generate secrets (run in your own terminal — never paste values into chat or git)
 
-| Variable | Notes |
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(50))"   # DJANGO_SECRET_KEY or CRON_SECRET
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"  # MFA_ENCRYPTION_KEY
+```
+
+Save every value in a password manager.
+
+### Environment variables (Vercel dashboard)
+
+**Secrets** (`sync` / Sensitive — paste in dashboard only):
+
+| Name | Notes |
 | --- | --- |
-| `VITE_API_BASE_URL` | `https://study-with-ayaz-api.onrender.com/api` |
-| `API_PUBLIC_URL` | Optional; Pages Function uses this (or strips `/api` from Vite URL) for SEO/robots |
+| `DATABASE_URL` | Neon **pooled** (`-pooler`) string with `sslmode=require` |
+| `DJANGO_SECRET_KEY` | Strong random; not the example value |
+| `MFA_ENCRYPTION_KEY` | Fernet key |
+| `CRON_SECRET` | Header `X-Cron-Secret` for cron jobs |
+| `DJANGO_SUPERUSER_USERNAME` | Admin username (created once) |
+| `DJANGO_SUPERUSER_EMAIL` | Your email |
+| `DJANGO_SUPERUSER_PASSWORD` | ≥16 chars, unique; never reset on rebuild |
+| `GOOGLE_OAUTH_CLIENT_ID` | Google Cloud OAuth web client |
+| `BREVO_API_KEY` | Optional until Brevo is ready |
+| `DEFAULT_FROM_EMAIL` | e.g. `Study with Ayaz <you@gmail.com>` |
+| `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | Optional until Turnstile widget exists |
+| `YOUTUBE_API_KEY` | Optional playlist sync |
+| `FIVERR_PROFILE_URL` | Optional |
 
-## Redeploy
+**Plain values:**
 
-- **Backend:** push to `main` (Blueprint `autoDeploy: true`) or Render → Manual Deploy.
-- **Frontend:** push to `main` with Git integration, or `npx wrangler pages deploy frontend/app/dist`.
+| Name | Example |
+| --- | --- |
+| `DJANGO_DEBUG` | `False` |
+| `DJANGO_ALLOWED_HOSTS` | `.vercel.app` (code also adds `.vercel.app` when `VERCEL=1`) |
+| `FRONTEND_URL` | `https://study-with-ayaz.pages.dev` |
+| `CORS_ALLOWED_ORIGINS` | `https://study-with-ayaz.pages.dev` |
+| `CSRF_TRUSTED_ORIGINS` | `https://study-with-ayaz.pages.dev` |
+| `API_PUBLIC_URL` | `https://<project>.vercel.app` |
+| `TURNSTILE_TEST_MODE` | `True` until Turnstile keys exist, then `False` |
+| `TURNSTILE_ALLOWED_HOSTNAMES` | `study-with-ayaz.pages.dev` |
 
-## Rollback
+Vercel itself sets `VERCEL=1`.
 
-- **Render:** Service → Events → **Rollback** to a previous deploy.
-- **Cloudflare Pages:** Deployments → **Rollback to this deployment**.
+Also mark the same secrets for **Build** and **Production** (and Preview if you use it) so `build.sh` can migrate/seed.
+
+## Frontend (Cloudflare Pages)
+
+| Variable | Value |
+| --- | --- |
+| `VITE_API_BASE_URL` | `https://<project>.vercel.app/api` |
+| `API_PUBLIC_URL` | `https://<project>.vercel.app` (Pages Function SEO/robots) |
+
+## Local / Docker
+
+Use `POSTGRES_*` or local `DATABASE_URL`. Entrypoint still migrates/seeds/gunicorn. See `backend/.env.example`.
+
+## Redeploy / rollback
+
+- **Backend:** push the tracked branch, or Vercel → Redeploy. Rollback: Deployments → ⋮ → Promote / Rollback.
+- **Frontend:** Cloudflare Pages → Deployments → Rollback.
 
 ## Rotate secrets
 
-1. Generate a new value locally (never commit it).
-2. Update the value in the **Render** / **Neon** / **Brevo** / **Cloudflare** dashboard only.
-3. Redeploy the service that reads it.
-4. For `CRON_SECRET`, also update cron-job.org job headers.
-5. For `MFA_ENCRYPTION_KEY`, rotating invalidates stored authenticator secrets — warn users before changing it.
+Update in the Vercel (and Neon/Brevo/Cloudflare) dashboard only, then redeploy. Rotating `MFA_ENCRYPTION_KEY` invalidates authenticator secrets. Update cron-job.org when rotating `CRON_SECRET`.
 
-## Free-plan limits (honest)
+## Free-plan limits
 
-- **Render free:** sleeps after ~15 min idle (30–60s wake); 750 instance hours/month; no outbound SMTP (use Brevo HTTPS).
-- **Neon free:** ~100 compute hours/month; sleeps after ~5 min idle. Keep-awake must hit `/healthz` only (no DB). Use pooler URL + `CONN_MAX_AGE=0`. Set compute min/max **0.25 CU**.
-- **Brevo free:** 300 emails/day; small Brevo footer; without a custom domain some mail may land in spam.
-- **Cloudflare Pages:** generous free tier for this site size.
-- **cron-job.org free:** enough for 10-minute pings + two daily/weekly jobs.
+- **Vercel Hobby:** serverless function limits / cold starts; use cron-job.org to hit `/healthz` if you want fewer cold wakes.
+- **Neon free:** ~100 CU-hours/month; idle after ~5 min. Keep-awake must **not** hit the DB — only `/healthz`. Pooler URL + `CONN_MAX_AGE=0`. Compute 0.25 / 0.25 CU.
+- **Brevo free:** 300 emails/day; footer; spam risk without a custom domain.
+- **Cloudflare Pages:** fine for this site size.
 
 ## Ops endpoints
 
-- `GET /healthz` → `200 ok` (no DB).
+- `GET /healthz` → `200 ok` (no DB)
 - `POST /api/internal/cron/sync_playlists/` + `X-Cron-Secret`
 - `POST /api/internal/cron/send_weekly_reminders/` + `X-Cron-Secret`
 - `GET /api/seo/head/?path=/courses/<slug>` → `{status, head_html}`
 
+## cron-job.org
+
+1. Keep awake: `GET https://<project>.vercel.app/healthz` every 10 minutes  
+2. Sync playlists: `POST …/api/internal/cron/sync_playlists/` daily 03:00 Asia/Karachi, header `X-Cron-Secret`  
+3. Weekly reminders: `POST …/api/internal/cron/send_weekly_reminders/` Mondays 18:00 Asia/Karachi, same header  
+
 ## Admin
 
-Created once from `DJANGO_SUPERUSER_USERNAME` / `EMAIL` / `PASSWORD` on boot. Existing users are never password-reset on reboot.
+Created once from `DJANGO_SUPERUSER_*` during build. Existing users are never password-reset on rebuild.
+
+## Reference
+
+Former Render Blueprint (unused): `docs/render.yaml.reference`.

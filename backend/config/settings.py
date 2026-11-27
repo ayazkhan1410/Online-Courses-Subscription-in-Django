@@ -15,6 +15,9 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Vercel sets VERCEL=1 on build and runtime.
+IS_VERCEL = os.getenv('VERCEL', '').lower() in ('1', 'true', 'yes')
+
 DEBUG = os.getenv('DJANGO_DEBUG', 'False').lower() in ('1', 'true', 'yes')
 
 _EXAMPLE_SECRET_KEYS = frozenset(
@@ -41,6 +44,10 @@ ALLOWED_HOSTS = [
     )
     if host.strip()
 ]
+if IS_VERCEL:
+    for host in ('.vercel.app', 'localhost', '127.0.0.1'):
+        if host not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(host)
 
 # SEO-proxied HTML goes through Django SecurityMiddleware. Google Identity
 # Services popup needs opener access; same-origin blocks the blank GSI window.
@@ -178,7 +185,8 @@ STORAGES = {
 WHITENOISE_MANIFEST_STRICT = False
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# Vercel filesystem is read-only except /tmp.
+MEDIA_ROOT = Path('/tmp') / 'media' if IS_VERCEL else BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -274,16 +282,24 @@ ANYMAIL = {
     'BREVO_API_KEY': BREVO_API_KEY,
 }
 EMAIL_INBOX_ENABLED = (
-    os.getenv('EMAIL_INBOX_ENABLED', '').lower()
-    in (
-        '1',
-        'true',
-        'yes',
+    False
+    if IS_VERCEL
+    else (
+        os.getenv('EMAIL_INBOX_ENABLED', '').lower()
+        in (
+            '1',
+            'true',
+            'yes',
+        )
+        or DEBUG
+        or TURNSTILE_TEST_MODE
     )
-    or DEBUG
-    or TURNSTILE_TEST_MODE
 )
-EMAIL_INBOX_DIR = os.getenv('EMAIL_INBOX_DIR', '')
+EMAIL_INBOX_DIR = (
+    str(Path('/tmp') / 'mail_inbox')
+    if IS_VERCEL
+    else os.getenv('EMAIL_INBOX_DIR', '')
+)
 if BREVO_API_KEY:
     EMAIL_BACKEND = 'anymail.backends.brevo.EmailBackend'
 elif os.getenv('EMAIL_BACKEND'):
@@ -299,6 +315,9 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 
+if IS_VERCEL or not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 if not DEBUG:
     if SECRET_KEY in _EXAMPLE_SECRET_KEYS:
         raise ImproperlyConfigured(
@@ -309,7 +328,6 @@ if not DEBUG:
         raise ImproperlyConfigured(
             'MFA_ENCRYPTION_KEY is required when DEBUG is False'
         )
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT = True
     SECURE_REDIRECT_EXEMPT = [r'^healthz/?$']
     SESSION_COOKIE_SECURE = True

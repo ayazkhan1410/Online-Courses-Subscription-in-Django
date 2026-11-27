@@ -8,8 +8,8 @@ Full-stack online courses platform with a **Django REST Framework** API, **Postg
 | Backend  | Django 5 + DRF + Gunicorn     | 4781  |
 | Database | PostgreSQL 16                 | 5433→5432 |
 
-Production (free): Cloudflare Pages + Render + Neon + Brevo. See [docs/DEPLOY.md](docs/DEPLOY.md).
-Admin file uploads do **not** persist on Render free (ephemeral disk); covers/OG are generated.
+Production (free): Cloudflare Pages + **Vercel** (Django) + Neon + Brevo. See [docs/DEPLOY.md](docs/DEPLOY.md).
+Admin file uploads do **not** persist on Vercel (read-only FS except `/tmp`); covers/OG are generated.
 
 ## Project structure
 

@@ -26,7 +26,7 @@ urlpatterns = [
     path('api/', include('contact.urls')),
     path('api/', include('learning.urls')),
     # Serve uploads under gunicorn (static() helper is DEBUG-only).
-    # Note: Render free disk is wiped on deploy; uploads do not persist.
+    # Note: Vercel FS is read-only except /tmp; uploads do not persist.
     re_path(
         r'^media/(?P<path>.*)$',
         serve,
