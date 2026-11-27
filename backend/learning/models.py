@@ -60,6 +60,29 @@ class LessonProgress(models.Model):
         return f'{self.user_id}:{self.module_id}:{self.completed}'
 
 
+class LessonNote(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='lesson_notes',
+    )
+    module = models.ForeignKey(
+        CourseModule,
+        on_delete=models.CASCADE,
+        related_name='notes',
+    )
+    seconds = models.PositiveIntegerField(default=0)
+    body = models.TextField(max_length=2000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self) -> str:
+        return f'{self.user_id}:{self.module_id}@{self.seconds}'
+
+
 class WishlistItem(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

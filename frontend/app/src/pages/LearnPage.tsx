@@ -5,6 +5,12 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { apiBase, formatApiError } from '@/api/client'
 import { getCourse } from '@/api/courses'
 import { enrollCourse, markLessonProgress, saveLessonPosition } from '@/api/learning'
+import {
+  createModuleNote,
+  deleteNote,
+  listModuleNotes,
+  updateNote,
+} from '@/api/notes'
 import type { Module } from '@/api/types'
 import { Counter, Ticks } from '@/components/Counter'
 import { ErrorState } from '@/components/ErrorState'
@@ -57,6 +63,11 @@ export default function LearnPage() {
   const lastSavedRef = useRef(0)
   const [resumeBanner, setResumeBanner] = useState<{ at: number } | null>(null)
   const [startOverNonce, setStartOverNonce] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [noteDraft, setNoteDraft] = useState('')
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editDraft, setEditDraft] = useState('')
+  const noteInputRef = useRef<HTMLInputElement>(null)
 
   const query = useQuery({
     queryKey: ['course', slug],
@@ -91,6 +102,12 @@ export default function LearnPage() {
     const resumeAt = computeResumeSeconds(savedPosition, current?.duration_seconds)
     setResumeBanner(resumeAt > 0 ? { at: resumeAt } : null)
   }, [current?.id, current?.duration_seconds, savedPosition, tParam])
+
+  const notesQuery = useQuery({
+    queryKey: ['notes', current?.id],
+    queryFn: () => listModuleNotes(current!.id),
+    enabled: Boolean(current?.id && query.data?.is_enrolled),
+  })
 
   const enroll = useMutation({
     mutationFn: () => enrollCourse(slug),
@@ -136,6 +153,7 @@ export default function LearnPage() {
     enabled: canPlay,
     startSeconds,
     onTime: (seconds, duration) => {
+      setCurrentTime(seconds)
       if (!current) return
       void savePos(current.id, seconds)
       if (duration > 0 && seconds >= duration * 0.9 && !current.is_completed) {
@@ -145,10 +163,23 @@ export default function LearnPage() {
       }
     },
     onPause: (seconds) => {
+      setCurrentTime(seconds)
       if (!current) return
       void savePos(current.id, seconds, true)
     },
   })
+
+  async function submitNote() {
+    if (!current || !noteDraft.trim()) return
+    const seconds = Math.floor(player?.getCurrentTime() ?? currentTime)
+    try {
+      await createModuleNote(current.id, noteDraft.trim(), seconds)
+      setNoteDraft('')
+      await queryClient.invalidateQueries({ queryKey: ['notes', current.id] })
+    } catch (error) {
+      toast.push(formatApiError(error), 'err')
+    }
+  }
 
   useEffect(() => {
     if (!token) navigate(`/login?next=${encodeURIComponent(window.location.pathname)}`)
@@ -312,12 +343,104 @@ export default function LearnPage() {
           <div className="notes-wrap">
             {tab === 'notes' ? (
               <>
-                <textarea
-                  className="notes"
-                  aria-label="Your notes"
-                  placeholder="Notes are not saved yet."
-                  readOnly
-                />
+                <form
+                  className="note-compose"
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                    void submitNote()
+                  }}
+                >
+                  <label className="meta" htmlFor="note-input">
+                    Add a note at{' '}
+                    <span className="mono">{formatClock(Math.floor(currentTime))}</span>
+                  </label>
+                  <input
+                    id="note-input"
+                    ref={noteInputRef}
+                    className="field"
+                    value={noteDraft}
+                    onChange={(event) => setNoteDraft(event.target.value)}
+                    placeholder="Write a note…"
+                    maxLength={2000}
+                    disabled={!course.is_enrolled}
+                  />
+                </form>
+                {(notesQuery.data?.length ?? 0) === 0 ? (
+                  <p className="dim small" style={{ marginTop: 16 }}>
+                    No notes for this lesson yet. Press N to write one at the current time.
+                  </p>
+                ) : (
+                  <ul className="note-list">
+                    {(notesQuery.data ?? []).map((note) => (
+                      <li key={note.id} className="note-row">
+                        <button
+                          type="button"
+                          className="mono link"
+                          onClick={() => {
+                            player?.seekTo(note.seconds)
+                            player?.play()
+                            setCurrentTime(note.seconds)
+                          }}
+                        >
+                          {formatClock(note.seconds)}
+                        </button>
+                        {editingId === note.id ? (
+                          <form
+                            className="note-edit"
+                            onSubmit={(event) => {
+                              event.preventDefault()
+                              void updateNote(note.id, { body: editDraft.trim() })
+                                .then(async () => {
+                                  setEditingId(null)
+                                  await queryClient.invalidateQueries({
+                                    queryKey: ['notes', current?.id],
+                                  })
+                                })
+                                .catch((error) => toast.push(formatApiError(error), 'err'))
+                            }}
+                          >
+                            <input
+                              className="field"
+                              value={editDraft}
+                              onChange={(event) => setEditDraft(event.target.value)}
+                              maxLength={2000}
+                              autoFocus
+                            />
+                          </form>
+                        ) : (
+                          <span>{note.body}</span>
+                        )}
+                        <span className="note-actions">
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => {
+                              setEditingId(note.id)
+                              setEditDraft(note.body)
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => {
+                              void deleteNote(note.id)
+                                .then(async () => {
+                                  await queryClient.invalidateQueries({
+                                    queryKey: ['notes', current?.id],
+                                  })
+                                })
+                                .catch((error) => toast.push(formatApiError(error), 'err'))
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <div className="notes-foot">
                   <span className="meta">Only you can see your notes</span>
                 </div>

@@ -4,8 +4,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from courses.models import Courses
+from learning.models import LessonNote
 from learning.serializers import (
     EnrollmentSerializer,
+    LessonNoteSerializer,
+    LessonNoteWriteSerializer,
     LessonPositionInputSerializer,
     LessonProgressInputSerializer,
     LessonProgressSerializer,
@@ -14,12 +17,17 @@ from learning.serializers import (
 from utils.learning import (
     add_wishlist,
     build_dashboard,
+    create_lesson_note,
+    delete_lesson_note,
     enroll_user,
+    list_all_notes,
     list_enrollments,
+    list_lesson_notes,
     list_wishlist,
     mark_lesson_progress,
     remove_wishlist,
     save_lesson_position,
+    update_lesson_note,
 )
 
 
@@ -104,6 +112,76 @@ class LessonPositionAPIView(APIView):
                 {'detail': str(exc)}, status=status.HTTP_403_FORBIDDEN
             )
         return Response(LessonProgressSerializer(progress).data)
+
+
+class ModuleNotesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, module_id: int):
+        try:
+            notes = list_lesson_notes(request.user, module_id)
+        except PermissionError as exc:
+            return Response(
+                {'detail': str(exc)}, status=status.HTTP_403_FORBIDDEN
+            )
+        return Response(LessonNoteSerializer(notes, many=True).data)
+
+    def post(self, request, module_id: int):
+        payload = LessonNoteWriteSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        try:
+            note = create_lesson_note(
+                request.user,
+                module_id,
+                payload.validated_data['body'],
+                payload.validated_data.get('seconds', 0),
+            )
+        except PermissionError as exc:
+            return Response(
+                {'detail': str(exc)}, status=status.HTTP_403_FORBIDDEN
+            )
+        return Response(
+            LessonNoteSerializer(note).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class NoteDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, note_id: int):
+        payload = LessonNoteWriteSerializer(data=request.data, partial=True)
+        payload.is_valid(raise_exception=True)
+        try:
+            note = update_lesson_note(
+                request.user,
+                note_id,
+                body=payload.validated_data.get('body'),
+                seconds=payload.validated_data.get('seconds'),
+            )
+        except LessonNote.DoesNotExist:
+            return Response(
+                {'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND
+            )
+        return Response(LessonNoteSerializer(note).data)
+
+    def delete(self, request, note_id: int):
+        try:
+            delete_lesson_note(request.user, note_id)
+        except LessonNote.DoesNotExist:
+            return Response(
+                {'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AllNotesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(
+            LessonNoteSerializer(list_all_notes(request.user), many=True).data
+        )
 
 
 class WishlistListCreateAPIView(APIView):

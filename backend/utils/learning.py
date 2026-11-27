@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from courses.models import CourseModule, Courses
-from learning.models import Enrollment, LessonProgress, WishlistItem
+from learning.models import Enrollment, LessonNote, LessonProgress, WishlistItem
 from subscriptions.models import Subscription
 
 
@@ -149,6 +149,66 @@ def resume_seconds(
     if pos <= 3:
         return 0
     return pos - 3
+
+
+def _require_enrollment_for_module(user, module_id: int) -> CourseModule:
+    module = get_object_or_404(CourseModule, pk=module_id)
+    if not Enrollment.objects.filter(user=user, course=module.course).exists():
+        raise PermissionError('Enroll in this course before adding notes')
+    return module
+
+
+def list_lesson_notes(user, module_id: int):
+    _require_enrollment_for_module(user, module_id)
+    return LessonNote.objects.filter(
+        user=user, module_id=module_id
+    ).select_related('module', 'module__course')
+
+
+def create_lesson_note(
+    user, module_id: int, body: str, seconds: int = 0
+) -> LessonNote:
+    module = _require_enrollment_for_module(user, module_id)
+    return LessonNote.objects.create(
+        user=user,
+        module=module,
+        body=body.strip(),
+        seconds=max(0, int(seconds)),
+    )
+
+
+def update_lesson_note(
+    user, note_id: int, body: str | None = None, seconds: int | None = None
+) -> LessonNote:
+    note = get_object_or_404(LessonNote, pk=note_id, user=user)
+    fields: list[str] = []
+    if body is not None:
+        note.body = body.strip()
+        fields.append('body')
+    if seconds is not None:
+        note.seconds = max(0, int(seconds))
+        fields.append('seconds')
+    if fields:
+        note.save(update_fields=[*fields, 'updated_at'])
+    return note
+
+
+def delete_lesson_note(user, note_id: int) -> None:
+    deleted, _ = LessonNote.objects.filter(pk=note_id, user=user).delete()
+    if not deleted:
+        raise LessonNote.DoesNotExist
+
+
+def list_all_notes(user):
+    return (
+        LessonNote.objects.filter(user=user)
+        .select_related('module', 'module__course')
+        .order_by(
+            'module__course__courses_name',
+            'module__sort_order',
+            'created_at',
+        )
+    )
 
 
 def list_wishlist(user):

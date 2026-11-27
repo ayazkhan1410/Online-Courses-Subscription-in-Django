@@ -229,6 +229,13 @@
 .notes { width: 100%; min-height: 160px; padding: 16px; border-radius: var(--r-md); border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); font: 400 14px/24px var(--font-mono); resize: vertical;
          background-image: repeating-linear-gradient(to bottom, transparent 0 23px, var(--line) 23px 24px); background-position: 0 15px; }
 .notes-foot { display: flex; justify-content: space-between; margin-top: 8px; }
+.note-compose { display: grid; gap: 8px; }
+.note-list { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 10px; }
+.note-row { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; font-size: 14px; }
+.note-row .note-actions { opacity: 0; display: flex; gap: 4px; }
+.note-row:hover .note-actions,
+.note-row:focus-within .note-actions { opacity: 1; }
+.note-edit { grid-column: 2 / 3; }
 .list { border-left: 1px solid var(--line); background: var(--surface); position: sticky; top: 56px; height: calc(100vh - 56px); overflow-y: auto; }
 .list-head { padding: 20px 20px 12px; display: flex; justify-content: space-between; align-items: baseline; }
 .list ol { list-style: none; margin: 0; padding: 0 8px 16px; }

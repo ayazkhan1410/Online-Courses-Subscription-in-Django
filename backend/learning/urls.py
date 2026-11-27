@@ -25,6 +25,17 @@ urlpatterns = [
         name='lesson-position',
     ),
     path(
+        'modules/<int:module_id>/notes/',
+        views.ModuleNotesAPIView.as_view(),
+        name='module-notes',
+    ),
+    path(
+        'notes/<int:note_id>/',
+        views.NoteDetailAPIView.as_view(),
+        name='note-detail',
+    ),
+    path('notes/', views.AllNotesAPIView.as_view(), name='all-notes'),
+    path(
         'wishlist/', views.WishlistListCreateAPIView.as_view(), name='wishlist'
     ),
     path(

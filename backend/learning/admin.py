@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from learning.models import Enrollment, LessonProgress, WishlistItem
+from learning.models import Enrollment, LessonNote, LessonProgress, WishlistItem
 
 
 @admin.register(Enrollment)
@@ -11,8 +11,20 @@ class EnrollmentAdmin(admin.ModelAdmin):
 
 @admin.register(LessonProgress)
 class LessonProgressAdmin(admin.ModelAdmin):
-    list_display = ['user', 'module', 'completed', 'updated_at']
+    list_display = [
+        'user',
+        'module',
+        'completed',
+        'position_seconds',
+        'updated_at',
+    ]
     list_filter = ['completed']
+
+
+@admin.register(LessonNote)
+class LessonNoteAdmin(admin.ModelAdmin):
+    list_display = ['user', 'module', 'seconds', 'updated_at']
+    search_fields = ['user__email', 'body']
 
 
 @admin.register(WishlistItem)

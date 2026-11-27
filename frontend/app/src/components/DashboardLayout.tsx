@@ -6,6 +6,7 @@ import {
   LayoutList,
   LogOut,
   Menu,
+  StickyNote,
   Shield,
   UserRound,
 } from 'lucide-react'
@@ -65,6 +66,9 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         </SideItem>
         <SideItem to="/dashboard/saved" icon={Bookmark} onNavigate={onNavigate}>
           Saved
+        </SideItem>
+        <SideItem to="/dashboard/notes" icon={StickyNote} onNavigate={onNavigate}>
+          Notes
         </SideItem>
       </nav>
       <nav className="side-group" aria-label="Browse">

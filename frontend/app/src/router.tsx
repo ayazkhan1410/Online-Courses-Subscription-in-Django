@@ -86,6 +86,7 @@ export const router = createBrowserRouter([
           { path: '/dashboard/courses', element: lazyPage(() => import('@/pages/DashboardCoursesPage')) },
           { path: '/dashboard/progress', element: lazyPage(() => import('@/pages/ProgressPage')) },
           { path: '/dashboard/saved', element: lazyPage(() => import('@/pages/SavedPage')) },
+          { path: '/dashboard/notes', element: lazyPage(() => import('@/pages/DashboardNotesPage')) },
           { path: '/dashboard/profile', element: lazyPage(() => import('@/pages/ProfilePage')) },
           { path: '/dashboard/settings', element: lazyPage(() => import('@/pages/SettingsPage')) },
           { path: '/dashboard/security', element: lazyPage(() => import('@/pages/SecurityPage')) },

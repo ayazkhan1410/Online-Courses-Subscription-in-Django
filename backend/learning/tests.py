@@ -119,6 +119,42 @@ class LearningAPITests(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_notes_owner_only(self):
+        Enrollment.objects.create(user=self.user, course=self.course)
+        created = self.client.post(
+            f'/api/modules/{self.module.id}/notes/',
+            {'seconds': 252, 'body': 'Lists tip'},
+            format='json',
+        )
+        self.assertEqual(created.status_code, status.HTTP_201_CREATED)
+        note_id = created.data['id']
+
+        listed = self.client.get(f'/api/modules/{self.module.id}/notes/')
+        self.assertEqual(listed.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(listed.data), 1)
+
+        other = CustomUser.objects.create_user(
+            email='other@example.com',
+            username='other',
+            password='StrongPass123',
+            full_name='Other',
+            user_choices='expert',
+        )
+        other_token = Token.objects.create(user=other)
+        outsider = APIClient()
+        outsider.credentials(
+            HTTP_AUTHORIZATION=f'Token {other_token.key}'
+        )
+        Enrollment.objects.create(user=other, course=self.course)
+        forbidden = outsider.patch(
+            f'/api/notes/{note_id}/',
+            {'body': 'hacked'},
+            format='json',
+        )
+        self.assertEqual(forbidden.status_code, status.HTTP_404_NOT_FOUND)
+        deleted = outsider.delete(f'/api/notes/{note_id}/')
+        self.assertEqual(deleted.status_code, status.HTTP_404_NOT_FOUND)
+
     def test_upgrade_to_pro_get_or_create_defaults(self):
         plan = SubscriptionList.objects.create(
             subscription_list='Pro',
