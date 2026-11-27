@@ -263,3 +263,31 @@ class CourseModuleAdmin(admin.ModelAdmin):
     list_filter = ['can_view', 'is_available', 'course']
     search_fields = ['module_name', 'youtube_video_id']
     ordering = ['course', 'sort_order']
+    fieldsets = (
+        (
+            None,
+            {
+                'fields': (
+                    'course',
+                    'module_name',
+                    'module_description',
+                    'module_video',
+                    'youtube_video_id',
+                    'thumbnail_url',
+                    'sort_order',
+                    'duration_seconds',
+                    'can_view',
+                    'is_available',
+                ),
+            },
+        ),
+        (
+            'Practice (own courses)',
+            {
+                'fields': ('practice_task', 'practice_hint'),
+                'description': (
+                    'Markdown-lite: paragraphs and fenced code blocks.'
+                ),
+            },
+        ),
+    )

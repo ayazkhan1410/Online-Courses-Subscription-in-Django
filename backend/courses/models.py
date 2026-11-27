@@ -164,6 +164,8 @@ class CourseModule(models.Model):
     duration_seconds = models.PositiveIntegerField(null=True, blank=True)
     can_view = models.BooleanField(default=True)
     is_available = models.BooleanField(default=True)
+    practice_task = models.TextField(blank=True, default='')
+    practice_hint = models.TextField(blank=True, default='')
 
     class Meta:
         ordering = ['sort_order', 'id']

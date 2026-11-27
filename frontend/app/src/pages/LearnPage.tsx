@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { apiBase, formatApiError } from '@/api/client'
@@ -14,6 +14,9 @@ import {
 } from '@/api/notes'
 import type { Module } from '@/api/types'
 import { Counter, Ticks } from '@/components/Counter'
+import { Keycap } from '@/components/Keycap'
+import { LearnShortcutsSheet } from '@/components/LearnShortcutsSheet'
+import { PracticePanel } from '@/components/PracticePanel'
 import { Panel } from '@/components/Panel'
 import { ErrorState } from '@/components/ErrorState'
 import { LessonList } from '@/components/LessonList'
@@ -21,8 +24,11 @@ import { Skeleton } from '@/components/Skeleton'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { useToast } from '@/components/Toast'
 import { useAuth } from '@/hooks/useAuth'
+import { useLearnFocusMode } from '@/hooks/useLearnFocusMode'
+import { useLearnShortcuts } from '@/hooks/useLearnShortcuts'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useYouTubePlayer } from '@/hooks/useYouTubePlayer'
+import { cn } from '@/lib/cn'
 import { cleanLessonTitle } from '@/lib/lessonTitle'
 import { computeResumeSeconds, formatClock } from '@/lib/resume'
 import { stripEmoji } from '@/lib/text'
@@ -70,7 +76,10 @@ export default function LearnPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editDraft, setEditDraft] = useState('')
   const [finishedCard, setFinishedCard] = useState<CompletionBrief | null>(null)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [playing, setPlaying] = useState(false)
   const noteInputRef = useRef<HTMLInputElement>(null)
+  const { focusMode, toggleFocusMode } = useLearnFocusMode()
 
   const query = useQuery({
     queryKey: ['course', slug],
@@ -84,6 +93,12 @@ export default function LearnPage() {
     modules.find((mod) => mod.id === requested) ??
     modules.find((mod) => !mod.is_locked) ??
     modules[0]
+  const lessonIndex = current
+    ? modules.findIndex((mod) => mod.id === current.id)
+    : 0
+  const prevModule = lessonIndex > 0 ? modules[lessonIndex - 1] : null
+  const nextModule =
+    lessonIndex < modules.length - 1 ? modules[lessonIndex + 1] : null
 
   const { counter, title: lessonTitle } = cleanLessonTitle(current?.module_name)
   usePageTitle(current ? lessonTitle : 'Lesson')
@@ -194,7 +209,65 @@ export default function LearnPage() {
       if (!current) return
       void savePos(current.id, seconds, true)
     },
+    onPlayingChange: setPlaying,
   })
+
+  const shortcutHandlers = useMemo(
+    () => ({
+      togglePlay: () => {
+        if (playing) player?.pause()
+        else player?.play()
+      },
+      seekRelative: (deltaSeconds: number) => {
+        const base = player?.getCurrentTime() ?? currentTime
+        player?.seekTo(Math.max(0, base + deltaSeconds))
+      },
+      markComplete: () => {
+        if (current && !current.is_locked && !complete.isPending) {
+          complete.mutate(current)
+        }
+      },
+      focusNewNote: () => {
+        setTab('notes')
+        noteInputRef.current?.focus()
+      },
+      prevLesson: () => {
+        if (prevModule && !prevModule.is_locked) {
+          navigate(`/learn/${slug}/${prevModule.id}`)
+        }
+      },
+      nextLesson: () => {
+        if (nextModule && !nextModule.is_locked) {
+          navigate(`/learn/${slug}/${nextModule.id}`)
+        }
+      },
+      toggleFocusMode,
+      openShortcutsSheet: () => setShortcutsOpen(true),
+    }),
+    [
+      complete,
+      current,
+      currentTime,
+      navigate,
+      nextModule,
+      player,
+      playing,
+      prevModule,
+      slug,
+      toggleFocusMode,
+    ],
+  )
+
+  useLearnShortcuts(shortcutHandlers, Boolean(query.data?.is_enrolled && current))
+
+  useEffect(() => {
+    if (!shortcutsOpen) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShortcutsOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [shortcutsOpen])
 
   async function submitNote() {
     if (!current || !noteDraft.trim()) return
@@ -241,16 +314,18 @@ export default function LearnPage() {
   }
 
   const course = query.data
-  const index = current ? modules.findIndex((mod) => mod.id === current.id) : 0
   const done = modules.filter((mod) => mod.is_completed).length
-  const prev = index > 0 ? modules[index - 1] : null
-  const next = index < modules.length - 1 ? modules[index + 1] : null
+  const prev = prevModule
+  const next = nextModule
+  const showPractice =
+    Boolean(course.creator?.is_owner) && Boolean(current?.practice_task?.trim())
   const dayLabel =
     counter?.replace(/^day\s+/i, 'Day ') ??
-    `Lesson ${String(index + 1).padStart(2, '0')} of ${course.module_count}`
+    `Lesson ${String(lessonIndex + 1).padStart(2, '0')} of ${course.module_count}`
 
   return (
-    <>
+    <div className={cn(focusMode && 'learn-focus')}>
+      <LearnShortcutsSheet open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <header className="topbar">
         <Link
           className="btn btn-ghost btn-icon"
@@ -261,14 +336,52 @@ export default function LearnPage() {
         </Link>
         <div className="title">{stripEmoji(course.courses_name)}</div>
         <div className="prog">
-          <Counter done={done} total={course.module_count} className="small" />
-          <Ticks done={done} total={course.module_count} />
+          <Counter done={done} total={course.module_count} className="small" animate />
+          <Ticks done={done} total={course.module_count} animate />
         </div>
-        <ThemeToggle />
+        <div className="l-actions" style={{ gap: 4 }}>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => setShortcutsOpen(true)}
+            aria-label="Keyboard shortcuts"
+          >
+            <Keycap>?</Keycap>
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-icon"
+            onClick={toggleFocusMode}
+            aria-label={focusMode ? 'Exit focus mode' : 'Focus mode'}
+            title="Focus mode (F)"
+          >
+            {focusMode ? (
+              <Minimize2 className="i" size={18} strokeWidth={1.5} />
+            ) : (
+              <Maximize2 className="i" size={18} strokeWidth={1.5} />
+            )}
+          </button>
+          <ThemeToggle />
+        </div>
       </header>
 
       <div className="shell">
         <main className="main">
+          {focusMode ? (
+            <div className="learn-focus-bar">
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={toggleFocusMode}
+              >
+                <Minimize2 className="i-16" size={16} strokeWidth={1.5} aria-hidden />
+                Exit focus
+                <span className="learn-key-hint">
+                  <Keycap>F</Keycap>
+                </span>
+              </button>
+            </div>
+          ) : null}
           <div className="player">
             {canPlay ? (
               <div
@@ -279,6 +392,13 @@ export default function LearnPage() {
             ) : null}
             <span className="player-note">Plays from YouTube</span>
           </div>
+
+          {showPractice && current ? (
+            <PracticePanel
+              task={current.practice_task ?? ''}
+              hint={current.practice_hint}
+            />
+          ) : null}
 
           {resumeBanner ? (
             <p className="dim small" style={{ marginTop: 12 }} data-testid="resume-banner">
@@ -361,6 +481,9 @@ export default function LearnPage() {
                 >
                   <Check className="i-16" size={16} strokeWidth={2} aria-hidden />
                   {current.is_completed ? 'Completed' : 'Mark complete'}
+                  <span className="learn-key-hint" aria-hidden>
+                    <Keycap>M</Keycap>
+                  </span>
                 </button>
               ) : null}
               <button
@@ -420,7 +543,8 @@ export default function LearnPage() {
                 </form>
                 {(notesQuery.data?.length ?? 0) === 0 ? (
                   <p className="dim small" style={{ marginTop: 16 }}>
-                    No notes for this lesson yet. Press N to write one at the current time.
+                    No notes for this lesson yet. Press <Keycap>N</Keycap> to write one at the
+                    current time.
                   </p>
                 ) : (
                   <ul className="note-list">
@@ -508,6 +632,6 @@ export default function LearnPage() {
 
         <LessonList slug={course.slug} modules={modules} currentId={current?.id} />
       </div>
-    </>
+    </div>
   )
 }

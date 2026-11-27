@@ -88,6 +88,8 @@ class CourseModuleSerializer(serializers.ModelSerializer):
             'is_completed',
             'is_locked',
             'position_seconds',
+            'practice_task',
+            'practice_hint',
         ]
 
     def get_embed_url(self, obj: CourseModule) -> str | None:
