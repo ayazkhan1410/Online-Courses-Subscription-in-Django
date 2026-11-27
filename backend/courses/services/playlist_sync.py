@@ -168,9 +168,7 @@ def sync_course_playlist(
 def sync_published_playlists(api_key: str | None) -> dict[str, int]:
     """Sync every published course that has a YouTube playlist id."""
     if not (api_key or '').strip():
-        logger.warning(
-            'YOUTUBE_API_KEY is not set; skipping playlist sync.'
-        )
+        logger.warning('YOUTUBE_API_KEY is not set; skipping playlist sync.')
         return {
             'courses': 0,
             'added': 0,

@@ -7,8 +7,6 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.core.mail import send_mail
-
-from utils.inbox import record_outbound_mail
 from django.db import transaction
 from django.utils import timezone
 
@@ -23,6 +21,7 @@ from mfa.models import Authenticator, LoginChallenge, RecoveryCode
 from mfa.utils.alerts import send_security_alert
 from mfa.utils.code import generate_login_code, hash_value, value_matches
 from mfa.utils.lockout import clear_failures, is_locked, record_failure
+from utils.inbox import record_outbound_mail
 
 logger = logging.getLogger(__name__)
 

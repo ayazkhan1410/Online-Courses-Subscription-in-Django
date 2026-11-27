@@ -1,7 +1,13 @@
 from rest_framework import serializers
 
 from courses.serializers import CourseSerializer
-from learning.models import Completion, Enrollment, LessonNote, LessonProgress, WishlistItem
+from learning.models import (
+    Completion,
+    Enrollment,
+    LessonNote,
+    LessonProgress,
+    WishlistItem,
+)
 from utils.completion import finished_month_label, learner_display_name
 
 

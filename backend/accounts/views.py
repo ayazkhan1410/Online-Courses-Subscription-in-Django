@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenRefreshView
 
+from accounts.models import CustomUser
 from accounts.serializers import (
     ChangePasswordSerializer,
     ForgetPasswordSerializer,
@@ -31,7 +32,6 @@ from utils.auth import (
     reset_password,
     verify_google_credential,
 )
-from accounts.models import CustomUser
 from utils.inbox import extract_code, inbox_enabled, read_last_mail
 
 RESEND_VERIFY_MESSAGE = (

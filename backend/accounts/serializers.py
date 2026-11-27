@@ -148,7 +148,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserSettingsSerializer(serializers.ModelSerializer):
-    daily_goal = serializers.IntegerField(min_value=1, max_value=3, required=False)
+    daily_goal = serializers.IntegerField(
+        min_value=1,
+        max_value=3,
+        required=False,
+    )
 
     class Meta:
         model = CustomUser
@@ -166,14 +170,10 @@ class UserSettingsSerializer(serializers.ModelSerializer):
         try:
             ZoneInfo(name)
         except ZoneInfoNotFoundError as exc:
-            raise serializers.ValidationError(
-                'Unknown timezone'
-            ) from exc
+            raise serializers.ValidationError('Unknown timezone') from exc
         return name
 
     def validate_daily_goal(self, value: int) -> int:
         if value not in (1, 2, 3):
-            raise serializers.ValidationError(
-                'Daily goal must be 1, 2, or 3'
-            )
+            raise serializers.ValidationError('Daily goal must be 1, 2, or 3')
         return value

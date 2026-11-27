@@ -30,9 +30,7 @@ def render_course_og(course: Courses) -> bytes:
     total = module_count
     title = course.courses_name[:120]
     teacher = (
-        course.creator.name
-        if course.creator_id and course.creator
-        else BRAND
+        course.creator.name if course.creator_id and course.creator else BRAND
     )
     level = (course.level or 'beginner').replace('_', ' ').title()
 

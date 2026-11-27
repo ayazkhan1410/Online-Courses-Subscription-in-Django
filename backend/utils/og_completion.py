@@ -28,7 +28,12 @@ class OgFontError(RuntimeError):
     """Raised when bundled OG fonts cannot be loaded."""
 
 
-def _font(size: int, *, mono: bool = False, medium: bool = False) -> ImageFont.FreeTypeFont:
+def _font(
+    size: int,
+    *,
+    mono: bool = False,
+    medium: bool = False,
+) -> ImageFont.FreeTypeFont:
     path = _MONO if mono else (_SANS_MED if medium else _SANS)
     try:
         return ImageFont.truetype(str(path), size)

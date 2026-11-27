@@ -61,9 +61,7 @@ def pick_next_lesson(
         .prefetch_related(
             Prefetch(
                 'course__course_modules',
-                queryset=CourseModule.objects.order_by(
-                    'sort_order', 'id'
-                ),
+                queryset=CourseModule.objects.order_by('sort_order', 'id'),
             )
         )
         .order_by('-last_accessed_at')
@@ -134,9 +132,7 @@ def send_weekly_reminder(user: CustomUser) -> bool:
     _, lesson_title = clean_lesson_title(module.module_name)
     total = course.course_modules.count()
     day_label = _lesson_day_label(module, total)
-    lesson_link = (
-        f'{_frontend_base()}/learn/{course.slug}/{module.id}'
-    )
+    lesson_link = f'{_frontend_base()}/learn/{course.slug}/{module.id}'
     subject = f'Your next lesson: {lesson_title}'
     body = (
         f'Course: {course.courses_name}\n'

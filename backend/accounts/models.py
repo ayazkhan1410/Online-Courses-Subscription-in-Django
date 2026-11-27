@@ -60,9 +60,11 @@ class CustomUser(AbstractUser):
         if not self.unsubscribe_token:
             for _ in range(8):
                 candidate = secrets.token_urlsafe(32)
-                if not CustomUser.objects.filter(
-                    unsubscribe_token=candidate
-                ).exclude(pk=self.pk).exists():
+                if (
+                    not CustomUser.objects.filter(unsubscribe_token=candidate)
+                    .exclude(pk=self.pk)
+                    .exists()
+                ):
                     self.unsubscribe_token = candidate
                     break
         super().save(*args, **kwargs)

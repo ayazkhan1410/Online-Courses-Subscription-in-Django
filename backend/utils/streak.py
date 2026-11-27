@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date, timedelta, timezone as dt_utc
+from datetime import UTC, date, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.utils import timezone as dj_timezone
@@ -24,7 +24,7 @@ def _user_zone(tz_name: str | None) -> ZoneInfo:
 
 def _local_date(dt, tz: ZoneInfo) -> date:
     if dj_timezone.is_naive(dt):
-        dt = dj_timezone.make_aware(dt, dt_utc.utc)
+        dt = dj_timezone.make_aware(dt, UTC)
     return dt.astimezone(tz).date()
 
 

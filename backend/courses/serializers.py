@@ -134,10 +134,14 @@ class CourseModuleSerializer(serializers.ModelSerializer):
             request.user, 'is_authenticated', False
         ):
             return 0
-        row = LessonProgress.objects.filter(
-            user=request.user,
-            module=obj,
-        ).only('position_seconds').first()
+        row = (
+            LessonProgress.objects.filter(
+                user=request.user,
+                module=obj,
+            )
+            .only('position_seconds')
+            .first()
+        )
         return int(row.position_seconds) if row else 0
 
     def _can_access(self, obj: CourseModule) -> bool:

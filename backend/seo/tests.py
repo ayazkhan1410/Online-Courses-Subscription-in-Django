@@ -74,8 +74,7 @@ class SeoMetaTests(TestCase):
         from seo.sitemaps import CourseSitemap, StaticViewSitemap
 
         course_locs = [
-            CourseSitemap().location(row)
-            for row in CourseSitemap().items()
+            CourseSitemap().location(row) for row in CourseSitemap().items()
         ]
         self.assertIn('/courses/seo-python', course_locs)
         static_keys = StaticViewSitemap().items()
@@ -98,7 +97,10 @@ class SeoMetaTests(TestCase):
         self.assertIn('<urlset', body)
 
     def test_og_fonts_load_without_fallback(self):
-        from utils.og_completion import OgFontError, assert_og_fonts_load, _font
+        from utils.og_completion import (
+            _font,
+            assert_og_fonts_load,
+        )
 
         assert_og_fonts_load()
         font = _font(64, medium=True)

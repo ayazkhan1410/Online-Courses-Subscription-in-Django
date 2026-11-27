@@ -42,9 +42,7 @@ class WeeklyReminderTests(TestCase):
         )
         self.module = CourseModule.objects.create(
             course=self.course,
-            module_name=(
-                'Day 08/50 - Lists in Python | Python Full Course'
-            ),
+            module_name=('Day 08/50 - Lists in Python | Python Full Course'),
             youtube_video_id='vid08',
             module_video='https://www.youtube.com/watch?v=vid08',
             sort_order=8,

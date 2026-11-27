@@ -48,9 +48,7 @@ class PlaylistSuggestionSerializer(serializers.ModelSerializer):
         if not note:
             raise serializers.ValidationError('Tell us why it fits here.')
         if len(note) > 500:
-            raise serializers.ValidationError(
-                'Use 500 characters or fewer.'
-            )
+            raise serializers.ValidationError('Use 500 characters or fewer.')
         return note
 
     def create(self, validated_data: dict) -> PlaylistSuggestion:

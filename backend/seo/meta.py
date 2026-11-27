@@ -163,18 +163,22 @@ def resolve_meta(path: str) -> PageMeta | None:
         return _home()
 
     head = segments[0]
-    if head in {
-        'about',
-        'contact',
-        'courses',
-        'categories',
-        'paths',
-        'services',
-        'faq',
-        'privacy',
-        'terms',
-        'search',
-    } and len(segments) == 1:
+    if (
+        head
+        in {
+            'about',
+            'contact',
+            'courses',
+            'categories',
+            'paths',
+            'services',
+            'faq',
+            'privacy',
+            'terms',
+            'search',
+        }
+        and len(segments) == 1
+    ):
         return _static(normalized)
 
     if head == 'courses' and len(segments) == 2:
@@ -256,9 +260,7 @@ def resolve_meta(path: str) -> PageMeta | None:
         if completion is None:
             return None
         course = completion.course
-        plain = (
-            f'Completion card for {course.courses_name} on {SITE_NAME}.'
-        )
+        plain = f'Completion card for {course.courses_name} on {SITE_NAME}.'
         canonical = urljoin(f'{base}/', f'done/{share_id}')
         title = _with_site(f'Finished {course.courses_name}')
         og = f'{_api_base()}/api/og/done/{share_id}.png'
@@ -295,9 +297,7 @@ def meta_head_tags(meta: PageMeta) -> str:
     ]
     for block in meta.json_ld:
         payload = _safe_json_ld(block)
-        chunks.append(
-            f'<script type="application/ld+json">{payload}</script>'
-        )
+        chunks.append(f'<script type="application/ld+json">{payload}</script>')
     return '\n    '.join(chunks)
 
 

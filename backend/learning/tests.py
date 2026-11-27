@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone as dt_utc
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from django.core.cache import cache
@@ -146,9 +146,7 @@ class LearningAPITests(TestCase):
         )
         other_token = Token.objects.create(user=other)
         outsider = APIClient()
-        outsider.credentials(
-            HTTP_AUTHORIZATION=f'Token {other_token.key}'
-        )
+        outsider.credentials(HTTP_AUTHORIZATION=f'Token {other_token.key}')
         Enrollment.objects.create(user=other, course=self.course)
         forbidden = outsider.patch(
             f'/api/notes/{note_id}/',
@@ -326,7 +324,7 @@ class StreakTests(TestCase):
                 0,
                 tzinfo=tz,
             )
-            when = local_noon.astimezone(dt_utc.utc)
+            when = local_noon.astimezone(UTC)
             self._complete_at(mod, when)
 
         response = self.client.get('/api/dashboard/')
@@ -348,11 +346,11 @@ class StreakTests(TestCase):
         )
         self._complete_at(
             self.modules[0],
-            late.astimezone(dt_utc.utc),
+            late.astimezone(UTC),
         )
         self._complete_at(
             self.modules[1],
-            early.astimezone(dt_utc.utc),
+            early.astimezone(UTC),
         )
         from utils.streak import completion_counts_by_day
 
@@ -372,7 +370,7 @@ class StreakTests(TestCase):
             14,
             0,
             tzinfo=tz,
-        ).astimezone(dt_utc.utc)
+        ).astimezone(UTC)
         self._complete_at(self.modules[0], noon)
         response = self.client.get('/api/dashboard/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)

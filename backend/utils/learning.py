@@ -7,10 +7,15 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from courses.models import CourseModule, Courses
-from learning.models import Enrollment, LessonNote, LessonProgress, WishlistItem
+from learning.models import (
+    Enrollment,
+    LessonNote,
+    LessonProgress,
+    WishlistItem,
+)
+from subscriptions.models import Subscription
 from utils.completion import list_user_completions, maybe_record_completion
 from utils.streak import build_streak_payload
-from subscriptions.models import Subscription
 
 
 def serializer_learning_context(user, course: Courses | None = None) -> dict:
@@ -115,9 +120,7 @@ def mark_lesson_progress(
     return progress
 
 
-def save_lesson_position(
-    user, module_id: int, seconds: int
-) -> LessonProgress:
+def save_lesson_position(user, module_id: int, seconds: int) -> LessonProgress:
     """Persist watch position; auto-complete at 90% when duration is known."""
     module = get_object_or_404(CourseModule, pk=module_id)
     enrollment = Enrollment.objects.filter(
@@ -144,9 +147,7 @@ def save_lesson_position(
     return progress
 
 
-def resume_seconds(
-    position: int, duration: int | None = None
-) -> int:
+def resume_seconds(position: int, duration: int | None = None) -> int:
     """Client resume rule: last 15s → 0, else max(0, position - 3)."""
     pos = max(0, int(position or 0))
     dur = int(duration or 0)
@@ -347,6 +348,4 @@ def _serialize_finished(user, ser_ctx: dict) -> list[dict]:
     from learning.serializers import CompletionSerializer
 
     rows = list_user_completions(user)
-    return CompletionSerializer(
-        rows, many=True, context=ser_ctx
-    ).data
+    return CompletionSerializer(rows, many=True, context=ser_ctx).data

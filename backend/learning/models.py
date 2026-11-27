@@ -145,9 +145,7 @@ class Completion(models.Model):
         if not self.share_id:
             for _ in range(24):
                 candidate = new_completion_share_id()
-                if not Completion.objects.filter(
-                    share_id=candidate
-                ).exists():
+                if not Completion.objects.filter(share_id=candidate).exists():
                     self.share_id = candidate
                     break
             if not self.share_id:

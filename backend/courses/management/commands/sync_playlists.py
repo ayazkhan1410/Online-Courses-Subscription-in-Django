@@ -19,9 +19,8 @@ class Command(BaseCommand):
             return
         self.stdout.write(
             self.style.SUCCESS(
-                'Synced %(courses)s course(s): '
-                '%(added)s added, %(hidden)s hidden, '
-                '%(restored)s restored, %(updated)s updated.'
-                % totals
+                'Synced {courses} course(s): '
+                '{added} added, {hidden} hidden, '
+                '{restored} restored, {updated} updated.'.format(**totals)
             )
         )

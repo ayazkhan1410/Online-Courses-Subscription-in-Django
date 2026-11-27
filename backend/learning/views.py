@@ -19,7 +19,6 @@ from learning.serializers import (
     WishlistSerializer,
 )
 from utils.completion import learner_display_name
-from utils.og_completion import render_completion_og
 from utils.learning import (
     add_wishlist,
     build_dashboard,
@@ -35,6 +34,7 @@ from utils.learning import (
     save_lesson_position,
     update_lesson_note,
 )
+from utils.og_completion import render_completion_og
 
 
 class DashboardAPIView(APIView):
@@ -99,10 +99,14 @@ class LessonProgressAPIView(APIView):
             )
         data = LessonProgressSerializer(progress).data
         if payload.validated_data.get('completed', True):
-            course_id = CourseModule.objects.filter(pk=module_id).values_list(
-                'course_id',
-                flat=True,
-            ).first()
+            course_id = (
+                CourseModule.objects.filter(pk=module_id)
+                .values_list(
+                    'course_id',
+                    flat=True,
+                )
+                .first()
+            )
             completion = (
                 Completion.objects.filter(
                     user=request.user,
@@ -112,9 +116,7 @@ class LessonProgressAPIView(APIView):
                 else None
             )
             if completion is not None:
-                data['completion'] = CompletionBriefSerializer(
-                    completion
-                ).data
+                data['completion'] = CompletionBriefSerializer(completion).data
         return Response(data)
 
 
@@ -137,9 +139,13 @@ class LessonPositionAPIView(APIView):
             )
         data = LessonProgressSerializer(progress).data
         if progress.completed:
-            course_id = CourseModule.objects.filter(
-                pk=progress.module_id,
-            ).values_list('course_id', flat=True).first()
+            course_id = (
+                CourseModule.objects.filter(
+                    pk=progress.module_id,
+                )
+                .values_list('course_id', flat=True)
+                .first()
+            )
             completion = (
                 Completion.objects.filter(
                     user=request.user,
@@ -149,9 +155,7 @@ class LessonPositionAPIView(APIView):
                 else None
             )
             if completion is not None:
-                data['completion'] = CompletionBriefSerializer(
-                    completion
-                ).data
+                data['completion'] = CompletionBriefSerializer(completion).data
         return Response(data)
 
 
