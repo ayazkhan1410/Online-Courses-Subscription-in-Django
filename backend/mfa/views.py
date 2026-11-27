@@ -19,6 +19,7 @@ from mfa.utils.challenge import (
     status_for,
     verify_challenge,
 )
+from mfa.utils.email_mfa import confirm_email_mfa, start_email_mfa
 from mfa.utils.totp import confirm_setup, start_setup
 from utils.auth import login_payload
 
@@ -118,3 +119,29 @@ class MfaStatusAPIView(APIView):
 
     def get(self, request):
         return Response(status_for(request.user))
+
+
+class MfaEnableEmailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            start_email_mfa(request.user)
+        except MfaError as exc:
+            return _mfa_error(exc)
+        return Response({'message': 'A verification code has been sent.'})
+
+
+class MfaConfirmEmailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MfaConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            confirm_email_mfa(request.user, serializer.validated_data['code'])
+        except MfaError as exc:
+            return _mfa_error(exc)
+        Token.objects.filter(user=request.user).delete()
+        Token.objects.create(user=request.user)
+        return Response({'message': 'Two-factor authentication is on.'})

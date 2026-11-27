@@ -2,10 +2,16 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatApiError } from '@/api/client'
-import { mfaConfirm, mfaDisable, mfaSetup, mfaStatus } from '@/api/mfa'
-import { Button } from '@/components/Button'
+import {
+  mfaConfirm,
+  mfaConfirmEmail,
+  mfaDisable,
+  mfaSetup,
+  mfaSetupEmail,
+  mfaStatus,
+} from '@/api/mfa'
+import { OtpInput } from '@/components/OtpInput'
 import { ErrorState } from '@/components/ErrorState'
-import { Input } from '@/components/Input'
 import { useToast } from '@/components/Toast'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -16,11 +22,13 @@ function QrCode({ svg }: { svg: string }) {
   if (!clean.startsWith('<svg') || clean.toLowerCase().includes('<script')) return null
   return (
     <div
-      className="max-w-xs bg-paper p-4 text-notebook-ink [&_svg]:h-auto [&_svg]:w-full"
+      className="sec-qr"
       dangerouslySetInnerHTML={{ __html: clean }}
     />
   )
 }
+
+type SetupMode = 'idle' | 'totp' | 'email'
 
 export default function SecurityPage() {
   usePageTitle('Security')
@@ -28,7 +36,8 @@ export default function SecurityPage() {
   const toast = useToast()
   const queryClient = useQueryClient()
   const status = useQuery({ queryKey: ['mfa-status'], queryFn: mfaStatus })
-  const [qr, setQr] = useState<string>('')
+  const [mode, setMode] = useState<SetupMode>('idle')
+  const [qr, setQr] = useState('')
   const [manual, setManual] = useState('')
   const [code, setCode] = useState('')
   const [codes, setCodes] = useState<string[]>([])
@@ -38,26 +47,49 @@ export default function SecurityPage() {
   const setup = useMutation({
     mutationFn: mfaSetup,
     onSuccess: (data) => {
+      setMode('totp')
       setQr(data.qr_svg)
       setManual(data.manual_key)
     },
     onError: (error) => toast.push(formatApiError(error), 'err'),
   })
 
-  const confirm = useMutation({
+  const setupEmail = useMutation({
+    mutationFn: mfaSetupEmail,
+    onSuccess: (data) => {
+      setMode('email')
+      toast.push(data.message)
+    },
+    onError: (error) => toast.push(formatApiError(error), 'err'),
+  })
+
+  const confirmTotp = useMutation({
     mutationFn: () => mfaConfirm(code),
     onSuccess: async (data) => {
-      setCodes(data.recovery_codes)
-      if (user) {
+      if (data.recovery_codes?.length) setCodes(data.recovery_codes)
+      if (user && (data.token || data.access)) {
         setSession(
-          accessFromAuth({ token: data.token, access: data.access, user }),
+          accessFromAuth({ token: data.token ?? '', access: data.access, user }),
           user,
           data.refresh,
         )
       }
       setQr('')
+      setMode('idle')
+      setCode('')
       await queryClient.invalidateQueries({ queryKey: ['mfa-status'] })
       toast.push('Authenticator is on')
+    },
+    onError: (error) => toast.push(formatApiError(error), 'err'),
+  })
+
+  const confirmEmail = useMutation({
+    mutationFn: () => mfaConfirmEmail(code),
+    onSuccess: async () => {
+      setMode('idle')
+      setCode('')
+      await queryClient.invalidateQueries({ queryKey: ['mfa-status'] })
+      toast.push('Email code is on')
     },
     onError: (error) => toast.push(formatApiError(error), 'err'),
   })
@@ -67,6 +99,9 @@ export default function SecurityPage() {
     onSuccess: async (data) => {
       toast.push(data.message)
       setCodes([])
+      setPassword('')
+      setDisableCode('')
+      setMode('idle')
       await queryClient.invalidateQueries({ queryKey: ['mfa-status'] })
     },
     onError: (error) => toast.push(formatApiError(error), 'err'),
@@ -87,97 +122,170 @@ export default function SecurityPage() {
   }
 
   const enabled = Boolean(status.data?.enabled)
+  const activeMethod = status.data?.method || status.data?.methods?.[0]
+  const hasTotp = activeMethod === 'totp'
+  const settingUp = mode === 'totp' || mode === 'email'
 
   return (
-    <div className="max-w-xl">
-      <h1 className="text-[32px]">Security</h1>
-      <p className="mt-3 font-mono text-sm text-accent-ink">
-        {status.isLoading ? 'Checking authenticator status' : enabled ? 'Authenticator is on' : 'Authenticator is off'}
+    <div className="sec-page">
+      <h1 className="h2">Two-step login</h1>
+      <p className="dim" style={{ marginTop: 8, maxWidth: '36rem' }}>
+        Ask for a code when you log in with your email and password. Choose an authenticator app
+        or a code sent to your email.
       </p>
-      {typeof status.data?.recovery_codes_remaining === 'number' ? (
-        <p className="mt-2 text-sm text-ink-2">
+      <p className="small dim" style={{ marginTop: 16, maxWidth: '36rem' }}>
+        When you continue with Google, Google protects your sign-in, so we don&apos;t ask for a
+        code.
+      </p>
+
+      {status.isLoading ? (
+        <p className="meta" style={{ marginTop: 24 }}>
+          Checking status
+        </p>
+      ) : (
+        <p className="meta" style={{ marginTop: 24 }}>
+          {enabled
+            ? `On · ${activeMethod === 'email' ? 'Email code' : 'Authenticator app'}`
+            : 'Off'}
+        </p>
+      )}
+
+      {enabled && hasTotp && typeof status.data?.recovery_codes_remaining === 'number' ? (
+        <p className="small dim" style={{ marginTop: 8 }}>
           Recovery codes left: {status.data.recovery_codes_remaining}
         </p>
       ) : null}
 
-      {!enabled && !qr ? (
-        <Button className="mt-6" onClick={() => setup.mutate()} disabled={setup.isPending}>
-          Set up authenticator
-        </Button>
+      {!enabled && !settingUp && codes.length === 0 ? (
+        <div className="hero-actions" style={{ marginTop: 24 }}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setup.mutate()}
+            disabled={setup.isPending}
+          >
+            Authenticator app
+          </button>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setupEmail.mutate()}
+            disabled={setupEmail.isPending}
+          >
+            Email code
+          </button>
+        </div>
       ) : null}
 
-      {qr ? (
-        <div className="mt-6 flex flex-col gap-4">
+      {mode === 'totp' && qr ? (
+        <div className="sec-block">
           <QrCode svg={qr} />
-          {manual ? <p className="font-mono text-sm">Manual key: {manual}</p> : null}
-          <Input
-            label="6-digit code"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={6}
+          {manual ? <p className="mono small">Manual key: {manual}</p> : null}
+          <p className="dim small">Enter the 6-digit code from your app to finish setup.</p>
+          <OtpInput
             value={code}
-            onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+            onChange={(next) => {
+              setCode(next)
+              if (next.length === 6) confirmTotp.mutate()
+            }}
           />
-          <Button onClick={() => confirm.mutate()} disabled={code.length !== 6 || confirm.isPending}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => confirmTotp.mutate()}
+            disabled={code.length !== 6 || confirmTotp.isPending}
+          >
             Confirm
-          </Button>
+          </button>
+        </div>
+      ) : null}
+
+      {mode === 'email' ? (
+        <div className="sec-block">
+          <p className="dim small">Enter the 6-digit code we emailed you.</p>
+          <OtpInput
+            value={code}
+            onChange={(next) => {
+              setCode(next)
+              if (next.length === 6) confirmEmail.mutate()
+            }}
+          />
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => confirmEmail.mutate()}
+            disabled={code.length !== 6 || confirmEmail.isPending}
+          >
+            Confirm
+          </button>
         </div>
       ) : null}
 
       {codes.length > 0 ? (
-        <div className="mt-8">
+        <div className="sec-block">
           <p>Save these recovery codes. Each one works once.</p>
-          <ul className="mt-4 font-mono text-sm">
+          <ul className="mono small" style={{ listStyle: 'none', padding: 0, margin: '16px 0' }}>
             {codes.map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>
-          <div className="mt-4 flex gap-3">
-            <Button
-              variant="ghost"
+          <div className="hero-actions">
+            <button type="button" className="btn btn-ghost" onClick={downloadCodes}>
+              Download
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
               onClick={() => {
-                void navigator.clipboard.writeText(codes.join('\n'))
-                toast.push('Copied')
+                setCodes([])
+                toast.push('Saved')
               }}
             >
-              Copy codes
-            </Button>
-            <Button variant="ghost" onClick={downloadCodes}>
-              Download
-            </Button>
+              I saved them
+            </button>
           </div>
         </div>
       ) : null}
 
       {enabled ? (
         <form
-          className="mt-8 flex flex-col gap-4"
+          className="sec-block"
           onSubmit={(event) => {
             event.preventDefault()
             disable.mutate()
           }}
         >
-          <Input
-            label="Password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-          <Input
-            label="Or authenticator / recovery code"
-            autoComplete="one-time-code"
-            value={disableCode}
-            onChange={(event) => setDisableCode(event.target.value)}
-          />
-          <Button type="submit" variant="ghost" disabled={disable.isPending}>
-            Disable authenticator
-          </Button>
+          <h2 className="h3">Turn off two-step login</h2>
+          <p className="dim small">Enter your password to turn this off.</p>
+          <label className="field">
+            <span className="label">Password</span>
+            <input
+              className="input"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          </label>
+          <label className="field">
+            <span className="label">Or code from your current method</span>
+            <input
+              className="input"
+              autoComplete="one-time-code"
+              value={disableCode}
+              onChange={(event) => setDisableCode(event.target.value)}
+            />
+          </label>
+          <button type="submit" className="btn btn-ghost" disabled={disable.isPending}>
+            Turn off
+          </button>
         </form>
       ) : null}
 
-      <p className="mt-8 text-sm">
-        <Link to="/dashboard">Back to dashboard</Link>
+      <p className="small" style={{ marginTop: 32 }}>
+        <Link className="link" to="/dashboard">
+          Back to dashboard
+        </Link>
       </p>
     </div>
   )

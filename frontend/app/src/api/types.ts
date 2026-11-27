@@ -30,6 +30,7 @@ export type Category = {
   sort_order: number
   is_featured: boolean
   published_course_count: number
+  cover_image_url?: string
 }
 
 export type CategoryBrief = {
@@ -121,13 +122,71 @@ export type AppConfig = {
   stripe_publishable_key: string
   google_client_id: string
   turnstile_site_key: string
+  fiverr_profile_url?: string
+  published_course_count?: number
+  category_count?: number
+}
+
+export type VerificationRequired = {
+  verification_required: true
+  email: string
+}
+
+export type PathStepBrief = {
+  sort_order?: number
+  note?: string
+  course: {
+    slug: string
+    title: string
+    thumbnail?: string
+  }
+}
+
+export type LearningPath = {
+  title: string
+  slug: string
+  summary: string
+  level: string
+  step_count?: number
+  course_count?: number
+  steps?: PathStepBrief[]
+  course_names?: string[]
+  completed_count?: number
+  total_count?: number
+}
+
+export type PathStepDetail = {
+  sort_order: number
+  note: string
+  course: Course
+}
+
+export type LearningPathDetail = {
+  title: string
+  slug: string
+  summary: string
+  level: string
+  steps: PathStepDetail[]
+}
+
+export type Project = {
+  title: string
+  slug: string
+  summary: string
+  tech: string
+  tech_list?: string[]
+  live_url?: string | null
+  repo_url?: string | null
 }
 
 export type MfaStatus = {
   enabled: boolean
-  required: boolean
-  methods: string[]
-  recovery_codes_remaining: number
+  method: string
+  available_to_enable: string[]
+  has_password: boolean
+  required?: boolean
+  methods?: string[]
+  recovery_codes_remaining?: number
 }
 
 export type MfaSetup = {

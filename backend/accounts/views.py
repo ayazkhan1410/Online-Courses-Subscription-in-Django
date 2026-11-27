@@ -18,12 +18,21 @@ from accounts.serializers import (
 from mfa.exceptions import MfaError
 from mfa.utils.alerts import remember_device
 from mfa.utils.challenge import mfa_gate
+from accounts.utils.email_verification import (
+    issue_verification_code,
+    resend_verification,
+    verify_email_code,
+)
 from utils.auth import (
     get_or_create_google_user,
     issue_password_reset,
     login_payload,
     reset_password,
     verify_google_credential,
+)
+
+RESEND_VERIFY_MESSAGE = (
+    'If that email needs verification, a new code has been sent.'
 )
 
 
@@ -38,10 +47,17 @@ class RegisterAPIView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+        try:
+            issue_verification_code(user)
+        except MfaError as exc:
+            return Response(
+                {'detail': exc.message},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return Response(
             {
-                'message': 'Account created successfully',
-                **login_payload(user),
+                'verification_required': True,
+                'email': user.email,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -63,6 +79,17 @@ class LoginAPIView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
+        if not user.email_verified:
+            try:
+                issue_verification_code(user)
+            except MfaError:
+                pass
+            return Response(
+                {
+                    'verification_required': True,
+                    'email': user.email,
+                }
+            )
         try:
             pending = mfa_gate(user)
         except MfaError as exc:
@@ -97,18 +124,44 @@ class GoogleAuthAPIView(APIView):
                 {'detail': str(exc)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        django_login(request, user)
+        remember_device(user, request)
+        return Response(login_payload(user))
+
+
+class VerifyEmailAPIView(APIView):
+    permission_classes = [AllowAny]
+    throttle_scope = 'auth'
+
+    def post(self, request):
+        email = (request.data.get('email') or '').strip()
+        code = (request.data.get('code') or '').strip()
+        if not email or not code:
+            return Response(
+                {'detail': 'Email and code are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         try:
-            pending = mfa_gate(user)
+            user = verify_email_code(email, code)
         except MfaError as exc:
             return Response(
                 {'detail': exc.message},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if pending is not None:
-            return Response(pending)
         django_login(request, user)
         remember_device(user, request)
         return Response(login_payload(user))
+
+
+class ResendVerifyEmailAPIView(APIView):
+    permission_classes = [AllowAny]
+    throttle_scope = 'auth'
+
+    def post(self, request):
+        email = (request.data.get('email') or '').strip()
+        if email:
+            resend_verification(email)
+        return Response({'message': RESEND_VERIFY_MESSAGE})
 
 
 class LogoutAPIView(APIView):

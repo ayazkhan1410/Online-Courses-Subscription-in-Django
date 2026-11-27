@@ -1,3 +1,4 @@
+import re
 from unittest.mock import patch
 
 from django.contrib.auth.tokens import default_token_generator
@@ -39,6 +40,8 @@ class AuthAPITests(TestCase):
             full_name='Learner',
             user_choices='expert',
         )
+        self.user.email_verified = True
+        self.user.save(update_fields=['email_verified'])
 
     def test_login_success(self):
         response = self.client.post(
@@ -148,7 +151,12 @@ class AuthAPITests(TestCase):
             format='json',
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(response.data['verification_required'])
+        self.assertEqual(response.data['email'], 'fresh@example.com')
+        self.assertNotIn('token', response.data)
         self.assertTrue(CustomUser.objects.filter(email='fresh@example.com').exists())
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('Study with Ayaz code', mail.outbox[0].subject)
 
     def test_model_has_no_profile_or_confirm_password(self):
         field_names = {f.name for f in CustomUser._meta.get_fields()}
@@ -322,3 +330,143 @@ class AuthThrottleTests(TestCase):
             format='json',
         )
         self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    TURNSTILE_TEST_MODE=True,
+    REST_FRAMEWORK={
+        'DEFAULT_AUTHENTICATION_CLASSES': [
+            'rest_framework.authentication.TokenAuthentication',
+        ],
+        'DEFAULT_THROTTLE_CLASSES': [],
+        'DEFAULT_THROTTLE_RATES': {},
+    },
+)
+class EmailVerificationTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        mail.outbox.clear()
+        self.client = APIClient()
+
+    def _register(self, email: str = 'verify@example.com'):
+        return self.client.post(
+            '/api/auth/register/',
+            {
+                'username': 'verify',
+                'email': email,
+                'password': 'StrongPass123',
+                **_TURNSTILE,
+            },
+            format='json',
+        )
+
+    def _code_from_mail(self) -> str:
+        match = re.search(r'\b(\d{6})\b', mail.outbox[-1].body)
+        self.assertIsNotNone(match)
+        return match.group(1)
+
+    def test_register_cannot_login_until_verified(self):
+        self._register()
+        login = self.client.post(
+            '/api/auth/login/',
+            {
+                'email': 'verify@example.com',
+                'password': 'StrongPass123',
+                **_TURNSTILE,
+            },
+            format='json',
+        )
+        self.assertTrue(login.data['verification_required'])
+        self.assertNotIn('token', login.data)
+
+    def test_verify_email_returns_login_payload(self):
+        self._register()
+        code = self._code_from_mail()
+        response = self.client.post(
+            '/api/auth/verify-email/',
+            {'email': 'verify@example.com', 'code': code},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('token', response.data)
+        user = CustomUser.objects.get(email='verify@example.com')
+        self.assertTrue(user.email_verified)
+
+    def test_wrong_code_five_times_locks(self):
+        self._register()
+        for _ in range(5):
+            wrong = self.client.post(
+                '/api/auth/verify-email/',
+                {'email': 'verify@example.com', 'code': '000000'},
+                format='json',
+            )
+            self.assertEqual(wrong.status_code, status.HTTP_400_BAD_REQUEST)
+        blocked = self.client.post(
+            '/api/auth/verify-email/',
+            {'email': 'verify@example.com', 'code': '000001'},
+            format='json',
+        )
+        self.assertEqual(blocked.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(
+            CustomUser.objects.get(email='verify@example.com').email_verified
+        )
+
+    def test_expired_code_fails(self):
+        from datetime import timedelta
+
+        from accounts.models import EmailVerificationCode
+        from django.utils import timezone
+
+        self._register()
+        row = EmailVerificationCode.objects.latest('created_at')
+        row.expires_at = timezone.now() - timedelta(minutes=1)
+        row.save(update_fields=['expires_at'])
+        response = self.client.post(
+            '/api/auth/verify-email/',
+            {'email': 'verify@example.com', 'code': self._code_from_mail()},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_resend_cooldown(self):
+        self._register()
+        first_len = len(mail.outbox)
+        cache.delete('email_verify_resend:verify@example.com')
+        self.client.post(
+            '/api/auth/verify-email/resend/',
+            {'email': 'verify@example.com'},
+            format='json',
+        )
+        self.assertEqual(len(mail.outbox), first_len + 1)
+        again = self.client.post(
+            '/api/auth/verify-email/resend/',
+            {'email': 'verify@example.com'},
+            format='json',
+        )
+        self.assertEqual(again.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), first_len + 1)
+
+    @patch('utils.auth.google_id_token.verify_oauth2_token')
+    def test_google_links_unverified_email_account(self, mock_verify):
+        self._register()
+        self.assertFalse(
+            CustomUser.objects.get(email='verify@example.com').email_verified
+        )
+        mock_verify.return_value = {
+            'email': 'verify@example.com',
+            'email_verified': True,
+            'iss': 'https://accounts.google.com',
+            'sub': 'google-sub-verify',
+            'name': 'Verify',
+        }
+        response = self.client.post(
+            '/api/auth/google/',
+            {'credential': 'fake-token'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('token', response.data)
+        user = CustomUser.objects.get(email='verify@example.com')
+        self.assertTrue(user.email_verified)
+        self.assertEqual(user.google_sub, 'google-sub-verify')

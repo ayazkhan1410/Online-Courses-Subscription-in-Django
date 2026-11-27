@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
-import { googleLogin, isMfaChallenge, register } from '@/api/auth'
+import { googleLogin, isMfaChallenge, isVerificationRequired, register } from '@/api/auth'
 import { formatApiError } from '@/api/client'
 import { GoogleButton } from '@/components/GoogleButton'
 import { Logo } from '@/components/Logo'
@@ -31,6 +31,10 @@ export default function RegisterPage() {
         ...values,
         turnstile_token: token,
       })
+      if (isVerificationRequired(data)) {
+        navigate(`/verify-email?email=${encodeURIComponent(data.email)}`)
+        return
+      }
       setSession(accessFromAuth(data), data.user, data.refresh)
       navigate('/dashboard')
     } catch (error) {

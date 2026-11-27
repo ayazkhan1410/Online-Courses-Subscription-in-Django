@@ -3,7 +3,7 @@ import { Mail } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { googleLogin, isMfaChallenge, login } from '@/api/auth'
+import { googleLogin, isMfaChallenge, isVerificationRequired, login } from '@/api/auth'
 import { formatApiError } from '@/api/client'
 import { mfaResend, mfaVerify } from '@/api/mfa'
 import type { MfaChallenge, User } from '@/api/types'
@@ -44,8 +44,14 @@ export default function LoginPage() {
         ...values,
         turnstile_token: token,
       })
+      if (isVerificationRequired(data)) {
+        navigate(`/verify-email?email=${encodeURIComponent(data.email)}`)
+        return
+      }
       if (isMfaChallenge(data)) {
-        const initial = data.methods.includes('totp') ? 'totp' : (data.methods[0] ?? 'email')
+        const initial = data.methods.includes('totp')
+          ? 'totp'
+          : (data.methods.includes('email') ? 'email' : (data.methods[0] ?? 'totp'))
         setMethod(initial)
         setChallenge(data)
         return
@@ -133,20 +139,25 @@ export default function LoginPage() {
             <button className="btn btn-primary btn-lg" type="submit">
               Verify
             </button>
-            <EmailMfaOption
-              show={challenge.methods.includes('email')}
-              onEmail={() => {
-                setMethod('email')
-                void mfaResend(challenge.challenge_token)
-                  .then((data) => toast.push(data.message))
-                  .catch((error: unknown) => toast.push(formatApiError(error), 'err'))
-              }}
-            />
+            {challenge.methods.includes('email') && method !== 'email' ? (
+              <EmailMfaOption
+                onEmail={() => {
+                  setMethod('email')
+                  void mfaResend(challenge.challenge_token)
+                    .then((data) => toast.push(data.message))
+                    .catch((error: unknown) => toast.push(formatApiError(error), 'err'))
+                }}
+              />
+            ) : null}
             <p className="foot">
-              <button type="button" className="link" onClick={() => setMethod('recovery')}>
-                Use a recovery code
-              </button>
-              <span aria-hidden> · </span>
+              {challenge.methods.includes('totp') ? (
+                <>
+                  <button type="button" className="link" onClick={() => setMethod('recovery')}>
+                    Use a recovery code
+                  </button>
+                  <span aria-hidden> · </span>
+                </>
+              ) : null}
               <button
                 type="button"
                 className="dim link"
@@ -219,8 +230,7 @@ export default function LoginPage() {
   )
 }
 
-function EmailMfaOption({ show, onEmail }: { show: boolean; onEmail: () => void }) {
-  if (!show) return null
+function EmailMfaOption({ onEmail }: { onEmail: () => void }) {
   return (
     <div className="method">
       <Mail size={18} strokeWidth={1.5} aria-hidden />

@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRef } from 'react'
 import { useForm } from 'react-hook-form'
+import { useSearchParams } from 'react-router-dom'
 import { sendContact } from '@/api/contact'
 import { formatApiError } from '@/api/client'
 import { Button } from '@/components/Button'
@@ -14,6 +15,9 @@ import { contactSchema, type ContactValues } from '@/lib/schemas'
 
 export default function ContactPage() {
   usePageTitle('Contact')
+  const [params] = useSearchParams()
+  const topic = params.get('topic')
+  const isProject = topic === 'project'
   const toast = useToast()
   const turnstile = useRef<TurnstileHandle>(null)
   const form = useForm<ContactValues>({
@@ -38,6 +42,12 @@ export default function ContactPage() {
   return (
     <PageMain>
       <PageHeader title="Contact" lead="Send a note about a course or a project." />
+      {isProject ? (
+        <p className="dim small" style={{ marginBottom: 16, maxWidth: '36rem' }}>
+          You came here from the services page. Mention what you&apos;re building and when you need
+          it.
+        </p>
+      ) : null}
       <form
         className="flex max-w-xl flex-col gap-4"
         onSubmit={(event) => {
@@ -54,6 +64,11 @@ export default function ContactPage() {
         />
         <Textarea
           label="Message"
+          placeholder={
+            isProject
+              ? 'What you are building, timeline, and anything else I should know.'
+              : undefined
+          }
           error={form.formState.errors.message?.message}
           {...form.register('message')}
         />

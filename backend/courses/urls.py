@@ -16,4 +16,11 @@ urlpatterns = [
         views.CourseDetailAPIView.as_view(),
         name='course-detail',
     ),
+    path('paths/', views.LearningPathListAPIView.as_view(), name='path-list'),
+    path(
+        'paths/<slug:slug>/',
+        views.LearningPathDetailAPIView.as_view(),
+        name='path-detail',
+    ),
+    path('projects/', views.ProjectListAPIView.as_view(), name='project-list'),
 ]

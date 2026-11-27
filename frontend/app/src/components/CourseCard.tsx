@@ -49,6 +49,7 @@ export function CourseCard({ course }: { course: Course }) {
         categorySlug={
           creator?.is_owner ? 'study-with-ayaz' : course.category?.slug
         }
+        imageUrl={course.thumbnail_url || course.course_image}
       />
       {progress != null ? (
         <div

@@ -90,13 +90,22 @@ def get_or_create_google_user(payload: dict) -> CustomUser:
 
     user = CustomUser.objects.filter(google_sub=sub).first()
     if user is not None:
+        if not user.email_verified:
+            user.email_verified = True
+            user.save(update_fields=['email_verified'])
         return user
 
     user = CustomUser.objects.filter(email__iexact=email).first()
     if user is not None:
+        updates = []
         if not user.google_sub:
             user.google_sub = sub
-            user.save(update_fields=['google_sub'])
+            updates.append('google_sub')
+        if not user.email_verified:
+            user.email_verified = True
+            updates.append('email_verified')
+        if updates:
+            user.save(update_fields=updates)
         return user
 
     user = CustomUser(
@@ -105,6 +114,7 @@ def get_or_create_google_user(payload: dict) -> CustomUser:
         full_name=name,
         user_choices='expert',
         google_sub=sub,
+        email_verified=True,
     )
     user.set_unusable_password()
     user.save()

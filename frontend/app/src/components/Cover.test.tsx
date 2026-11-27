@@ -17,4 +17,18 @@ describe('Cover', () => {
     expect(screen.getByText('Python in 50 days')).toBeInTheDocument()
     expect(screen.getByText('50 lessons')).toBeInTheDocument()
   })
+
+  it('shows a playlist thumbnail when provided', () => {
+    const { container } = render(
+      <Cover
+        title="Django Tutorials"
+        categoryLabel="Backend"
+        lessons={17}
+        categorySlug="backend-engineering"
+        imageUrl="https://i.ytimg.com/vi/abc/hqdefault.jpg"
+      />,
+    )
+    const img = container.querySelector('img.cover-thumb')
+    expect(img).toHaveAttribute('src', 'https://i.ytimg.com/vi/abc/hqdefault.jpg')
+  })
 })

@@ -4,7 +4,15 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path
 
-from courses.models import Category, CourseModule, Courses, Creator
+from courses.models import (
+    Category,
+    CourseModule,
+    Courses,
+    Creator,
+    LearningPath,
+    PathStep,
+    Project,
+)
 from courses.services.playlist_import import PlaylistImportError, import_playlist
 
 
@@ -56,6 +64,7 @@ class CoursesAdmin(admin.ModelAdmin):
     list_filter = ['category', 'creator', 'status', 'level', 'language']
     search_fields = [
         'courses_name',
+        'slug',
         'playlist_url',
         'youtube_playlist_id',
         'creator__name',
@@ -123,6 +132,32 @@ class CoursesAdmin(admin.ModelAdmin):
             'title': 'Import playlist by URL',
         }
         return TemplateResponse(request, 'admin/import_playlist.html', context)
+
+
+class PathStepInline(admin.TabularInline):
+    model = PathStep
+    extra = 0
+    ordering = ['sort_order']
+    autocomplete_fields = ['course']
+
+
+@admin.register(LearningPath)
+class LearningPathAdmin(admin.ModelAdmin):
+    list_display = ['title', 'slug', 'level', 'sort_order', 'is_published']
+    list_filter = ['is_published', 'level']
+    search_fields = ['title', 'slug', 'summary']
+    prepopulated_fields = {'slug': ('title',)}
+    ordering = ['sort_order', 'title']
+    inlines = [PathStepInline]
+
+
+@admin.register(Project)
+class ProjectAdmin(admin.ModelAdmin):
+    list_display = ['title', 'slug', 'sort_order', 'is_published']
+    list_filter = ['is_published']
+    search_fields = ['title', 'slug', 'summary', 'tech']
+    prepopulated_fields = {'slug': ('title',)}
+    ordering = ['sort_order', 'title']
 
 
 @admin.register(CourseModule)

@@ -6,7 +6,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from accounts.models import CustomUser
-from courses.models import Category, CourseModule, Courses
+from courses.models import Category, CourseModule, Courses, LearningPath, PathStep, Project
 from courses.services.playlist_import import playlist_id_from_url, resolve_import_status
 from learning.models import Enrollment
 
@@ -31,6 +31,8 @@ class CourseLockAndSeedTests(TestCase):
             full_name='Student',
             user_choices='expert',
         )
+        self.user.email_verified = True
+        self.user.save(update_fields=['email_verified'])
         self.token = Token.objects.create(user=self.user)
         self.free = Courses.objects.create(
             courses_name='Free Course',
@@ -132,12 +134,19 @@ class CourseLockAndSeedTests(TestCase):
             category=category,
             status=Courses.STATUS_PENDING,
         )
+        self.free.thumbnail_url = 'https://img.example/python-cover.jpg'
+        self.free.save(update_fields=['thumbnail_url'])
         response = self.client.get('/api/categories/')
         row = next(item for item in response.data if item['slug'] == 'python')
         self.assertEqual(row['published_course_count'], 1)
+        self.assertEqual(row['cover_image_url'], 'https://img.example/python-cover.jpg')
         detail = self.client.get('/api/categories/python/')
         self.assertEqual(detail.status_code, status.HTTP_200_OK)
         self.assertEqual(detail.data['category']['slug'], 'python')
+        self.assertEqual(
+            detail.data['category']['cover_image_url'],
+            'https://img.example/python-cover.jpg',
+        )
         self.assertEqual(
             [course['slug'] for course in detail.data['results']],
             ['free-course'],
@@ -189,3 +198,96 @@ class CourseLockAndSeedTests(TestCase):
         call_command('seed_youtube_courses')
         self.assertTrue(Courses.objects.filter(pk=placeholder.pk).exists())
         self.assertFalse(Courses.objects.filter(pk=orphan.pk).exists())
+
+
+@override_settings(
+    REST_FRAMEWORK={
+        'DEFAULT_AUTHENTICATION_CLASSES': [
+            'rest_framework.authentication.TokenAuthentication',
+        ],
+        'DEFAULT_THROTTLE_CLASSES': [],
+        'PAGE_SIZE': 8,
+    }
+)
+class PathsAndProjectsAPITests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.client = APIClient()
+        self.published = Courses.objects.create(
+            courses_name='Path Course A',
+            courses_description='A',
+            youtube_playlist_id='path-pl-a',
+            slug='path-course-a',
+            status=Courses.STATUS_PUBLISHED,
+            thumbnail_url='https://img.example/a.jpg',
+        )
+        self.hidden = Courses.objects.create(
+            courses_name='Path Course Hidden',
+            youtube_playlist_id='path-pl-hidden',
+            slug='path-course-hidden',
+            status=Courses.STATUS_HIDDEN,
+        )
+        self.path_pub = LearningPath.objects.create(
+            title='Published path',
+            slug='published-path',
+            summary='Summary',
+            level='Beginner',
+            sort_order=1,
+            is_published=True,
+        )
+        PathStep.objects.create(
+            path=self.path_pub,
+            course=self.published,
+            sort_order=1,
+            note='Start here.',
+        )
+        self.path_draft = LearningPath.objects.create(
+            title='Draft path',
+            slug='draft-path',
+            summary='Hidden',
+            level='Beginner',
+            is_published=False,
+        )
+        PathStep.objects.create(
+            path=self.path_draft,
+            course=self.published,
+            sort_order=1,
+        )
+
+    def test_paths_list_only_published_with_ordered_steps(self):
+        response = self.client.get('/api/paths/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        row = response.data[0]
+        self.assertEqual(row['slug'], 'published-path')
+        self.assertEqual(row['step_count'], 1)
+        self.assertEqual(row['steps'][0]['sort_order'], 1)
+        self.assertEqual(row['steps'][0]['course']['slug'], 'path-course-a')
+        self.assertEqual(row['steps'][0]['course']['title'], 'Path Course A')
+
+    def test_path_detail_includes_course_card_fields(self):
+        response = self.client.get('/api/paths/published-path/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        course = response.data['steps'][0]['course']
+        self.assertIn('module_count', course)
+        self.assertEqual(course['slug'], 'path-course-a')
+
+    def test_projects_empty_when_none_published(self):
+        Project.objects.create(
+            title='Draft project',
+            slug='draft-project',
+            summary='Not live',
+            tech='Django',
+            is_published=False,
+        )
+        response = self.client.get('/api/projects/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])
+
+    def test_config_includes_about_facts(self):
+        Category.objects.create(name='Python', slug='python-cfg')
+        response = self.client.get('/api/config/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('fiverr_profile_url', response.data)
+        self.assertIn('published_course_count', response.data)
+        self.assertIn('category_count', response.data)

@@ -244,6 +244,7 @@ export default function CourseDetailPage() {
           categorySlug={
             course.creator?.is_owner ? 'study-with-ayaz' : course.category?.slug
           }
+          imageUrl={course.thumbnail_url || course.course_image}
         />
       </section>
 

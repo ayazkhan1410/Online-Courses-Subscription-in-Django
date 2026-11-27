@@ -178,6 +178,7 @@ function ContinuePanel({ course }: { course: Course }) {
         categoryLabel={course.category?.name}
         lessons={course.module_count}
         categorySlug={course.creator?.is_owner ? 'study-with-ayaz' : course.category?.slug}
+        imageUrl={course.thumbnail_url || course.course_image}
       />
       <div className="cont-body">
         <div className="meta">Continue · {stripEmoji(course.courses_name)}</div>

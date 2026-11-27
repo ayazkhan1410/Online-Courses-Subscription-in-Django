@@ -170,3 +170,66 @@ class CourseModule(models.Model):
 
     def __str__(self) -> str:
         return self.module_name
+
+
+class LearningPath(models.Model):
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255, unique=True)
+    summary = models.TextField()
+    level = models.CharField(max_length=64)
+    sort_order = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['sort_order', 'title']
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class PathStep(models.Model):
+    path = models.ForeignKey(
+        LearningPath,
+        on_delete=models.CASCADE,
+        related_name='steps',
+    )
+    course = models.ForeignKey(
+        Courses,
+        on_delete=models.CASCADE,
+        related_name='path_steps',
+    )
+    sort_order = models.PositiveIntegerField(default=0)
+    note = models.TextField(blank=True, default='')
+
+    class Meta:
+        ordering = ['sort_order', 'id']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['path', 'course'],
+                name='uniq_path_step_course',
+            ),
+            models.UniqueConstraint(
+                fields=['path', 'sort_order'],
+                name='uniq_path_step_order',
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f'{self.path.title} step {self.sort_order}'
+
+
+class Project(models.Model):
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255, unique=True)
+    summary = models.TextField()
+    tech = models.CharField(max_length=500)
+    live_url = models.URLField(max_length=500, blank=True, default='')
+    repo_url = models.URLField(max_length=500, blank=True, default='')
+    sort_order = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['sort_order', 'title']
+
+    def __str__(self) -> str:
+        return self.title

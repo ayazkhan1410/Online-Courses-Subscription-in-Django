@@ -51,7 +51,7 @@ def _qr_svg(data: str) -> str:
 
 
 def start_setup(user) -> dict:
-    if Authenticator.objects.filter(user=user, confirmed_at__isnull=False).exists():
+    if getattr(user, 'mfa_method', ''):
         raise MfaError('Two-factor authentication is already enabled.')
     secret = pyotp.random_base32()
     Authenticator.objects.update_or_create(
@@ -93,6 +93,8 @@ def confirm_setup(user, code: str) -> list[str]:
         authenticator.confirmed_at = timezone.now()
         authenticator.last_used_step = step
         authenticator.save(update_fields=['confirmed_at', 'last_used_step'])
+        user.mfa_method = user.MFA_TOTP
+        user.save(update_fields=['mfa_method'])
         codes = issue_recovery_codes(user)
     send_security_alert(user, 'enabled')
     logger.info('MFA enabled | user_id=%s', user.pk)

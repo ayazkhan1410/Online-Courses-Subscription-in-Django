@@ -9,4 +9,14 @@ urlpatterns = [
     path('auth/mfa/confirm/', views.MfaConfirmAPIView.as_view(), name='mfa-confirm'),
     path('auth/mfa/disable/', views.MfaDisableAPIView.as_view(), name='mfa-disable'),
     path('auth/mfa/status/', views.MfaStatusAPIView.as_view(), name='mfa-status'),
+    path(
+        'auth/mfa/enable-email/',
+        views.MfaEnableEmailAPIView.as_view(),
+        name='mfa-enable-email',
+    ),
+    path(
+        'auth/mfa/confirm-email/',
+        views.MfaConfirmEmailAPIView.as_view(),
+        name='mfa-confirm-email',
+    ),
 ]

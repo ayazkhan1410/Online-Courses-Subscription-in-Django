@@ -57,6 +57,8 @@ class RegisterSerializer(serializers.Serializer):
             user_choices='expert',
         )
         user.set_password(validated_data['password'])
+        user.email_verified = False
+        user.is_active = True
         user.save()
         return user
 

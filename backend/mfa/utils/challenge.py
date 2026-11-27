@@ -31,16 +31,19 @@ def _resend_key(challenge_id: int) -> str:
 
 
 def available_methods(user) -> list[str]:
-    confirmed = Authenticator.objects.filter(
-        user=user,
-        confirmed_at__isnull=False,
-    ).exists()
-    if confirmed:
-        methods = ['totp', 'email']
+    method = getattr(user, 'mfa_method', '') or ''
+    if method == 'totp':
+        confirmed = Authenticator.objects.filter(
+            user=user,
+            confirmed_at__isnull=False,
+        ).exists()
+        if not confirmed:
+            return []
+        methods = ['totp']
         if RecoveryCode.objects.filter(user=user, used_at__isnull=True).exists():
             methods.append('recovery')
         return methods
-    if user.is_staff or user.is_superuser:
+    if method == 'email':
         return ['email']
     return []
 
@@ -60,9 +63,16 @@ def _issue_email_code(challenge: LoginChallenge) -> None:
 
 
 def create_challenge(user, methods: list[str]) -> LoginChallenge:
-    method = (
-        LoginChallenge.Method.TOTP if 'totp' in methods else LoginChallenge.Method.EMAIL
-    )
+    if user.mfa_method == 'totp':
+        method = LoginChallenge.Method.TOTP
+    elif user.mfa_method == 'email':
+        method = LoginChallenge.Method.EMAIL
+    else:
+        method = (
+            LoginChallenge.Method.TOTP
+            if 'totp' in methods
+            else LoginChallenge.Method.EMAIL
+        )
     now = timezone.now()
     LoginChallenge.objects.filter(user=user, used_at__isnull=True).update(used_at=now)
     challenge = LoginChallenge.objects.create(
@@ -162,41 +172,43 @@ def resend_challenge(token: str) -> None:
         raise MfaError('Invalid or expired challenge.')
     if is_locked(challenge.user_id) or challenge.attempts >= MAX_ATTEMPTS:
         raise MfaError('Too many attempts. Try again later.')
+    if challenge.user.mfa_method != 'email':
+        raise MfaError('Resend is only available for email codes.')
     _issue_email_code(challenge)
 
 
 def status_for(user) -> dict:
-    methods = available_methods(user)
+    method = getattr(user, 'mfa_method', '') or ''
+    enabled = bool(method)
+    methods = available_methods(user) if enabled else []
     remaining = RecoveryCode.objects.filter(user=user, used_at__isnull=True).count()
-    enabled = Authenticator.objects.filter(
-        user=user,
-        confirmed_at__isnull=False,
-    ).exists()
+    available_to_enable = [] if enabled else ['totp', 'email']
     return {
         'enabled': enabled,
-        'required': bool(methods),
+        'method': method,
         'methods': methods,
+        'available_to_enable': available_to_enable,
+        'has_password': user.has_usable_password(),
         'recovery_codes_remaining': remaining,
     }
 
 
 def disable_mfa(user, password: str, code: str) -> None:
-    enabled = Authenticator.objects.filter(
-        user=user,
-        confirmed_at__isnull=False,
-    ).exists()
-    if not enabled:
+    if not getattr(user, 'mfa_method', ''):
         raise MfaError('Two-factor authentication is not enabled.')
     if password:
         if not user.check_password(password):
             raise MfaError('Invalid password.')
     elif code:
         cleaned = code.strip()
-        accepted = (
-            consume_totp(user, cleaned)
-            if cleaned.isdigit() and len(cleaned) == 6
-            else consume_recovery_code(user, cleaned)
-        )
+        if user.mfa_method == 'email':
+            from mfa.utils.email_mfa import verify_email_mfa_disable
+
+            accepted = verify_email_mfa_disable(user, cleaned)
+        elif cleaned.isdigit() and len(cleaned) == 6:
+            accepted = consume_totp(user, cleaned)
+        else:
+            accepted = consume_recovery_code(user, cleaned)
         if not accepted:
             raise MfaError('Invalid code.')
     else:
@@ -208,5 +220,7 @@ def disable_mfa(user, password: str, code: str) -> None:
         LoginChallenge.objects.filter(user=user, used_at__isnull=True).update(
             used_at=now
         )
+        user.mfa_method = ''
+        user.save(update_fields=['mfa_method'])
     send_security_alert(user, 'disabled')
     logger.info('MFA disabled | user_id=%s', user.pk)

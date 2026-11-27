@@ -31,13 +31,31 @@ export function mfaSetup(): Promise<MfaSetup> {
   return api<MfaSetup>('/auth/mfa/setup/', { method: 'POST', body: {} })
 }
 
-export function mfaConfirm(code: string): Promise<{
-  recovery_codes: string[]
-  token: string
+export function mfaConfirm(
+  code: string,
+  method?: string,
+): Promise<{
+  recovery_codes?: string[]
+  token?: string
   access?: string
   refresh?: string
+  message?: string
 }> {
-  return api('/auth/mfa/confirm/', { method: 'POST', body: { code } })
+  return api('/auth/mfa/confirm/', {
+    method: 'POST',
+    body: method ? { code, method } : { code },
+  })
+}
+
+export function mfaSetupEmail(): Promise<MessageResponse> {
+  return api<MessageResponse>('/auth/mfa/enable-email/', { method: 'POST', body: {} })
+}
+
+export function mfaConfirmEmail(code: string): Promise<MessageResponse> {
+  return api<MessageResponse>('/auth/mfa/confirm-email/', {
+    method: 'POST',
+    body: { code },
+  })
 }
 
 export function mfaDisable(payload: {

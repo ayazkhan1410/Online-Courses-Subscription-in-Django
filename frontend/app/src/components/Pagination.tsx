@@ -1,5 +1,3 @@
-import { Button } from '@/components/Button'
-
 export function pageCount(count: number, size = 8): number {
   if (count <= 0) return 1
   return Math.ceil(count / size)
@@ -16,26 +14,30 @@ export function Pagination({
 }) {
   if (pages <= 1) return null
   return (
-    <nav aria-label="Pagination" className="mt-8 flex items-center justify-center gap-3">
-      <Button
-        variant="secondary"
-        size="sm"
+    <nav
+      aria-label="Pagination"
+      className="results-bar"
+      style={{ justifyContent: 'center', marginTop: 28, gap: 12 }}
+    >
+      <button
+        type="button"
+        className="btn btn-sm"
         disabled={page <= 1}
         onClick={() => onPage(page - 1)}
       >
         Previous
-      </Button>
-      <p className="font-mono text-sm tabular-nums text-ink-2">
+      </button>
+      <span className="meta num">
         {page} / {pages}
-      </p>
-      <Button
-        variant="secondary"
-        size="sm"
+      </span>
+      <button
+        type="button"
+        className="btn btn-sm"
         disabled={page >= pages}
         onClick={() => onPage(page + 1)}
       >
         Next
-      </Button>
+      </button>
     </nav>
   )
 }

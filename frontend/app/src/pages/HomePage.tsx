@@ -10,6 +10,8 @@ import { ErrorState } from '@/components/ErrorState'
 import { Skeleton } from '@/components/Skeleton'
 import { DeskScene } from '@/features/hero/DeskScene'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { inkClass } from '@/lib/ink'
+
 const AYAZ = 'study-with-ayaz'
 
 export default function HomePage() {
@@ -148,20 +150,28 @@ export default function HomePage() {
         ) : null}
         {categories.data && categories.data.length > 0 ? (
           <div className="cats">
-            {categories.data.map((item) => (
-              <Link
-                key={item.slug}
-                to={`/categories/${item.slug}`}
-                className={`cat${item.slug === AYAZ ? ' owner' : ''}`}
-              >
-                <div className="cat-top">
-                  <CategoryGlyph icon={item.icon} slug={item.slug} />
-                  <span className="cat-count meta">{item.published_course_count}</span>
-                </div>
-                <h3 className="h3">{item.name}</h3>
-                {item.description ? <p>{item.description}</p> : null}
-              </Link>
-            ))}
+            {categories.data.map((item) => {
+              const cover = (item.cover_image_url || '').trim()
+              return (
+                <Link
+                  key={item.slug}
+                  to={`/categories/${item.slug}`}
+                  className={`cat${item.slug === AYAZ ? ' owner' : ''}${cover ? ' cat-media' : ''} ${inkClass(item.slug)}`}
+                >
+                  {cover ? (
+                    <img src={cover} alt="" className="cat-thumb" loading="lazy" />
+                  ) : null}
+                  <div className="cat-body">
+                    <div className="cat-top">
+                      <CategoryGlyph icon={item.icon} slug={item.slug} />
+                      <span className="cat-count meta">{item.published_course_count}</span>
+                    </div>
+                    <h3 className="h3">{item.name}</h3>
+                    {item.description ? <p>{item.description}</p> : null}
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         ) : null}
       </div>

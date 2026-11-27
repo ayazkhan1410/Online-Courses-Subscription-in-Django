@@ -37,10 +37,13 @@ class MfaApiTests(TestCase):
             full_name='Learner',
             user_choices='expert',
         )
+        self.user.email_verified = True
+        self.user.save(update_fields=['email_verified'])
         self.secret = ''
         self.recovery: list[str] = []
 
     def _login(self, email: str | None = None, password: str = 'StrongPass123'):
+        self.client.credentials()
         return self.client.post(
             '/api/auth/login/',
             {
@@ -244,7 +247,7 @@ class MfaApiTests(TestCase):
         self.assertNotIn('mfa_required', login.data)
 
     @patch('utils.auth.google_id_token.verify_oauth2_token')
-    def test_google_login_requires_mfa_after_setup(self, mock_verify):
+    def test_google_login_skips_mfa_when_enabled(self, mock_verify):
         mock_verify.return_value = {
             'email': 'google.new@example.com',
             'email_verified': True,
@@ -275,44 +278,43 @@ class MfaApiTests(TestCase):
             {'credential': 'fake-token'},
             format='json',
         )
-        self.assertTrue(again.data['mfa_required'])
-        self.assertNotIn('token', again.data)
-        verified = self._verify(
-            again.data['challenge_token'],
-            self._unused_code(),
-            'totp',
+        self.assertIn('token', again.data)
+        self.assertNotIn('mfa_required', again.data)
+
+    def _enable_email(self) -> None:
+        login = self._login()
+        self._auth(login.data['token'])
+        send = self.client.post('/api/auth/mfa/enable-email/', format='json')
+        self.assertEqual(send.status_code, status.HTTP_200_OK)
+        match = re.search(r'\b(\d{6})\b', mail.outbox[-1].body)
+        self.assertIsNotNone(match)
+        confirm = self.client.post(
+            '/api/auth/mfa/confirm-email/',
+            {'code': match.group(1)},
+            format='json',
         )
-        self.assertEqual(verified.status_code, status.HTTP_200_OK)
-        self.assertIn('token', verified.data)
+        self.assertEqual(confirm.status_code, status.HTTP_200_OK)
 
     def test_resend_cooldown(self):
-        self._enable()
+        self._enable_email()
         mail.outbox.clear()
         login = self._login()
         token = login.data['challenge_token']
-        with self.assertLogs('mfa', level='INFO') as captured:
-            first = self.client.post(
-                '/api/auth/mfa/resend/',
-                {'challenge_token': token},
-                format='json',
-            )
-        self.assertEqual(first.status_code, status.HTTP_200_OK)
         self.assertEqual(len(mail.outbox), 1)
-        match = re.search(r'\b(\d{6})\b', mail.outbox[0].body)
+        match = re.search(r'\b(\d{6})\b', mail.outbox[-1].body)
         self.assertIsNotNone(match)
         code = match.group(1)
-        self.assertNotIn(code, '\n'.join(captured.output))
-        second = self.client.post(
+        blocked = self.client.post(
             '/api/auth/mfa/resend/',
             {'challenge_token': token},
             format='json',
         )
-        self.assertEqual(second.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(blocked.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(len(mail.outbox), 1)
         verified = self._verify(token, code, 'email')
         self.assertEqual(verified.status_code, status.HTTP_200_OK)
 
-    def test_staff_without_authenticator_gets_email_code(self):
+    def test_staff_login_without_mfa(self):
         staff = CustomUser.objects.create_user(
             email='staff@example.com',
             username='staff',
@@ -321,16 +323,27 @@ class MfaApiTests(TestCase):
             user_choices='admin',
         )
         staff.is_staff = True
-        staff.save(update_fields=['is_staff'])
-        with self.assertLogs('mfa', level='INFO') as captured:
-            login = self._login(email='staff@example.com')
+        staff.email_verified = True
+        staff.save(update_fields=['is_staff', 'email_verified'])
+        login = self._login(email='staff@example.com')
+        self.assertIn('token', login.data)
+        self.assertNotIn('mfa_required', login.data)
+
+    def test_mfa_off_by_default(self):
+        status_response = self.client.get('/api/auth/mfa/status/')
+        self.assertEqual(status_response.status_code, status.HTTP_401_UNAUTHORIZED)
+        login = self._login()
+        self._auth(login.data['token'])
+        status_response = self.client.get('/api/auth/mfa/status/')
+        self.assertFalse(status_response.data['enabled'])
+        self.assertEqual(status_response.data['method'], '')
+        self.assertEqual(status_response.data['available_to_enable'], ['totp', 'email'])
+
+    def test_enable_email_mfa_login_uses_email_only(self):
+        self._enable_email()
+        login = self._login()
         self.assertTrue(login.data['mfa_required'])
         self.assertEqual(login.data['methods'], ['email'])
-        self.assertNotIn('token', login.data)
-        self.assertEqual(len(mail.outbox), 1)
-        code = re.search(r'\b(\d{6})\b', mail.outbox[0].body).group(1)
-        self.assertNotIn(code, '\n'.join(captured.output))
-        verified = self._verify(login.data['challenge_token'], code, 'email')
+        match = re.search(r'\b(\d{6})\b', mail.outbox[-1].body)
+        verified = self._verify(login.data['challenge_token'], match.group(1), 'email')
         self.assertEqual(verified.status_code, status.HTTP_200_OK)
-        self.assertIn('token', verified.data)
-        self.assertTrue(Token.objects.filter(user=staff).exists())

@@ -1,6 +1,14 @@
 from rest_framework import serializers
 
-from courses.models import Category, CourseModule, Courses, Creator
+from courses.models import (
+    Category,
+    CourseModule,
+    Courses,
+    Creator,
+    LearningPath,
+    PathStep,
+    Project,
+)
 from learning.models import Enrollment, LessonProgress, WishlistItem
 
 
@@ -10,6 +18,7 @@ def _nocookie_embed(video_id: str) -> str:
 
 class CategorySerializer(serializers.ModelSerializer):
     published_course_count = serializers.SerializerMethodField()
+    cover_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
@@ -22,6 +31,7 @@ class CategorySerializer(serializers.ModelSerializer):
             'sort_order',
             'is_featured',
             'published_course_count',
+            'cover_image_url',
         ]
 
     def get_published_course_count(self, obj: Category) -> int:
@@ -29,6 +39,19 @@ class CategorySerializer(serializers.ModelSerializer):
         if annotated is not None:
             return int(annotated)
         return obj.courses.filter(status=Courses.STATUS_PUBLISHED).count()
+
+    def get_cover_image_url(self, obj: Category) -> str:
+        annotated = getattr(obj, 'cover_image_url', None)
+        if annotated:
+            return str(annotated)
+        course = (
+            obj.courses.filter(status=Courses.STATUS_PUBLISHED)
+            .exclude(thumbnail_url='')
+            .order_by('sort_order', 'id')
+            .only('thumbnail_url')
+            .first()
+        )
+        return course.thumbnail_url if course else ''
 
 
 class CategoryBriefSerializer(serializers.ModelSerializer):
@@ -225,3 +248,110 @@ class CourseDetailSerializer(CourseSerializer):
 
     class Meta(CourseSerializer.Meta):
         fields = CourseSerializer.Meta.fields + ['course_modules']
+
+
+class CourseBriefSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(source='courses_name')
+    thumbnail = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Courses
+        fields = ['slug', 'title', 'thumbnail']
+
+    def get_thumbnail(self, obj: Courses) -> str:
+        if obj.thumbnail_url:
+            return obj.thumbnail_url
+        if not obj.course_image:
+            return ''
+        request = self.context.get('request')
+        url = obj.course_image.url
+        if request is not None:
+            return request.build_absolute_uri(url)
+        return url
+
+
+class PathStepListSerializer(serializers.ModelSerializer):
+    course = CourseBriefSerializer(read_only=True)
+
+    class Meta:
+        model = PathStep
+        fields = ['sort_order', 'note', 'course']
+
+
+class PathStepDetailSerializer(serializers.ModelSerializer):
+    course = CourseSerializer(read_only=True)
+
+    class Meta:
+        model = PathStep
+        fields = ['sort_order', 'note', 'course']
+
+
+class LearningPathListSerializer(serializers.ModelSerializer):
+    step_count = serializers.SerializerMethodField()
+    total_count = serializers.SerializerMethodField()
+    completed_count = serializers.SerializerMethodField()
+    steps = PathStepListSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = LearningPath
+        fields = [
+            'title',
+            'slug',
+            'summary',
+            'level',
+            'sort_order',
+            'step_count',
+            'total_count',
+            'completed_count',
+            'steps',
+        ]
+
+    def get_step_count(self, obj: LearningPath) -> int:
+        return obj.steps.count()
+
+    def get_total_count(self, obj: LearningPath) -> int:
+        return self.get_step_count(obj)
+
+    def get_completed_count(self, obj: LearningPath) -> int | None:
+        request = self.context.get('request')
+        user = getattr(request, 'user', None) if request is not None else None
+        if user is None or not user.is_authenticated:
+            return None
+        progress_map = self.context.get('progress_map') or {}
+        course_ids = [step.course_id for step in obj.steps.all()]
+        return sum(1 for cid in course_ids if progress_map.get(cid, 0) >= 100)
+
+
+class LearningPathDetailSerializer(serializers.ModelSerializer):
+    steps = PathStepDetailSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = LearningPath
+        fields = [
+            'title',
+            'slug',
+            'summary',
+            'level',
+            'sort_order',
+            'steps',
+        ]
+
+
+class ProjectSerializer(serializers.ModelSerializer):
+    tech_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Project
+        fields = [
+            'title',
+            'slug',
+            'summary',
+            'tech',
+            'tech_list',
+            'live_url',
+            'repo_url',
+            'sort_order',
+        ]
+
+    def get_tech_list(self, obj: Project) -> list[str]:
+        return [part.strip() for part in obj.tech.split(',') if part.strip()]

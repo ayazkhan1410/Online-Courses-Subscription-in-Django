@@ -4,6 +4,16 @@ from accounts import views
 
 urlpatterns = [
     path('auth/register/', views.RegisterAPIView.as_view(), name='register'),
+    path(
+        'auth/verify-email/',
+        views.VerifyEmailAPIView.as_view(),
+        name='verify-email',
+    ),
+    path(
+        'auth/verify-email/resend/',
+        views.ResendVerifyEmailAPIView.as_view(),
+        name='verify-email-resend',
+    ),
     path('auth/login/', views.LoginAPIView.as_view(), name='login'),
     path('auth/google/', views.GoogleAuthAPIView.as_view(), name='auth-google'),
     path('auth/token/refresh/', views.JwtRefreshAPIView.as_view(), name='token-refresh'),

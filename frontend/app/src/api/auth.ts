@@ -1,5 +1,11 @@
 import { api } from '@/api/client'
-import type { AuthSuccess, MfaChallenge, MessageResponse, User } from '@/api/types'
+import type {
+  AuthSuccess,
+  MfaChallenge,
+  MessageResponse,
+  User,
+  VerificationRequired,
+} from '@/api/types'
 
 export type LoginPayload = {
   email: string
@@ -15,13 +21,21 @@ export type RegisterPayload = {
 }
 
 export function isMfaChallenge(
-  data: AuthSuccess | MfaChallenge,
+  data: AuthSuccess | MfaChallenge | VerificationRequired,
 ): data is MfaChallenge {
   return 'mfa_required' in data && data.mfa_required === true
 }
 
-export function register(payload: RegisterPayload): Promise<AuthSuccess> {
-  return api<AuthSuccess>('/auth/register/', {
+export function isVerificationRequired(
+  data: AuthSuccess | MfaChallenge | VerificationRequired,
+): data is VerificationRequired {
+  return 'verification_required' in data && data.verification_required === true
+}
+
+export function register(
+  payload: RegisterPayload,
+): Promise<AuthSuccess | VerificationRequired> {
+  return api<AuthSuccess | VerificationRequired>('/auth/register/', {
     method: 'POST',
     body: payload,
     auth: false,
@@ -31,8 +45,8 @@ export function register(payload: RegisterPayload): Promise<AuthSuccess> {
 
 export function login(
   payload: LoginPayload,
-): Promise<AuthSuccess | MfaChallenge> {
-  return api<AuthSuccess | MfaChallenge>('/auth/login/', {
+): Promise<AuthSuccess | MfaChallenge | VerificationRequired> {
+  return api<AuthSuccess | MfaChallenge | VerificationRequired>('/auth/login/', {
     method: 'POST',
     body: payload,
     auth: false,
