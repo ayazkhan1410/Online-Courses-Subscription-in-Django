@@ -78,14 +78,34 @@ class CourseLockAndSeedTests(TestCase):
         )
 
     def test_language_filter(self):
-        self.free.language = Courses.LANGUAGE_UR_HI
+        self.free.language = Courses.LANGUAGE_UR
         self.free.save(update_fields=['language'])
         self.premium.language = Courses.LANGUAGE_EN
         self.premium.save(update_fields=['language'])
+        hi = Courses.objects.create(
+            courses_name='Hindi Course',
+            courses_description='Hindi',
+            is_premium=False,
+            youtube_playlist_id='hi-pl',
+            slug='hindi-course',
+            status=Courses.STATUS_PUBLISHED,
+            language=Courses.LANGUAGE_HI,
+        )
+        ur_hi = Courses.objects.create(
+            courses_name='Urdu Hindi Course',
+            courses_description='Both',
+            is_premium=False,
+            youtube_playlist_id='urhi-pl',
+            slug='urdu-hindi-course',
+            status=Courses.STATUS_PUBLISHED,
+            language=Courses.LANGUAGE_UR_HI,
+        )
         ur = self.client.get('/api/courses/', {'language': 'ur-hi'})
         self.assertEqual(ur.status_code, status.HTTP_200_OK)
         slugs = {item['slug'] for item in ur.data['results']}
         self.assertIn('free-course', slugs)
+        self.assertIn(hi.slug, slugs)
+        self.assertIn(ur_hi.slug, slugs)
         self.assertNotIn('premium-course', slugs)
         en = self.client.get('/api/courses/', {'language': 'en'})
         en_slugs = {item['slug'] for item in en.data['results']}

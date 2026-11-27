@@ -167,18 +167,6 @@ export function CourseBrowser({ lockedCategory }: Props) {
               </label>
             ))}
           </FilterBlock>
-          <FilterBlock title="Language">
-            {LANGUAGES.map((item) => (
-              <label className="check" key={item.value}>
-                <input
-                  type="checkbox"
-                  checked={language === item.value}
-                  onChange={() => toggleFilter('language', item.value)}
-                />
-                {item.label}
-              </label>
-            ))}
-          </FilterBlock>
         </aside>
 
         <section>
