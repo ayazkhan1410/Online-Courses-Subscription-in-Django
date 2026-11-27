@@ -83,8 +83,11 @@ export function useYouTubePlayer(
   const playerRef = useRef<YTPlayer | null>(null)
   const [ready, setReady] = useState(false)
   const optsRef = useRef(options)
-  optsRef.current = options
   const startRef = useRef(options.startSeconds || 0)
+
+  useEffect(() => {
+    optsRef.current = options
+  }, [options])
 
   useEffect(() => {
     startRef.current = options.startSeconds || 0
@@ -101,7 +104,6 @@ export function useYouTubePlayer(
     }
 
     let cancelled = false
-    let tick: number | undefined
     const mountEl = containerRef.current
     const start = Math.max(0, Math.floor(startRef.current))
 
@@ -139,7 +141,7 @@ export function useYouTubePlayer(
       playerRef.current = player
     })
 
-    tick = window.setInterval(() => {
+    const tick = window.setInterval(() => {
       const player = playerRef.current
       if (!player || !window.YT) return
       try {
@@ -152,7 +154,7 @@ export function useYouTubePlayer(
 
     return () => {
       cancelled = true
-      if (tick) window.clearInterval(tick)
+      window.clearInterval(tick)
       playerRef.current?.destroy()
       playerRef.current = null
       setReady(false)

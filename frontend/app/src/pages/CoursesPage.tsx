@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Search } from 'lucide-react'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { listCategories } from '@/api/categories'
 import { getCourses } from '@/api/courses'
@@ -9,6 +9,35 @@ import { PlaylistSuggestPanel } from '@/features/catalog/PlaylistSuggestPanel'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { PAGE_DESCRIPTIONS } from '@/lib/pageDescriptions'
 
+function CoursesSearch({
+  search,
+  onCommit,
+}: {
+  search: string
+  onCommit: (value: string) => void
+}) {
+  const [draft, setDraft] = useState(search)
+
+  function onSearch(event: FormEvent) {
+    event.preventDefault()
+    onCommit(draft.trim())
+  }
+
+  return (
+    <form className="search" role="search" onSubmit={onSearch}>
+      <Search className="i" size={16} strokeWidth={1.5} aria-hidden />
+      <input
+        className="input"
+        type="search"
+        placeholder="Search"
+        aria-label="Search courses"
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+      />
+    </form>
+  )
+}
+
 export default function CoursesPage() {
   usePageTitle('Courses', {
     description: PAGE_DESCRIPTIONS.courses,
@@ -16,11 +45,6 @@ export default function CoursesPage() {
   })
   const [params, setParams] = useSearchParams()
   const search = params.get('search') ?? ''
-  const [draft, setDraft] = useState(search)
-
-  useEffect(() => {
-    setDraft(search)
-  }, [search])
 
   const categories = useQuery({ queryKey: ['categories'], queryFn: listCategories })
   const catalog = useQuery({
@@ -31,10 +55,8 @@ export default function CoursesPage() {
   const totalCourses = catalog.data?.count ?? 0
   const categoryCount = categories.data?.length ?? 0
 
-  function onSearch(event: FormEvent) {
-    event.preventDefault()
+  function commitSearch(value: string) {
     const next = new URLSearchParams(params)
-    const value = draft.trim()
     if (value) next.set('search', value)
     else next.delete('search')
     next.delete('page')
@@ -52,17 +74,7 @@ export default function CoursesPage() {
               : 'Search the catalog and open a course.'}
           </p>
         </div>
-        <form className="search" role="search" onSubmit={onSearch}>
-          <Search className="i" size={16} strokeWidth={1.5} aria-hidden />
-          <input
-            className="input"
-            type="search"
-            placeholder="Search"
-            aria-label="Search courses"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-          />
-        </form>
+        <CoursesSearch key={search} search={search} onCommit={commitSearch} />
       </div>
       <CourseBrowser />
       <PlaylistSuggestPanel />

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Search } from 'lucide-react'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { getCategory, listCategories } from '@/api/categories'
 import { ApiError } from '@/api/client'
@@ -9,15 +9,39 @@ import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
+function CategorySearch({
+  search,
+  onCommit,
+}: {
+  search: string
+  onCommit: (value: string) => void
+}) {
+  const [draft, setDraft] = useState(search)
+
+  function onSearch(event: FormEvent) {
+    event.preventDefault()
+    onCommit(draft.trim())
+  }
+
+  return (
+    <form className="search" role="search" onSubmit={onSearch}>
+      <Search className="i" size={16} strokeWidth={1.5} aria-hidden />
+      <input
+        className="input"
+        type="search"
+        placeholder="Search"
+        aria-label="Search courses"
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+      />
+    </form>
+  )
+}
+
 export default function CategoryDetailPage() {
   const { slug = '' } = useParams()
   const [params, setParams] = useSearchParams()
   const search = params.get('search') ?? ''
-  const [draft, setDraft] = useState(search)
-
-  useEffect(() => {
-    setDraft(search)
-  }, [search])
 
   const probe = useQuery({
     queryKey: ['category', slug, 1],
@@ -28,10 +52,8 @@ export default function CategoryDetailPage() {
 
   usePageTitle(probe.data?.category.name ?? 'Category')
 
-  function onSearch(event: FormEvent) {
-    event.preventDefault()
+  function commitSearch(value: string) {
     const next = new URLSearchParams(params)
-    const value = draft.trim()
     if (value) next.set('search', value)
     else next.delete('search')
     next.delete('page')
@@ -77,17 +99,7 @@ export default function CategoryDetailPage() {
               : `${totalCourses} playlists in ${categoryCount} categories.`}
           </p>
         </div>
-        <form className="search" role="search" onSubmit={onSearch}>
-          <Search className="i" size={16} strokeWidth={1.5} aria-hidden />
-          <input
-            className="input"
-            type="search"
-            placeholder="Search"
-            aria-label="Search courses"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-          />
-        </form>
+        <CategorySearch key={search} search={search} onCommit={commitSearch} />
       </div>
       <CourseBrowser lockedCategory={slug} />
     </main>

@@ -9,10 +9,11 @@ export function PracticePanel({
   task: string
   hint?: string
 }) {
-  const body = task.trim()
-  if (!body) return null
   const [hintOpen, setHintOpen] = useState(false)
+  const body = task.trim()
   const hasHint = Boolean(hint?.trim())
+
+  if (!body) return null
 
   return (
     <Panel className="practice-panel">

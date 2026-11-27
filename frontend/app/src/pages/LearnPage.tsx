@@ -69,8 +69,7 @@ export default function LearnPage() {
   const [tab, setTab] = useState<'notes' | 'about'>('notes')
   const playerHostRef = useRef<HTMLDivElement>(null)
   const lastSavedRef = useRef(0)
-  const [resumeBanner, setResumeBanner] = useState<{ at: number } | null>(null)
-  const [startOverNonce, setStartOverNonce] = useState(0)
+  const [startedOverFor, setStartedOverFor] = useState<number | null>(null)
   const [currentTime, setCurrentTime] = useState(0)
   const [noteDraft, setNoteDraft] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -105,21 +104,19 @@ export default function LearnPage() {
 
   const tParam = Number(searchParams.get('t') || '')
   const savedPosition = current?.position_seconds ?? 0
+  const startedOver = current?.id != null && startedOverFor === current.id
   const startSeconds = useMemo(() => {
-    if (startOverNonce > 0) return 0
+    if (startedOver) return 0
     if (Number.isFinite(tParam) && tParam > 0) return Math.floor(tParam)
     return computeResumeSeconds(savedPosition, current?.duration_seconds)
-  }, [current?.duration_seconds, savedPosition, startOverNonce, tParam])
+  }, [current?.duration_seconds, savedPosition, startedOver, tParam])
 
-  useEffect(() => {
-    setStartOverNonce(0)
-    if (Number.isFinite(tParam) && tParam > 0) {
-      setResumeBanner(null)
-      return
-    }
-    const resumeAt = computeResumeSeconds(savedPosition, current?.duration_seconds)
-    setResumeBanner(resumeAt > 0 ? { at: resumeAt } : null)
-  }, [current?.id, current?.duration_seconds, savedPosition, tParam])
+  const resumeBannerAt = useMemo(() => {
+    if (startedOver) return null
+    if (Number.isFinite(tParam) && tParam > 0) return null
+    const at = computeResumeSeconds(savedPosition, current?.duration_seconds)
+    return at > 0 ? at : null
+  }, [current?.duration_seconds, savedPosition, startedOver, tParam])
 
   const notesQuery = useQuery({
     queryKey: ['notes', current?.id],
@@ -400,15 +397,14 @@ export default function LearnPage() {
             />
           ) : null}
 
-          {resumeBanner ? (
+          {resumeBannerAt != null ? (
             <p className="dim small" style={{ marginTop: 12 }} data-testid="resume-banner">
-              Resumed at {formatClock(resumeBanner.at)}.{' '}
+              Resumed at {formatClock(resumeBannerAt)}.{' '}
               <button
                 type="button"
                 className="link"
                 onClick={() => {
-                  setResumeBanner(null)
-                  setStartOverNonce((n) => n + 1)
+                  if (current?.id != null) setStartedOverFor(current.id)
                   player?.seekTo(0)
                 }}
               >
