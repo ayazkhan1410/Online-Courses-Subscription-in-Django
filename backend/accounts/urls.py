@@ -40,4 +40,9 @@ urlpatterns = [
         views.LastTestEmailAPIView.as_view(),
         name='test-last-email',
     ),
+    path(
+        'email/unsubscribe/<str:token>/',
+        views.WeeklyEmailUnsubscribeAPIView.as_view(),
+        name='email-unsubscribe',
+    ),
 ]

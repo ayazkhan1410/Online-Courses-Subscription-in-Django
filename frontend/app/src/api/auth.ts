@@ -75,6 +75,7 @@ export function updateSettings(payload: {
   show_name_on_completion?: boolean
   timezone?: string
   daily_goal?: 1 | 2 | 3
+  weekly_email?: boolean
 }): Promise<User> {
   return api<User>('/auth/me/', { method: 'PATCH', body: payload })
 }

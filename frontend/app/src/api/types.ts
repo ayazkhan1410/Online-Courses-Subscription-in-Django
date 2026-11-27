@@ -8,6 +8,7 @@ export type User = {
   show_name_on_completion: boolean
   timezone: string
   daily_goal: 1 | 2 | 3
+  weekly_email: boolean
 }
 
 export type Module = {
@@ -24,6 +25,8 @@ export type Module = {
   is_completed: boolean
   is_locked: boolean
   position_seconds?: number
+  practice_task?: string
+  practice_hint?: string
 }
 
 export type Category = {

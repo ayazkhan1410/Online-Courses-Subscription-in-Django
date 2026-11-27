@@ -43,6 +43,17 @@ export default function SettingsPage() {
           />
           Show my name on completion cards
         </label>
+        <label className="mt-4 flex items-center gap-3 text-sm">
+          <input
+            type="checkbox"
+            checked={user?.weekly_email ?? false}
+            disabled={settings.isPending}
+            onChange={(event) =>
+              settings.mutate({ weekly_email: event.target.checked })
+            }
+          />
+          Weekly reminder email
+        </label>
         <div className="mt-6">
           <p className="text-sm text-ink-2">Daily lesson goal</p>
           <div className="mt-3 flex flex-wrap gap-2">

@@ -139,6 +139,7 @@ class UserSerializer(serializers.ModelSerializer):
             'show_name_on_completion',
             'timezone',
             'daily_goal',
+            'weekly_email',
         ]
 
     def get_is_pro(self, obj: CustomUser) -> bool:
@@ -155,6 +156,7 @@ class UserSettingsSerializer(serializers.ModelSerializer):
             'show_name_on_completion',
             'timezone',
             'daily_goal',
+            'weekly_email',
         ]
 
     def validate_timezone(self, value: str) -> str:

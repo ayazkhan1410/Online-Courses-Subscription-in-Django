@@ -1,3 +1,5 @@
+import secrets
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -41,9 +43,29 @@ class CustomUser(AbstractUser):
     show_name_on_completion = models.BooleanField(default=True)
     timezone = models.CharField(max_length=64, default='Asia/Karachi')
     daily_goal = models.PositiveSmallIntegerField(default=1)
+    weekly_email = models.BooleanField(default=False)
+    unsubscribe_token = models.CharField(
+        max_length=64,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+    last_reminder_at = models.DateTimeField(null=True, blank=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
+
+    def save(self, *args, **kwargs):
+        if not self.unsubscribe_token:
+            for _ in range(8):
+                candidate = secrets.token_urlsafe(32)
+                if not CustomUser.objects.filter(
+                    unsubscribe_token=candidate
+                ).exclude(pk=self.pk).exists():
+                    self.unsubscribe_token = candidate
+                    break
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f'{self.email}'

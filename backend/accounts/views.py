@@ -31,6 +31,7 @@ from utils.auth import (
     reset_password,
     verify_google_credential,
 )
+from accounts.models import CustomUser
 from utils.inbox import extract_code, inbox_enabled, read_last_mail
 
 RESEND_VERIFY_MESSAGE = (
@@ -255,3 +256,19 @@ class LastTestEmailAPIView(APIView):
                 'code': extract_code(body),
             }
         )
+
+
+class WeeklyEmailUnsubscribeAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, token: str):
+        user = CustomUser.objects.filter(unsubscribe_token=token).first()
+        if user is None:
+            return Response(
+                {'detail': 'Invalid unsubscribe link'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        if user.weekly_email:
+            user.weekly_email = False
+            user.save(update_fields=['weekly_email'])
+        return Response({'message': 'Weekly reminder emails are turned off.'})

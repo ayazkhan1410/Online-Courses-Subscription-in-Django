@@ -152,6 +152,17 @@ docker compose exec backend python manage.py seed_youtube_courses
 
 Catalog source: `backend/courses/data/youtube_catalog.json` (from [@studywithayaz](https://www.youtube.com/@studywithayaz/playlists) playlists).
 
+### Weekly lesson reminders
+
+Opt-in emails for learners who have not finished a lesson in 3+ days (at most once
+per 7 days). Schedule `send_weekly_reminders` in deployment; locally:
+
+```bash
+python manage.py send_weekly_reminders
+```
+
+Unsubscribe is one-click at `GET /api/email/unsubscribe/<token>/` (no login).
+
 ### Sync YouTube playlists
 
 Re-fetch published course playlists and append new lessons (set `YOUTUBE_API_KEY` in `backend/.env`):
