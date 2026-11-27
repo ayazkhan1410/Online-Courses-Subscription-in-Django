@@ -6,7 +6,14 @@ from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from accounts.models import CustomUser
-from courses.models import Category, CourseModule, Courses, LearningPath, PathStep, Project
+from courses.models import (
+    Category,
+    CourseModule,
+    Courses,
+    LearningPath,
+    PathStep,
+    Project,
+)
 from courses.services.playlist_import import playlist_id_from_url, resolve_import_status
 from learning.models import Enrollment
 
@@ -153,10 +160,11 @@ class CourseLockAndSeedTests(TestCase):
         )
 
     def test_playlist_id_and_publish_rules(self):
+        playlist_url = (
+            'https://www.youtube.com/playlist?list=PL-osiE80TeTtoQCKZ03TU5fNfx2UY6U4p'
+        )
         self.assertEqual(
-            playlist_id_from_url(
-                'https://www.youtube.com/playlist?list=PL-osiE80TeTtoQCKZ03TU5fNfx2UY6U4p'
-            ),
+            playlist_id_from_url(playlist_url),
             'PL-osiE80TeTtoQCKZ03TU5fNfx2UY6U4p',
         )
         self.assertEqual(

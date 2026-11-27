@@ -11,18 +11,17 @@ from django.db import transaction
 from django.utils import timezone
 
 from accounts.models import EmailVerificationCode
-from mfa.exceptions import MfaError
-from mfa.models import Authenticator, LoginChallenge, RecoveryCode
-from mfa.utils.alerts import send_security_alert
-from mfa.utils.code import generate_login_code, hash_value, value_matches
-from mfa.utils.lockout import clear_failures, is_locked, record_failure
-
 from accounts.utils.email_verification import (
     MAX_ATTEMPTS,
     RESEND_SECONDS,
     _invalidate_codes,
     _resend_key,
 )
+from mfa.exceptions import MfaError
+from mfa.models import Authenticator, LoginChallenge, RecoveryCode
+from mfa.utils.alerts import send_security_alert
+from mfa.utils.code import generate_login_code, hash_value, value_matches
+from mfa.utils.lockout import clear_failures, is_locked, record_failure
 
 logger = logging.getLogger(__name__)
 

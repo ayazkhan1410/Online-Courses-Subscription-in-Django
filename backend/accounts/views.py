@@ -15,14 +15,14 @@ from accounts.serializers import (
     RegisterSerializer,
     UserSerializer,
 )
-from mfa.exceptions import MfaError
-from mfa.utils.alerts import remember_device
-from mfa.utils.challenge import mfa_gate
 from accounts.utils.email_verification import (
     issue_verification_code,
     resend_verification,
     verify_email_code,
 )
+from mfa.exceptions import MfaError
+from mfa.utils.alerts import remember_device
+from mfa.utils.challenge import mfa_gate
 from utils.auth import (
     get_or_create_google_user,
     issue_password_reset,
@@ -31,9 +31,7 @@ from utils.auth import (
     verify_google_credential,
 )
 
-RESEND_VERIFY_MESSAGE = (
-    'If that email needs verification, a new code has been sent.'
-)
+RESEND_VERIFY_MESSAGE = 'If that email needs verification, a new code has been sent.'
 
 
 class RegisterAPIView(APIView):

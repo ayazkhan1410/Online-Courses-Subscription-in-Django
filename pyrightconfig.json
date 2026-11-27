@@ -1,0 +1,23 @@
+{
+  "include": ["backend"],
+  "exclude": [
+    "**/ocs_backend_venv",
+    "**/__pycache__",
+    "backend/staticfiles",
+    "backend/media",
+    "frontend",
+    "design"
+  ],
+  "venvPath": "backend",
+  "venv": "ocs_backend_venv",
+  "pythonVersion": "3.14",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "warning",
+  "executionEnvironments": [
+    {
+      "root": "backend",
+      "pythonVersion": "3.14",
+      "extraPaths": ["backend"]
+    }
+  ]
+}

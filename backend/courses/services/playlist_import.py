@@ -198,7 +198,8 @@ def _sync_modules(course: Courses, modules: list[dict]) -> tuple[int, int]:
             created += 1
         else:
             updated += 1
-    # shortcut: videos dropped from the playlist stay on the course, prune if editors need a full sync
+    # shortcut: videos dropped from the playlist stay on the course;
+    # prune if editors need a full sync.
     return created, updated
 
 

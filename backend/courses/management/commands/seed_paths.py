@@ -15,7 +15,8 @@ PATH_SPECS = [
         'title': 'Python from zero',
         'level': 'Beginner',
         'summary': (
-            'Write your first program, then build small projects until Python feels natural.'
+            'Write your first program, then build small projects '
+            'until Python feels natural.'
         ),
         'sort_order': 1,
         'steps': [
@@ -38,7 +39,8 @@ PATH_SPECS = [
         'title': 'Django backend developer',
         'level': 'Beginner to intermediate',
         'summary': (
-            'From Python basics to a deployed Django app with users, a database and an API.'
+            'From Python basics to a deployed Django app with users, '
+            'a database and an API.'
         ),
         'sort_order': 2,
         'steps': [

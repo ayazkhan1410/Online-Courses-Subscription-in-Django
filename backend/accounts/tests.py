@@ -87,9 +87,7 @@ class AuthAPITests(TestCase):
         self.assertEqual(refreshed.status_code, status.HTTP_200_OK)
         self.assertIn('access', refreshed.data)
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {refreshed.data["access"]}'
-        )
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refreshed.data["access"]}')
         me_again = self.client.get('/api/auth/me/')
         self.assertEqual(me_again.status_code, status.HTTP_200_OK)
 
@@ -415,8 +413,9 @@ class EmailVerificationTests(TestCase):
     def test_expired_code_fails(self):
         from datetime import timedelta
 
-        from accounts.models import EmailVerificationCode
         from django.utils import timezone
+
+        from accounts.models import EmailVerificationCode
 
         self._register()
         row = EmailVerificationCode.objects.latest('created_at')
