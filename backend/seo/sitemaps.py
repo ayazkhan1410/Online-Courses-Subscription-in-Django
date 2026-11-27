@@ -1,6 +1,19 @@
-from django.contrib.sitemaps import Sitemap
+from urllib.parse import urlsplit
+
+from django.conf import settings
+from django.contrib.sitemaps import Sitemap as BaseSitemap
 
 from courses.models import Category, Courses, LearningPath
+
+
+class Sitemap(BaseSitemap):
+    """Public loc host comes from FRONTEND_URL, not the API request host."""
+
+    def get_domain(self, site=None):
+        return urlsplit(settings.FRONTEND_URL).netloc
+
+    def get_protocol(self, protocol=None):
+        return urlsplit(settings.FRONTEND_URL).scheme or 'https'
 
 
 class StaticViewSitemap(Sitemap):
@@ -58,3 +71,11 @@ class LearningPathSitemap(Sitemap):
 
     def location(self, obj: LearningPath) -> str:
         return f'/paths/{obj.slug}'
+
+
+SITEMAP_CONFIG = {
+    'static': StaticViewSitemap,
+    'courses': CourseSitemap,
+    'categories': CategorySitemap,
+    'paths': LearningPathSitemap,
+}

@@ -1,22 +1,18 @@
 from django.contrib.sitemaps.views import sitemap
 from django.urls import path, re_path
 
-from seo import sitemaps
+from seo.sitemaps import SITEMAP_CONFIG
 from seo.views import SpaMetaView, robots_txt, seo_head
 
-sitemap_config = {
-    'static': sitemaps.StaticViewSitemap,
-    'courses': sitemaps.CourseSitemap,
-    'categories': sitemaps.CategorySitemap,
-    'paths': sitemaps.LearningPathSitemap,
-}
+# Back-compat alias for tests/imports.
+sitemap_config = SITEMAP_CONFIG
 
 urlpatterns = [
     path('robots.txt', robots_txt, name='robots-txt'),
     path(
         'sitemap.xml',
         sitemap,
-        {'sitemaps': sitemap_config},
+        {'sitemaps': SITEMAP_CONFIG},
         name='sitemap',
     ),
     path('api/seo/head/', seo_head, name='seo-head'),

@@ -178,8 +178,8 @@ def _entry_video(entry: dict, index: int) -> dict | None:
 
 
 def _sync_modules(course: Courses, modules: list[dict]) -> tuple[int, int]:
-    created = 0
-    updated = 0
+    """Upsert lessons with bulk_create / bulk_update (few queries)."""
+    prepared: list[dict] = []
     seen: set[str] = set()
     for mod in modules:
         video_id = (mod.get('youtube_video_id') or '').strip()
@@ -187,27 +187,76 @@ def _sync_modules(course: Courses, modules: list[dict]) -> tuple[int, int]:
             continue
         seen.add(video_id)
         title = strip_emoji(mod.get('title') or video_id)[:255]
-        _module, was_created = CourseModule.objects.update_or_create(
-            course=course,
-            youtube_video_id=video_id,
-            defaults={
+        prepared.append(
+            {
+                'youtube_video_id': video_id[:32],
                 'module_name': title,
                 'module_description': f'<p>{escape(title[:300])}</p>',
                 'module_video': (mod.get('video_url') or '')[:500],
                 'thumbnail_url': (mod.get('thumbnail_url') or '')[:500],
                 'sort_order': int(mod.get('sort_order') or 0),
                 'duration_seconds': mod.get('duration_seconds'),
-                'can_view': True,
-                'is_available': True,
-            },
+            }
         )
-        if was_created:
-            created += 1
+    if not prepared:
+        return 0, 0
+
+    existing = {
+        row.youtube_video_id: row
+        for row in CourseModule.objects.filter(
+            course=course,
+            youtube_video_id__in=[row['youtube_video_id'] for row in prepared],
+        )
+    }
+    to_create: list[CourseModule] = []
+    to_update: list[CourseModule] = []
+    for row in prepared:
+        video_id = row['youtube_video_id']
+        if video_id in existing:
+            module = existing[video_id]
+            module.module_name = row['module_name']
+            module.module_description = row['module_description']
+            module.module_video = row['module_video']
+            module.thumbnail_url = row['thumbnail_url']
+            module.sort_order = row['sort_order']
+            module.duration_seconds = row['duration_seconds']
+            module.can_view = True
+            module.is_available = True
+            to_update.append(module)
         else:
-            updated += 1
-    # shortcut: videos dropped from the playlist stay on the course;
-    # prune if editors need a full sync.
-    return created, updated
+            to_create.append(
+                CourseModule(
+                    course=course,
+                    youtube_video_id=video_id,
+                    module_name=row['module_name'],
+                    module_description=row['module_description'],
+                    module_video=row['module_video'],
+                    thumbnail_url=row['thumbnail_url'],
+                    sort_order=row['sort_order'],
+                    duration_seconds=row['duration_seconds'],
+                    can_view=True,
+                    is_available=True,
+                )
+            )
+    if to_create:
+        CourseModule.objects.bulk_create(to_create, batch_size=200)
+    if to_update:
+        CourseModule.objects.bulk_update(
+            to_update,
+            fields=[
+                'module_name',
+                'module_description',
+                'module_video',
+                'thumbnail_url',
+                'sort_order',
+                'duration_seconds',
+                'can_view',
+                'is_available',
+            ],
+            batch_size=200,
+        )
+    # Videos dropped from the playlist stay on the course.
+    return len(to_create), len(to_update)
 
 
 def upsert_youtube_course(

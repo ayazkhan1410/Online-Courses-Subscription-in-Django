@@ -107,13 +107,6 @@ PATH_SPECS = [
 ]
 
 
-def _published_course(playlist_id: str) -> Courses | None:
-    return Courses.objects.filter(
-        youtube_playlist_id=playlist_id,
-        status=Courses.STATUS_PUBLISHED,
-    ).first()
-
-
 def _freelancing_playlist_ids() -> list[str]:
     category = Category.objects.filter(slug=FREELANCING_SLUG).first()
     if category is None:
@@ -134,11 +127,32 @@ def _freelancing_playlist_ids() -> list[str]:
     )
 
 
+def _collect_playlist_ids() -> set[str]:
+    ids: set[str] = set()
+    for spec in PATH_SPECS:
+        for playlist_id, _note in spec['steps']:
+            if playlist_id == '__freelancing_category__':
+                ids.update(_freelancing_playlist_ids())
+            else:
+                ids.add(playlist_id)
+    return ids
+
+
 class Command(BaseCommand):
     help = 'Seed published learning paths (idempotent).'
 
     @transaction.atomic
     def handle(self, *args, **options):
+        playlist_ids = _collect_playlist_ids()
+        courses_by_playlist = {
+            course.youtube_playlist_id: course
+            for course in Courses.objects.filter(
+                youtube_playlist_id__in=playlist_ids,
+                status=Courses.STATUS_PUBLISHED,
+            ).only('id', 'youtube_playlist_id')
+        }
+
+        path_rows: list[LearningPath] = []
         for spec in PATH_SPECS:
             path, _ = LearningPath.objects.update_or_create(
                 slug=spec['slug'],
@@ -150,42 +164,43 @@ class Command(BaseCommand):
                     'is_published': True,
                 },
             )
-            PathStep.objects.filter(path=path).delete()
+            path_rows.append(path)
+
+        PathStep.objects.filter(path__in=path_rows).delete()
+
+        steps: list[PathStep] = []
+        for path, spec in zip(path_rows, PATH_SPECS, strict=True):
             order = 0
             for playlist_id, note in spec['steps']:
+                ids = (
+                    _freelancing_playlist_ids()
+                    if playlist_id == '__freelancing_category__'
+                    else [playlist_id]
+                )
                 if playlist_id == '__freelancing_category__':
-                    for fid in _freelancing_playlist_ids():
-                        course = _published_course(fid)
-                        if course is None:
-                            self.stdout.write(
-                                self.style.WARNING(
-                                    f'Skip freelancing playlist {fid} '
-                                    f'(not published)'
-                                )
+                    step_note = ''
+                else:
+                    step_note = note
+                for fid in ids:
+                    course = courses_by_playlist.get(fid)
+                    if course is None:
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f'Skip {fid} in {path.slug} (not published)'
                             )
-                            continue
-                        order += 1
-                        PathStep.objects.create(
+                        )
+                        continue
+                    order += 1
+                    steps.append(
+                        PathStep(
                             path=path,
                             course=course,
                             sort_order=order,
-                            note='',
-                        )
-                    continue
-                course = _published_course(playlist_id)
-                if course is None:
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f'Skip {playlist_id} in {path.slug} '
-                            f'(not published)'
+                            note=step_note,
                         )
                     )
-                    continue
-                order += 1
-                PathStep.objects.create(
-                    path=path,
-                    course=course,
-                    sort_order=order,
-                    note=note,
-                )
+                    step_note = ''
+
+        if steps:
+            PathStep.objects.bulk_create(steps, batch_size=200)
         self.stdout.write(self.style.SUCCESS('Learning paths seeded.'))

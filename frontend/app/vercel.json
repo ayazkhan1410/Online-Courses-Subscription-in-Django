@@ -1,16 +1,45 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/robots.txt", "destination": "https://study-with-ayaz-api.vercel.app/robots.txt" },
-    { "source": "/sitemap.xml", "destination": "https://study-with-ayaz-api.vercel.app/sitemap.xml" },
-    { "source": "/(courses|categories|paths)", "destination": "https://study-with-ayaz-api.vercel.app/$1" },
-    { "source": "/(courses|categories|paths)/:slug", "destination": "https://study-with-ayaz-api.vercel.app/$1/:slug" },
-    { "source": "/(about|contact|services|faq|privacy|terms)", "destination": "https://study-with-ayaz-api.vercel.app/$1" },
-    { "source": "/done/:id", "destination": "https://study-with-ayaz-api.vercel.app/done/:id" },
+    {
+      "source": "/robots.txt",
+      "destination": "https://study-with-ayaz-api.vercel.app/robots.txt"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://study-with-ayaz-api.vercel.app/sitemap.xml"
+    },
+    {
+      "source": "/(courses|categories|paths)",
+      "destination": "https://study-with-ayaz-api.vercel.app/$1"
+    },
+    {
+      "source": "/(courses|categories|paths)/:slug",
+      "destination": "https://study-with-ayaz-api.vercel.app/$1/:slug"
+    },
+    {
+      "source": "/(about|contact|services|faq|privacy|terms)",
+      "destination": "https://study-with-ayaz-api.vercel.app/$1"
+    },
+    {
+      "source": "/done/:id",
+      "destination": "https://study-with-ayaz-api.vercel.app/done/:id"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
-    { "source": "/assets/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
-    { "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    }
   ]
 }

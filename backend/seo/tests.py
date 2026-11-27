@@ -83,18 +83,49 @@ class SeoMetaTests(TestCase):
         self.assertIn('/about', static)
 
     def test_sitemap_xml_body(self):
-        from django.contrib.sitemaps.views import sitemap as sitemap_view
-        from django.test import RequestFactory
+        from seo.sitemaps import CourseSitemap
 
-        from seo.urls import sitemap_config
+        locs = [
+            CourseSitemap().location(row) for row in CourseSitemap().items()
+        ]
+        self.assertIn('/courses/seo-python', locs)
 
-        request = RequestFactory().get('/sitemap.xml')
-        request.META['SERVER_NAME'] = 'localhost'
-        request.META['SERVER_PORT'] = '4780'
-        response = sitemap_view(request, sitemaps=sitemap_config)
-        body = response.render().content.decode()
-        self.assertIn('/courses/seo-python', body)
-        self.assertIn('<urlset', body)
+    def test_sitemap_and_robots_use_frontend_url_not_request_host(self):
+        """API may be proxied; public URLs must stay on FRONTEND_URL."""
+        from types import SimpleNamespace
+
+        from seo.sitemaps import CourseSitemap, StaticViewSitemap
+
+        frontend = 'https://study-with-ayaz.vercel.app'
+        with self.settings(FRONTEND_URL=frontend):
+            robots = self.client.get('/robots.txt')
+            self.assertEqual(robots.status_code, status.HTTP_200_OK)
+            robots_text = robots.content.decode()
+            self.assertIn(f'Sitemap: {frontend}/sitemap.xml', robots_text)
+            self.assertNotIn('study-with-ayaz-api.vercel.app', robots_text)
+
+            # Fake API host must be ignored by get_domain / get_protocol.
+            api_site = SimpleNamespace(
+                domain='study-with-ayaz-api.vercel.app',
+                name='api',
+            )
+            course_urls = CourseSitemap().get_urls(
+                site=api_site,
+                protocol='http',
+            )
+            self.assertTrue(course_urls)
+            for row in course_urls:
+                self.assertTrue(row['location'].startswith(frontend))
+                self.assertNotIn(
+                    'study-with-ayaz-api.vercel.app',
+                    row['location'],
+                )
+            about_urls = StaticViewSitemap().get_urls(
+                site=api_site,
+                protocol='http',
+            )
+            about_locs = [row['location'] for row in about_urls]
+            self.assertIn(f'{frontend}/about', about_locs)
 
     def test_og_fonts_load_without_fallback(self):
         from utils.og_completion import (

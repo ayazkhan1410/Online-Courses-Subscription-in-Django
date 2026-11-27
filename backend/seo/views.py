@@ -27,7 +27,7 @@ class SpaMetaView(View):
 
 @require_GET
 def seo_head(request):
-    """JSON head fragment for Cloudflare Pages middleware."""
+    """JSON head fragment for the frontend SEO rewrite / middleware."""
     raw_path = request.GET.get('path') or '/'
     cache_key = f'seo:head:v1:{raw_path}'
     cached = cache.get(cache_key)

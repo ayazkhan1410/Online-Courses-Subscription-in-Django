@@ -116,6 +116,7 @@ class Command(BaseCommand):
         refresh: bool,
         skip_network: bool,
     ) -> None:
+        parsed: list[tuple[str, str, str, str, int]] = []
         for index, item in enumerate(playlists):
             url = (item.get('url') or '').strip()
             level = item.get('level') or Courses.LEVEL_BEGINNER
@@ -126,9 +127,17 @@ class Command(BaseCommand):
                 logger.error('Skip %s: %s', url, exc)
                 self.stderr.write(self.style.WARNING(str(exc)))
                 continue
-            existing = Courses.objects.filter(
-                youtube_playlist_id=playlist_id
-            ).first()
+            parsed.append((playlist_id, url, level, language, index))
+
+        existing_map = {
+            course.youtube_playlist_id: course
+            for course in Courses.objects.filter(
+                youtube_playlist_id__in=[row[0] for row in parsed]
+            )
+        }
+        to_update: list[Courses] = []
+        for playlist_id, url, level, language, index in parsed:
+            existing = existing_map.get(playlist_id)
             if existing is not None and not refresh:
                 existing.category = category
                 existing.level = level
@@ -136,15 +145,7 @@ class Command(BaseCommand):
                 existing.sort_order = index
                 if existing.status != Courses.STATUS_HIDDEN:
                     existing.status = Courses.STATUS_PUBLISHED
-                existing.save(
-                    update_fields=[
-                        'category',
-                        'level',
-                        'language',
-                        'sort_order',
-                        'status',
-                    ]
-                )
+                to_update.append(existing)
                 continue
             if skip_network:
                 self.stdout.write(f'Skip network import {playlist_id}')
@@ -164,4 +165,16 @@ class Command(BaseCommand):
                 continue
             self.stdout.write(
                 f'{category.slug}: {course.courses_name} ({course.status})'
+            )
+        if to_update:
+            Courses.objects.bulk_update(
+                to_update,
+                fields=[
+                    'category',
+                    'level',
+                    'language',
+                    'sort_order',
+                    'status',
+                ],
+                batch_size=100,
             )
