@@ -2,15 +2,28 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { ApiError, formatApiError } from '@/api/client'
 import { getPath } from '@/api/paths'
+import type { Course } from '@/api/types'
 import { CourseCard } from '@/components/CourseCard'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { Skeleton } from '@/components/Skeleton'
+import { useAuth } from '@/hooks/useAuth'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { shortenCourseTitle } from '@/lib/courseTitle'
 
+type PathNodeState = 'done' | 'started' | 'todo' | 'outlined'
+
+function pathNodeState(progress: number, loggedIn: boolean): PathNodeState {
+  if (!loggedIn) return 'outlined'
+  if (progress >= 100) return 'done'
+  if (progress > 0) return 'started'
+  return 'todo'
+}
+
 export default function PathDetailPage() {
   const { slug = '' } = useParams()
+  const { token } = useAuth()
+  const loggedIn = Boolean(token)
   const path = useQuery({
     queryKey: ['path', slug],
     queryFn: () => getPath(slug),
@@ -23,7 +36,7 @@ export default function PathDetailPage() {
     return (
       <main className="wrap">
         <Skeleton className="h-24" />
-        <div className="grid" style={{ marginTop: 32 }}>
+        <div className="path-route" style={{ marginTop: 32 }}>
           <Skeleton className="h-64" />
           <Skeleton className="h-64" />
         </div>
@@ -55,6 +68,8 @@ export default function PathDetailPage() {
   const data = path.data
   if (!data) return null
 
+  const steps = [...data.steps].sort((a, b) => a.sort_order - b.sort_order)
+
   return (
     <main className="wrap">
       <p className="meta small">
@@ -68,25 +83,46 @@ export default function PathDetailPage() {
           <p className="lead">{data.summary}</p>
         </div>
       </div>
-      <div className="grid grid-3" style={{ marginTop: 8 }}>
-        {[...data.steps]
-          .sort((a, b) => a.sort_order - b.sort_order)
-          .map((step) => (
-            <div key={step.course.id} className="path-step">
-              {step.note ? (
-                <p className="dim small" style={{ margin: '0 0 12px' }}>
-                  {step.note}
-                </p>
-              ) : null}
-              <CourseCard
-                course={{
-                  ...step.course,
-                  courses_name: shortenCourseTitle(step.course.courses_name),
-                }}
-              />
-            </div>
-          ))}
-      </div>
+      <ol className="path-route">
+        {steps.map((step) => (
+          <PathRouteStep
+            key={step.course.id}
+            note={step.note}
+            course={step.course}
+            loggedIn={loggedIn}
+          />
+        ))}
+      </ol>
     </main>
+  )
+}
+
+function PathRouteStep({
+  note,
+  course,
+  loggedIn,
+}: {
+  note: string
+  course: Course
+  loggedIn: boolean
+}) {
+  const state = pathNodeState(course.progress_percent ?? 0, loggedIn)
+
+  return (
+    <li className="path-route-step">
+      <div className="path-route-track" aria-hidden="true">
+        <span className={`path-rail-node ${state}`} />
+        <span className="path-rail-connector" />
+      </div>
+      <div className="path-route-body">
+        {note ? <p className="dim small path-route-note">{note}</p> : null}
+        <CourseCard
+          course={{
+            ...course,
+            courses_name: shortenCourseTitle(course.courses_name),
+          }}
+        />
+      </div>
+    </li>
   )
 }

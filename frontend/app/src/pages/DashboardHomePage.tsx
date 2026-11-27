@@ -1,19 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
-import { Play } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatApiError } from '@/api/client'
 import { getDashboard } from '@/api/learning'
 import type { Course, Enrollment } from '@/api/types'
-import { Counter, Ticks, WeekGoalTicks } from '@/components/Counter'
+import { WeekGoalTicks } from '@/components/Counter'
+import { ContinueLearningPanel } from '@/components/ContinueLearningPanel'
 import { CourseCard } from '@/components/CourseCard'
-import { Cover } from '@/components/Cover'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { Panel } from '@/components/Panel'
 import { Skeleton } from '@/components/Skeleton'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { cleanLessonTitle } from '@/lib/lessonTitle'
-import { lessonIndex, stripEmoji } from '@/lib/text'
+import { stripEmoji } from '@/lib/text'
 
 function preferEnrolledCategories(recommended: Course[], enrolled: Enrollment[]): Course[] {
   const slugs = new Set(
@@ -75,7 +73,7 @@ export default function DashboardHomePage() {
       </div>
 
       {current ? (
-        <ContinuePanel course={current} />
+        <ContinueLearningPanel course={current} primaryLabel="Resume" showSecondaryAction={false} />
       ) : (
         <Panel>
           <EmptyState
@@ -194,41 +192,5 @@ export default function DashboardHomePage() {
         )}
       </section>
     </>
-  )
-}
-
-function ContinuePanel({ course }: { course: Course }) {
-  const done = progressLessons(course.progress_percent, course.module_count)
-  const index = lessonIndex(course.progress_percent, course.module_count)
-  const module = course.course_modules?.[index]
-  const lesson = module ? cleanLessonTitle(module.module_name) : null
-
-  return (
-    <Panel className="continue">
-      <Cover
-        title={stripEmoji(course.courses_name)}
-        categoryLabel={course.category?.name}
-        lessons={course.module_count}
-        categorySlug={course.creator?.is_owner ? 'study-with-ayaz' : course.category?.slug}
-        imageUrl={course.thumbnail_url || course.course_image}
-      />
-      <div className="cont-body">
-        <div className="meta">Continue · {stripEmoji(course.courses_name)}</div>
-        <h2 className="h2">
-          {lesson?.counter ? `${lesson.counter} · ` : ''}
-          {lesson?.title ?? stripEmoji(course.courses_name)}
-        </h2>
-        <div className="cont-count">
-          <Counter done={done} total={course.module_count} />
-        </div>
-        <Ticks done={done} total={course.module_count} />
-        <div>
-          <Link className="btn btn-primary" to={`/learn/${course.slug}/${module?.id ?? 0}`}>
-            <Play className="i-16" size={16} strokeWidth={1.5} aria-hidden />
-            Resume
-          </Link>
-        </div>
-      </div>
-    </Panel>
   )
 }

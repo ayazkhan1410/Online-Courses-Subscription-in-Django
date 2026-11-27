@@ -3,12 +3,20 @@ import { Link } from 'react-router-dom'
 import { getCategory, listCategories } from '@/api/categories'
 import { ApiError, formatApiError } from '@/api/client'
 import { getCourses } from '@/api/courses'
+import { getDashboard } from '@/api/learning'
+import type { Course } from '@/api/types'
 import { CategoryGlyph } from '@/components/CategoryGlyph'
+import {
+  ContinueLearningPanel,
+  ContinueLearningSkeleton,
+} from '@/components/ContinueLearningPanel'
 import { CourseCard } from '@/components/CourseCard'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
+import { Panel } from '@/components/Panel'
 import { Skeleton } from '@/components/Skeleton'
 import { DeskScene } from '@/features/hero/DeskScene'
+import { useAuth } from '@/hooks/useAuth'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { PAGE_DESCRIPTIONS } from '@/lib/pageDescriptions'
 import { inkClass } from '@/lib/ink'
@@ -19,6 +27,13 @@ export default function HomePage() {
   usePageTitle('Study with Ayaz', {
     description: PAGE_DESCRIPTIONS.home,
     canonicalPath: '/',
+  })
+  const { token } = useAuth()
+  const loggedIn = Boolean(token)
+  const dashboard = useQuery({
+    queryKey: ['dashboard'],
+    queryFn: getDashboard,
+    enabled: loggedIn,
   })
   const ayaz = useQuery({
     queryKey: ['category', AYAZ],
@@ -89,7 +104,16 @@ export default function HomePage() {
           ) : null}
         </div>
       </div>
-      <DeskScene />
+      {loggedIn ? (
+        <HeroContinue
+          loading={dashboard.isLoading}
+          course={dashboard.data?.continue_learning[0]}
+          errored={dashboard.isError}
+          onRetry={() => void dashboard.refetch()}
+        />
+      ) : (
+        <DeskScene />
+      )}
     </section>
 
     <section className="section">
@@ -254,5 +278,48 @@ export default function HomePage() {
       </div>
     </section>
   </>
+  )
+}
+
+function HeroContinue({
+  loading,
+  course,
+  errored,
+  onRetry,
+}: {
+  loading: boolean
+  course: Course | undefined
+  errored: boolean
+  onRetry: () => void
+}) {
+  if (loading) {
+    return <ContinueLearningSkeleton className="hero-continue" />
+  }
+  if (errored) {
+    return (
+      <Panel className="continue hero-continue">
+        <ErrorState message="Could not load your progress." onRetry={onRetry} />
+      </Panel>
+    )
+  }
+  if (!course) {
+    return (
+      <Panel className="continue hero-continue">
+        <EmptyState
+          title="Nothing in progress"
+          body="Enroll in a course to pick up where you left off."
+          actionLabel="Browse courses"
+          to="/courses"
+        />
+      </Panel>
+    )
+  }
+  return (
+    <ContinueLearningPanel
+      className="hero-continue"
+      course={course}
+      primaryLabel="Continue"
+      showHeadingMeta={false}
+    />
   )
 }
