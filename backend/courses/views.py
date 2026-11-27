@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.cache import cache
 from django.db.models import Count, OuterRef, Q, Subquery
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -7,7 +8,14 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from courses.models import Category, Courses, LearningPath, Project
+from courses.models import (
+    Category,
+    CourseModule,
+    Courses,
+    Creator,
+    LearningPath,
+    Project,
+)
 from courses.serializers import (
     CategorySerializer,
     CourseDetailSerializer,
@@ -20,6 +28,37 @@ from utils.courses import get_course_by_slug, list_courses
 from utils.learning import serializer_learning_context
 from utils.og_course import render_course_og, render_default_og
 
+CONFIG_COUNTS_CACHE_KEY = 'config_catalog_counts_v1'
+CONFIG_COUNTS_CACHE_TTL = 300
+
+
+def catalog_counts() -> dict[str, int]:
+    cached = cache.get(CONFIG_COUNTS_CACHE_KEY)
+    if isinstance(cached, dict):
+        return cached
+    published = Courses.objects.filter(status=Courses.STATUS_PUBLISHED)
+    counts = {
+        'published_course_count': published.count(),
+        'category_count': Category.objects.count(),
+        'lesson_count': CourseModule.objects.filter(
+            course__status=Courses.STATUS_PUBLISHED,
+        ).count(),
+        'creator_count': Creator.objects.filter(
+            courses__status=Courses.STATUS_PUBLISHED,
+        )
+        .distinct()
+        .count(),
+        'path_count': LearningPath.objects.filter(is_published=True).count(),
+        'language_count': (
+            published.exclude(language='')
+            .values('language')
+            .distinct()
+            .count()
+        ),
+    }
+    cache.set(CONFIG_COUNTS_CACHE_KEY, counts, CONFIG_COUNTS_CACHE_TTL)
+    return counts
+
 
 class ConfigAPIView(APIView):
     permission_classes = [AllowAny]
@@ -29,18 +68,14 @@ class ConfigAPIView(APIView):
         site_key = ''
         if not getattr(settings, 'TURNSTILE_TEST_MODE', False):
             site_key = settings.TURNSTILE_SITE_KEY or ''
-        published_courses = Courses.objects.filter(
-            status=Courses.STATUS_PUBLISHED,
-        ).count()
-        category_count = Category.objects.count()
+        counts = catalog_counts()
         return Response(
             {
                 'stripe_publishable_key': settings.STRIPE_PUBLISHABLE_KEY,
                 'google_client_id': settings.GOOGLE_OAUTH_CLIENT_ID,
                 'turnstile_site_key': site_key,
                 'fiverr_profile_url': settings.FIVERR_PROFILE_URL,
-                'published_course_count': published_courses,
-                'category_count': category_count,
+                **counts,
             }
         )
 
