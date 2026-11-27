@@ -8,8 +8,6 @@ const pages = [
   '/courses',
   '/paths',
   '/services',
-  '/work',
-  '/testimonials',
   '/contact',
   '/categories',
   '/faq',
@@ -18,6 +16,7 @@ const pages = [
   '/search',
   '/login',
   '/register',
+  '/verify-email?email=demo%40example.com',
   '/forgot-password',
 ]
 

@@ -34,7 +34,7 @@ export function Footer() {
                 <Link to="/services">Services</Link>
               </li>
               <li>
-                <Link to="/work">Projects</Link>
+                <Link to="/about#work">Projects</Link>
               </li>
               <li>
                 <Link to="/contact">Contact</Link>

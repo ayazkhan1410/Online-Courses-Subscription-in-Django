@@ -1,23 +1,11 @@
 import { expect, test } from '@playwright/test'
+import { hideTurnstile, registerAndVerify } from './helpers'
 
 const stamp = Date.now().toString().slice(-8)
 const user = {
   username: `pw${stamp}`,
   email: `pw${stamp}@example.com`,
   password: 'StudyDesk-4780!',
-}
-
-async function hideTurnstile(page: import('@playwright/test').Page) {
-  await page.route('**/api/config/', async (route) => {
-    const response = await route.fetch()
-    const json = await response.json()
-    json.turnstile_site_key = ''
-    await route.fulfill({
-      status: response.status(),
-      contentType: 'application/json',
-      body: JSON.stringify(json),
-    })
-  })
 }
 
 test('register login logout courses search pagination detail enroll complete wishlist dashboard contact forgot unauthorized', async ({
@@ -32,13 +20,8 @@ test('register login logout courses search pagination detail enroll complete wis
     expect(page.url()).toContain('next=')
   })
 
-  await test.step('register', async () => {
-    await page.goto('/register')
-    await page.getByLabel('Username').fill(user.username)
-    await page.getByLabel('Email').fill(user.email)
-    await page.getByLabel('Password').fill(user.password)
-    await page.getByRole('button', { name: 'Create account' }).click()
-    await page.waitForURL('**/dashboard', { timeout: 20_000 })
+  await test.step('register and verify email', async () => {
+    await registerAndVerify(page, user)
   })
 
   await test.step('logout', async () => {
