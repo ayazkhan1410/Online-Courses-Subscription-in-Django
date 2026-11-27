@@ -11,9 +11,17 @@ from PIL import Image, ImageDraw
 if TYPE_CHECKING:
     from courses.models import Courses
 
-from utils.og_completion import HEIGHT, WIDTH, _font, _tick_row
+from utils.og_completion import (
+    CACHE_TTL,
+    HEIGHT,
+    PAD,
+    WIDTH,
+    _font,
+    _tick_row,
+    draw_og_title,
+    fit_og_title,
+)
 
-CACHE_TTL = 60 * 60 * 24
 BRAND = 'Study with Ayaz'
 
 
@@ -22,13 +30,13 @@ def render_course_og(course: Courses) -> bytes:
         can_view=True,
         is_available=True,
     ).count()
-    cache_key = f'og_course:v2:{course.slug}:{module_count}'
+    cache_key = f'og_course:v3:{course.slug}:{module_count}'
     cached = cache.get(cache_key)
     if cached is not None:
         return cached
 
     total = module_count
-    title = course.courses_name[:120]
+    title_lines, title_font = fit_og_title(course.courses_name)
     teacher = (
         course.creator.name if course.creator_id and course.creator else BRAND
     )
@@ -40,18 +48,29 @@ def render_course_og(course: Courses) -> bytes:
     draw.line((56, 0, 56, HEIGHT), fill=(200, 190, 175), width=1)
 
     label_font = _font(22, mono=True)
-    title_font = _font(64, medium=True)
     meta_font = _font(28, mono=True)
 
-    pad = 72
-    draw.text((pad, 56), BRAND, fill=(120, 112, 98), font=label_font)
-    draw.text((pad, 120), title, fill=(35, 32, 28), font=title_font)
+    draw.text((PAD, 56), BRAND, fill=(120, 112, 98), font=label_font)
+    title_bottom = draw_og_title(
+        draw,
+        title_lines,
+        title_font,
+        x=PAD,
+        y=120,
+        fill=(35, 32, 28),
+    )
+    counter_y = max(title_bottom + 24, 280)
     counter = f'{total} lessons · {level}'
-    draw.text((pad, 280), counter, fill=(120, 112, 98), font=meta_font)
-    _tick_row(draw, min(total, 50) or 1, pad, 340)
-    draw.text((pad, 400), teacher, fill=(35, 32, 28), font=meta_font)
+    draw.text((PAD, counter_y), counter, fill=(120, 112, 98), font=meta_font)
+    _tick_row(draw, min(total, 50) or 1, PAD, counter_y + 60)
     draw.text(
-        (pad, HEIGHT - 72),
+        (PAD, counter_y + 120),
+        teacher,
+        fill=(35, 32, 28),
+        font=meta_font,
+    )
+    draw.text(
+        (PAD, HEIGHT - 72),
         'Free course · Study with Ayaz',
         fill=(154, 144, 127),
         font=meta_font,
@@ -65,7 +84,7 @@ def render_course_og(course: Courses) -> bytes:
 
 
 def render_default_og() -> bytes:
-    cache_key = 'og_default:v2'
+    cache_key = 'og_default:v3'
     cached = cache.get(cache_key)
     if cached is not None:
         return cached
@@ -77,10 +96,9 @@ def render_default_og() -> bytes:
 
     title_font = _font(64, medium=True)
     meta_font = _font(28, mono=True)
-    pad = 72
-    draw.text((pad, 180), BRAND, fill=(35, 32, 28), font=title_font)
+    draw.text((PAD, 180), BRAND, fill=(35, 32, 28), font=title_font)
     draw.text(
-        (pad, 280),
+        (PAD, 280),
         'Free programming courses from curated YouTube playlists.',
         fill=(120, 112, 98),
         font=meta_font,

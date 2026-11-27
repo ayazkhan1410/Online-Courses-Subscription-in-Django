@@ -31,4 +31,21 @@ describe('Cover', () => {
     const img = container.querySelector('img.cover-thumb')
     expect(img).toHaveAttribute('src', 'https://i.ytimg.com/vi/abc/hqdefault.jpg')
   })
+
+  it('compact cover shows only spine and title', () => {
+    const { container } = render(
+      <Cover
+        compact
+        title="Python in 50 days for beginners"
+        categoryLabel="Python"
+        lessons={50}
+        categorySlug="study-with-ayaz"
+        imageUrl="https://i.ytimg.com/vi/abc/hqdefault.jpg"
+      />,
+    )
+    expect(container.querySelector('img')).toBeNull()
+    expect(container.querySelector('.cover-top')).toBeNull()
+    expect(container.querySelector('.cover-compact')).not.toBeNull()
+    expect(container.querySelector('.cover-title')).not.toBeNull()
+  })
 })

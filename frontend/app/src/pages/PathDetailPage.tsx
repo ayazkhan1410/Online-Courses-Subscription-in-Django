@@ -137,13 +137,11 @@ function PathRouteStep({
         <Link to={`/courses/${course.slug}`} className="path-route-card">
           <Cover
             className="path-route-cover"
+            compact
             title={title}
-            categoryLabel={course.category?.name}
-            lessons={course.module_count}
             categorySlug={
               course.creator?.is_owner ? 'study-with-ayaz' : course.category?.slug
             }
-            imageUrl={course.thumbnail_url || course.course_image}
           />
           <div className="path-route-card-meta">
             <div className="card-title">{title}</div>

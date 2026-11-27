@@ -520,10 +520,7 @@
 .path-route-cover {
   width: 120px;
   aspect-ratio: 4 / 3;
-  padding: 10px 10px 10px 18px;
 }
-.path-route-cover .cover-title { font-size: 14px; line-height: 1.25; }
-.path-route-cover .cover-top { font-size: 10px; }
 .path-route-card-meta .card-title { font-size: 16px; margin: 0 0 6px; }
 @media (max-width: 560px) {
   .path-route-card { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; }

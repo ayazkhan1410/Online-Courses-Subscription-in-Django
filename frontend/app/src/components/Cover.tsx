@@ -8,6 +8,7 @@ export function Cover({
   categorySlug,
   byline,
   imageUrl,
+  compact = false,
   className,
 }: {
   title: string
@@ -16,6 +17,7 @@ export function Cover({
   categorySlug?: string | null
   byline?: string | null
   imageUrl?: string | null
+  compact?: boolean
   className?: string
 }) {
   const lessonText =
@@ -24,6 +26,22 @@ export function Cover({
       : lessons === 1
         ? '1 lesson'
         : `${lessons} lessons`
+  const shortTitle = coverShortTitle(title)
+
+  if (compact) {
+    return (
+      <div
+        className={cn(
+          'cover cover-compact',
+          inkClass(categorySlug),
+          className,
+        )}
+      >
+        <div className="cover-title">{shortTitle}</div>
+      </div>
+    )
+  }
+
   const thumb = (imageUrl || '').trim()
   if (thumb) {
     return (
@@ -34,7 +52,7 @@ export function Cover({
           <span>{categoryLabel || 'Course'}</span>
           {lessonText ? <span>{lessonText}</span> : <span />}
         </div>
-        <div className="cover-title">{coverShortTitle(title)}</div>
+        <div className="cover-title">{shortTitle}</div>
         {byline ? <div className="cover-by">{byline}</div> : null}
       </div>
     )
@@ -45,7 +63,7 @@ export function Cover({
         <span>{categoryLabel || 'Course'}</span>
         {lessonText ? <span>{lessonText}</span> : <span />}
       </div>
-      <div className="cover-title">{coverShortTitle(title)}</div>
+      <div className="cover-title">{shortTitle}</div>
       {byline ? <div className="cover-by">{byline}</div> : null}
     </div>
   )

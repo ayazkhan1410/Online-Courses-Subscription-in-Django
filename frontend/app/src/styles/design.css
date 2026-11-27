@@ -186,6 +186,13 @@ button { font: inherit; color: inherit; }
 .cover::after { content: ""; position: absolute; left: 18px; top: 0; bottom: 0; width: 1px; background: color-mix(in srgb, var(--ink) 35%, transparent); }
 .cover-top { display: flex; justify-content: space-between; font: 400 11px/1 var(--font-mono); color: var(--text-3); }
 .cover-title { margin-top: auto; font-size: 20px; line-height: 1.15; letter-spacing: -0.01em; font-weight: 500; color: var(--text); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-width: 92%; }
+.cover-compact { padding: 10px 10px 10px 18px; }
+.cover-compact .cover-title {
+  -webkit-line-clamp: 2;
+  font-size: 14px;
+  line-height: 1.25;
+  max-width: 100%;
+}
 .cover-by { margin-top: 8px; font: 400 11px/1 var(--font-mono); color: color-mix(in srgb, var(--ink) 80%, var(--text)); }
 .cover-media { background: var(--sunken); padding: 0; color: #f5f2ec; }
 .cover-media::before, .cover-media::after { display: none; }

@@ -67,4 +67,16 @@ describe('CourseCard', () => {
     expect(screen.queryByText('By Ayaz')).not.toBeInTheDocument()
     expect(screen.getByText('Corey Schafer')).toBeInTheDocument()
   })
+
+  it('always uses the generated cover, never a YouTube thumbnail', () => {
+    const { container } = renderCard(
+      course({
+        thumbnail_url: 'https://i.ytimg.com/vi/abc/hqdefault.jpg',
+        course_image: 'https://img.example/cover.jpg',
+      }),
+    )
+    expect(container.querySelector('img')).toBeNull()
+    expect(container.querySelector('.cover')).not.toBeNull()
+    expect(container.querySelector('.cover-media')).toBeNull()
+  })
 })

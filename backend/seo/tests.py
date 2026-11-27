@@ -116,6 +116,30 @@ class SeoMetaTests(TestCase):
         self.assertEqual(response['Content-Type'], 'image/png')
         self.assertTrue(response.content.startswith(b'\x89PNG'))
 
+    def test_long_course_og_title_stays_inside_width(self):
+        from utils.og_completion import (
+            PAD,
+            TITLE_MAX_WIDTH,
+            WIDTH,
+            fit_og_title,
+        )
+        from utils.og_course import render_course_og
+
+        long_title = (
+            'Build production Django APIs with JWT auth, caching '
+            'and deployment patterns for real teams'
+        )
+        self.assertEqual(len(long_title), 90)
+        self.course.courses_name = long_title
+        self.course.save(update_fields=['courses_name'])
+        lines, font = fit_og_title(long_title)
+        self.assertLessEqual(len(lines), 2)
+        for line in lines:
+            self.assertLessEqual(font.getlength(line), TITLE_MAX_WIDTH)
+            self.assertLessEqual(PAD + font.getlength(line), WIDTH - PAD)
+        png = render_course_og(self.course)
+        self.assertTrue(png.startswith(b'\x89PNG'))
+
     def test_default_og_png(self):
         response = self.api.get('/api/og/default.png')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
