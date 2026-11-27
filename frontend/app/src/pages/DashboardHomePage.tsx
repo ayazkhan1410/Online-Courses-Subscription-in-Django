@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { formatApiError } from '@/api/client'
 import { getDashboard } from '@/api/learning'
 import type { Course, Enrollment } from '@/api/types'
-import { Counter, Ticks } from '@/components/Counter'
+import { Counter, Ticks, WeekGoalTicks } from '@/components/Counter'
 import { CourseCard } from '@/components/CourseCard'
 import { Cover } from '@/components/Cover'
 import { EmptyState } from '@/components/EmptyState'
@@ -59,6 +59,7 @@ export default function DashboardHomePage() {
   const data = query.data
   const current = data.continue_learning[0]
   const stats = data.stats
+  const streak = data.streak
   const recommended = preferEnrolledCategories(data.recommended, data.enrolled)
 
   return (
@@ -87,6 +88,15 @@ export default function DashboardHomePage() {
       )}
 
       <section className="stats">
+        <Panel className="stat">
+          <div className="label">Day streak</div>
+          <div className="fig">
+            <span className="counter">
+              <b>{streak.current}</b>
+              <span> day{streak.current === 1 ? '' : 's'}</span>
+            </span>
+          </div>
+        </Panel>
         <Panel className="stat">
           <div className="label">Lessons completed</div>
           <div className="fig">{stats.completed_lessons}</div>
@@ -122,9 +132,13 @@ export default function DashboardHomePage() {
       <section className="split">
         <Panel>
           <div className="p-head">
-            <h2 className="h3">Lessons this week</h2>
+            <h2 className="h3">This week</h2>
           </div>
-          <p className="dim small">Daily lesson counts are not tracked yet.</p>
+          <WeekGoalTicks days={streak.week} />
+          <p className="meta small" style={{ marginTop: 12 }}>
+            Goal: {streak.daily_goal} lesson{streak.daily_goal === 1 ? '' : 's'}{' '}
+            per day · Longest {streak.longest} day{streak.longest === 1 ? '' : 's'}
+          </p>
         </Panel>
         <Panel>
           <div className="p-head">

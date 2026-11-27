@@ -9,6 +9,7 @@ from django.utils import timezone
 from courses.models import CourseModule, Courses
 from learning.models import Enrollment, LessonNote, LessonProgress, WishlistItem
 from utils.completion import list_user_completions, maybe_record_completion
+from utils.streak import build_streak_payload
 from subscriptions.models import Subscription
 
 
@@ -292,6 +293,7 @@ def build_dashboard(user) -> dict:
         return CourseSerializer(course, context=ser_ctx).data
 
     completed_courses = sum(1 for pct in progress_map.values() if pct >= 100)
+    streak = build_streak_payload(user)
     return {
         'user': {
             'id': user.id,
@@ -311,7 +313,9 @@ def build_dashboard(user) -> dict:
                 if progress_map
                 else 0
             ),
+            'streak_current': streak['current'],
         },
+        'streak': streak,
         'enrolled': EnrollmentSerializer(
             enrollments, many=True, context=ser_ctx
         ).data,

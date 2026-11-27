@@ -39,6 +39,8 @@ class CustomUser(AbstractUser):
         ],
     )
     show_name_on_completion = models.BooleanField(default=True)
+    timezone = models.CharField(max_length=64, default='Asia/Karachi')
+    daily_goal = models.PositiveSmallIntegerField(default=1)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']

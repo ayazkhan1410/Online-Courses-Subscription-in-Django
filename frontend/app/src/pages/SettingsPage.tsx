@@ -12,15 +12,17 @@ export default function SettingsPage() {
   const { user, setSession, token } = useAuth()
   const toast = useToast()
   const queryClient = useQueryClient()
-  const privacy = useMutation({
-    mutationFn: (show_name_on_completion: boolean) =>
-      updateSettings({ show_name_on_completion }),
+  const settings = useMutation({
+    mutationFn: updateSettings,
     onSuccess: (nextUser) => {
       if (token) setSession(token, nextUser)
       void queryClient.invalidateQueries({ queryKey: ['me'] })
+      void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
     },
     onError: (error) => toast.push(formatApiError(error), 'err'),
   })
+
+  const dailyGoal = user?.daily_goal ?? 1
 
   return (
     <div>
@@ -34,11 +36,29 @@ export default function SettingsPage() {
           <input
             type="checkbox"
             checked={user?.show_name_on_completion ?? true}
-            disabled={privacy.isPending}
-            onChange={(event) => privacy.mutate(event.target.checked)}
+            disabled={settings.isPending}
+            onChange={(event) =>
+              settings.mutate({ show_name_on_completion: event.target.checked })
+            }
           />
           Show my name on completion cards
         </label>
+        <div className="mt-6">
+          <p className="text-sm text-ink-2">Daily lesson goal</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {([1, 2, 3] as const).map((n) => (
+              <button
+                key={n}
+                type="button"
+                className={`btn btn-sm${dailyGoal === n ? ' btn-primary' : ''}`}
+                disabled={settings.isPending}
+                onClick={() => settings.mutate({ daily_goal: n })}
+              >
+                {n} {n === 1 ? 'lesson' : 'lessons'}
+              </button>
+            ))}
+          </div>
+        </div>
         <p className="mt-6 text-sm text-ink-2">Signed in as {user?.email}</p>
         <div className="mt-4 flex flex-col gap-2 text-sm">
           <Link to="/dashboard/security">Security</Link>

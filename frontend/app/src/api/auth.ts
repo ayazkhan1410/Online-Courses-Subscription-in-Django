@@ -73,6 +73,8 @@ export function getMe(): Promise<User> {
 
 export function updateSettings(payload: {
   show_name_on_completion?: boolean
+  timezone?: string
+  daily_goal?: 1 | 2 | 3
 }): Promise<User> {
   return api<User>('/auth/me/', { method: 'PATCH', body: payload })
 }

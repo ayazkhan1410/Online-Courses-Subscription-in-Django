@@ -2,10 +2,12 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react'
+import { syncBrowserTimezoneOnce } from '@/lib/timezone'
 import { logout as logoutRequest } from '@/api/auth'
 import type { User } from '@/api/types'
 import { clearSession, readToken, readUser, writeSession } from '@/lib/session'
@@ -42,6 +44,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null)
     setUser(null)
   }, [])
+
+  useEffect(() => {
+    if (!token) return
+    void syncBrowserTimezoneOnce()
+  }, [token])
 
   const value = useMemo(
     () => ({ token, user, setSession, logout }),

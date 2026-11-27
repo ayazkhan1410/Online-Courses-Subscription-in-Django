@@ -1,3 +1,5 @@
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
@@ -135,6 +137,8 @@ class UserSerializer(serializers.ModelSerializer):
             'user_choices',
             'is_pro',
             'show_name_on_completion',
+            'timezone',
+            'daily_goal',
         ]
 
     def get_is_pro(self, obj: CustomUser) -> bool:
@@ -143,6 +147,31 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserSettingsSerializer(serializers.ModelSerializer):
+    daily_goal = serializers.IntegerField(min_value=1, max_value=3, required=False)
+
     class Meta:
         model = CustomUser
-        fields = ['show_name_on_completion']
+        fields = [
+            'show_name_on_completion',
+            'timezone',
+            'daily_goal',
+        ]
+
+    def validate_timezone(self, value: str) -> str:
+        name = (value or '').strip()
+        if not name:
+            raise serializers.ValidationError('Timezone is required')
+        try:
+            ZoneInfo(name)
+        except ZoneInfoNotFoundError as exc:
+            raise serializers.ValidationError(
+                'Unknown timezone'
+            ) from exc
+        return name
+
+    def validate_daily_goal(self, value: int) -> int:
+        if value not in (1, 2, 3):
+            raise serializers.ValidationError(
+                'Daily goal must be 1, 2, or 3'
+            )
+        return value

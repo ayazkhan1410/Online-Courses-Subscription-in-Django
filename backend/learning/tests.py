@@ -1,5 +1,9 @@
+from datetime import datetime, timedelta, timezone as dt_utc
+from zoneinfo import ZoneInfo
+
 from django.core.cache import cache
 from django.test import TestCase, override_settings
+from django.utils import timezone as dj_tz
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
@@ -265,3 +269,132 @@ class CompletionTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response['Content-Type'], 'image/png')
         self.assertTrue(response.content.startswith(b'\x89PNG'))
+
+
+class StreakTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.client = APIClient()
+        self.user = CustomUser.objects.create_user(
+            email='streak@example.com',
+            username='streak',
+            password='StrongPass123',
+            full_name='Streak',
+            user_choices='expert',
+            timezone='America/New_York',
+        )
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
+        self.course = Courses.objects.create(
+            courses_name='Streak course',
+            courses_description='desc',
+            is_premium=False,
+            youtube_playlist_id='stk',
+            slug='streak-course',
+        )
+        self.modules = [
+            CourseModule.objects.create(
+                course=self.course,
+                module_name=f'Lesson {n}',
+                youtube_video_id=f'id{n}',
+                module_video=f'https://www.youtube.com/watch?v=id{n}',
+                sort_order=n,
+            )
+            for n in range(1, 6)
+        ]
+        Enrollment.objects.create(user=self.user, course=self.course)
+
+    def _complete_at(self, module: CourseModule, when: datetime):
+        row, _ = LessonProgress.objects.update_or_create(
+            user=self.user,
+            module=module,
+            defaults={'completed': True},
+        )
+        LessonProgress.objects.filter(pk=row.pk).update(updated_at=when)
+        return row
+
+    def test_streak_counts_consecutive_local_days(self):
+        tz = ZoneInfo('America/New_York')
+        today_local = dj_tz.now().astimezone(tz).date()
+        for offset, mod in enumerate(self.modules[:3]):
+            day = today_local - timedelta(days=2 - offset)
+            local_noon = datetime(
+                day.year,
+                day.month,
+                day.day,
+                12,
+                0,
+                tzinfo=tz,
+            )
+            when = local_noon.astimezone(dt_utc.utc)
+            self._complete_at(mod, when)
+
+        response = self.client.get('/api/dashboard/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['streak']['current'], 3)
+        self.assertEqual(response.data['streak']['longest'], 3)
+
+    def test_timezone_splits_completions_across_local_midnights(self):
+        tz = ZoneInfo('America/New_York')
+        day = dj_tz.now().astimezone(tz).date() - timedelta(days=1)
+        late = datetime(day.year, day.month, day.day, 23, 30, tzinfo=tz)
+        early = datetime(
+            (day + timedelta(days=1)).year,
+            (day + timedelta(days=1)).month,
+            (day + timedelta(days=1)).day,
+            0,
+            30,
+            tzinfo=tz,
+        )
+        self._complete_at(
+            self.modules[0],
+            late.astimezone(dt_utc.utc),
+        )
+        self._complete_at(
+            self.modules[1],
+            early.astimezone(dt_utc.utc),
+        )
+        from utils.streak import completion_counts_by_day
+
+        counts = completion_counts_by_day(self.user)
+        self.assertEqual(counts.get(day), 1)
+        self.assertEqual(counts.get(day + timedelta(days=1)), 1)
+
+    def test_daily_goal_two_needs_two_lessons(self):
+        self.user.daily_goal = 2
+        self.user.save(update_fields=['daily_goal'])
+        tz = ZoneInfo('America/New_York')
+        today = dj_tz.now().astimezone(tz).date()
+        noon = datetime(
+            today.year,
+            today.month,
+            today.day,
+            14,
+            0,
+            tzinfo=tz,
+        ).astimezone(dt_utc.utc)
+        self._complete_at(self.modules[0], noon)
+        response = self.client.get('/api/dashboard/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        today_cell = next(
+            d for d in response.data['streak']['week'] if d['is_today']
+        )
+        self.assertFalse(today_cell['goal_met'])
+        self._complete_at(self.modules[1], noon + timedelta(minutes=5))
+        response = self.client.get('/api/dashboard/')
+        today_cell = next(
+            d for d in response.data['streak']['week'] if d['is_today']
+        )
+        self.assertTrue(today_cell['goal_met'])
+
+    def test_me_patch_timezone_and_daily_goal(self):
+        patch = self.client.patch(
+            '/api/auth/me/',
+            {'timezone': 'Asia/Karachi', 'daily_goal': 3},
+            format='json',
+        )
+        self.assertEqual(patch.status_code, status.HTTP_200_OK)
+        self.assertEqual(patch.data['timezone'], 'Asia/Karachi')
+        self.assertEqual(patch.data['daily_goal'], 3)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.timezone, 'Asia/Karachi')

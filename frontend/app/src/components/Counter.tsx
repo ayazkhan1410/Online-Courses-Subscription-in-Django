@@ -1,3 +1,4 @@
+import type { StreakWeekDay } from '@/api/types'
 import { padCounter } from '@/lib/lessonTitle'
 import { cn } from '@/lib/cn'
 
@@ -16,6 +17,33 @@ export function Counter({
       <b>{current}</b>
       <span>{rest}</span>
     </span>
+  )
+}
+
+export function WeekGoalTicks({
+  days,
+  className,
+}: {
+  days: StreakWeekDay[]
+  className?: string
+}) {
+  return (
+    <div className={cn('week-ticks', className)}>
+      {days.map((day) => (
+        <div key={day.date} className="week-tick">
+          <i
+            className={cn(
+              day.goal_met && 'on',
+              day.is_today && 'today',
+            )}
+            title={`${day.weekday}: ${day.lesson_count} lesson${
+              day.lesson_count === 1 ? '' : 's'
+            }`}
+          />
+          <span className="week-tick-label meta">{day.weekday}</span>
+        </div>
+      ))}
+    </div>
   )
 }
 

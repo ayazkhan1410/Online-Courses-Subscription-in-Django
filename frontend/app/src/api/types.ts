@@ -6,6 +6,8 @@ export type User = {
   user_choices: string
   is_pro: boolean
   show_name_on_completion: boolean
+  timezone: string
+  daily_goal: 1 | 2 | 3
 }
 
 export type Module = {
@@ -103,12 +105,28 @@ export type DashboardUser = {
   is_pro: boolean
 }
 
+export type StreakWeekDay = {
+  weekday: string
+  date: string
+  lesson_count: number
+  goal_met: boolean
+  is_today: boolean
+}
+
+export type StreakPayload = {
+  current: number
+  longest: number
+  daily_goal: 1 | 2 | 3
+  week: StreakWeekDay[]
+}
+
 export type DashboardStats = {
   enrolled_courses: number
   completed_courses: number
   completed_lessons: number
   wishlist_count: number
   avg_progress: number
+  streak_current: number
 }
 
 export type CompletionBrief = {
@@ -127,6 +145,7 @@ export type CompletionCard = CompletionBrief & {
 export type Dashboard = {
   user: DashboardUser
   stats: DashboardStats
+  streak: StreakPayload
   enrolled: Enrollment[]
   continue_learning: Course[]
   recent: Course[]

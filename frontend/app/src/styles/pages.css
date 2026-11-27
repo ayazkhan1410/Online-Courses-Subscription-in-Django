@@ -308,7 +308,19 @@
 .cont-count .counter span { font-size: 18px; }
 .continue .ticks { height: 18px; gap: 3px; }
 
-.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 16px 0; }
+.week-ticks { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.week-tick { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.week-tick > i {
+  display: block;
+  height: 18px;
+  background: var(--line-strong);
+  border-radius: 1px;
+}
+.week-tick > i.on { background: var(--text-2); }
+.week-tick > i.today { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.week-tick-label { font-size: 11px; text-align: center; }
+
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 16px 0; }
 .stat { padding: 20px; display: flex; flex-direction: column; gap: 6px; }
 .stat .label { font-size: 13px; color: var(--text-2); font-weight: 400; }
 .stat .fig { font: 500 30px/1.1 var(--font-sans); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
