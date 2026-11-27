@@ -45,3 +45,4 @@ frontend/app/e2e/screenshots/
 frontend/app/playwright-report/
 frontend/app/test-results/
 frontend/legacy/node_modules/
+deploy-secrets.sh
