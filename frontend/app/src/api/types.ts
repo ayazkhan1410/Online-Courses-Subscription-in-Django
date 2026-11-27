@@ -164,6 +164,10 @@ export type AppConfig = {
   fiverr_profile_url?: string
   published_course_count?: number
   category_count?: number
+  lesson_count?: number
+  creator_count?: number
+  path_count?: number
+  language_count?: number
 }
 
 export type VerificationRequired = {

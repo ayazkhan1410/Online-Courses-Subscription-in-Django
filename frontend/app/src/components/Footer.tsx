@@ -14,7 +14,7 @@ export function Footer() {
             </p>
           </div>
           <div>
-            <h4>Learn</h4>
+            <p className="footer-heading">Learn</p>
             <ul>
               <li>
                 <Link to="/courses">All courses</Link>
@@ -28,7 +28,7 @@ export function Footer() {
             </ul>
           </div>
           <div>
-            <h4>Work with me</h4>
+            <p className="footer-heading">Work with me</p>
             <ul>
               <li>
                 <Link to="/services">Services</Link>
@@ -42,7 +42,7 @@ export function Footer() {
             </ul>
           </div>
           <div>
-            <h4>Site</h4>
+            <p className="footer-heading">Site</p>
             <ul>
               <li>
                 <Link to="/about">About</Link>
@@ -59,7 +59,7 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        <div className="footer-note small muted">
+        <div className="footer-note small dim">
           <span>Videos belong to their creators and play from YouTube.</span>
           <span className="mono">© 2026</span>
         </div>
